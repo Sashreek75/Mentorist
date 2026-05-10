@@ -265,9 +265,11 @@
           <td style="vertical-align:top;"><span class="status-pill ${statusClass}">${u.status || 'pending'}</span></td>
           <td style="vertical-align:top;">
             <div class="action-btns">
-              ${canApprove ? `<button class="btn-action btn-approve" onclick="performAction('${u.email}', 'active', 'approved')">Approve</button>` : ''}
-              ${canReject ? `<button class="btn-action btn-reject" onclick="performAction('${u.email}', 'rejected', 'rejected')">Reject</button>` : ''}
-              ${!canApprove && !canReject ? '—' : ''}
+              ${u.email === user.email ? '<span style="color:var(--t4); font-style:italic; font-size:12px;">Current Session</span>' : `
+                ${canApprove ? `<button class="btn-action btn-approve" onclick="performAction('${u.email}', 'active', 'approved')">Approve</button>` : ''}
+                ${canReject ? `<button class="btn-action btn-reject" onclick="performAction('${u.email}', 'rejected', 'rejected')">Reject</button>` : ''}
+                ${!canApprove && !canReject ? '—' : ''}
+              `}
             </div>
           </td>
         </tr>`;
