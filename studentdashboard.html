@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dashboard — Mentorist</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="shared.css">
+<style>
+body{background:var(--bg);}
+.dash-header{margin-bottom:48px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;}
+.dash-greeting-name{font-family:var(--font-h);font-size:clamp(24px, 4vw, 36px);font-weight:800;color:var(--t1);letter-spacing:-0.03em;}
+.dash-greeting-sub{font-size:15px;color:var(--t3);margin-top:4px;}
+
+.profile-summary-pill{
+  display:inline-flex;align-items:center;gap:12px;padding:8px 16px;
+  background:rgba(255,255,255,0.03);border:1px solid var(--b1);border-radius:var(--r-pill);
+}
+.psp-item{font-size:13px;font-weight:600;color:var(--t2);display:flex;align-items:center;gap:6px;}
+.psp-item span{color:var(--green);}
+
+/* Ask Section */
+.ask-card-premium{
+  background:var(--bg-1);border:1px solid var(--b1);border-radius:var(--r-3xl);padding:40px;
+  margin-bottom:48px;position:relative;overflow:hidden;
+}
+.ask-card-premium::after{
+  content:'';position:absolute;top:-50%;right:-10%;width:300px;height:300px;
+  background:radial-gradient(circle, rgba(0,232,122,0.1), transparent 70%);
+  filter:blur(40px);pointer-events:none;
+}
+.ask-hd-title{font-family:var(--font-h);font-size:24px;font-weight:800;color:var(--t1);margin-bottom:8px;}
+.ask-hd-sub{font-size:14px;color:var(--t3);margin-bottom:32px;max-width:500px;line-height:1.6;}
+
+/* Feed UI */
+.feed-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding:0 4px;}
+.feed-header h3{font-family:var(--font-h);font-size:18px;font-weight:700;color:var(--t1);}
+
+.qcard-luxury{
+  background:var(--bg-2);border:1px solid var(--b1);border-radius:var(--r-2xl);
+  overflow:hidden;margin-bottom:20px;transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.qcard-luxury:hover{border-color:var(--b3);transform:translateY(-4px);box-shadow: 0 12px 30px rgba(0,0,0,0.4);}
+.qcard-body{padding:28px;cursor:pointer;}
+.qcard-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.qcard-tags{display:flex;gap:8px;flex-wrap:wrap;}
+.qtag-premium{
+  font-size:11px;font-weight:800;padding:4px 10px;border-radius:var(--r-pill);
+  background:var(--green-dim);color:var(--green);border:1px solid rgba(0,232,122,0.2);
+  text-transform:uppercase;letter-spacing:0.04em;
+}
+.qdate-simple{font-size:12px;color:var(--t4);font-weight:600;}
+
+.qquestion-text{font-size:17px;font-weight:700;color:var(--t1);line-height:1.5;margin-bottom:8px;}
+.qctx-text{font-size:13px;color:var(--t3);line-height:1.6;padding-left:14px;border-left:2px solid var(--b2);}
+
+.qstatus-bar{
+  padding:14px 28px;border-top:1px solid var(--b1);display:flex;align-items:center;gap:10px;
+  font-size:13px;font-weight:600;background:var(--bg-1);
+}
+.qstatus-answered{color:var(--green);}
+.qstatus-pending{color:var(--amber);}
+.dot-indicator{width:8px;height:8px;border-radius:50%;}
+
+/* Answer UI */
+.answer-panel{background:var(--bg);padding:32px;display:none;border-top:1px solid var(--b1);}
+.qcard-luxury.open .answer-panel{display:block;}
+.mentor-profile-mini{display:flex;align-items:center;gap:14px;margin-bottom:20px;}
+.mentor-info h5{font-size:14px;font-weight:700;color:var(--t1);}
+.mentor-info p{font-size:11px;color:var(--t4);font-weight:600;}
+.answer-content{font-size:15px;color:var(--t2);line-height:1.8;white-space:pre-wrap;}
+
+/* Sidebar Tips */
+.sidebar-card-tip{background:var(--bg-1);border:1px solid var(--b2);border-radius:var(--r-xl);padding:24px;margin-top:32px;}
+.sidebar-card-tip h6{font-size:12px;font-weight:800;color:var(--t4);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:16px;}
+.tip-item{display:flex;gap:12px;font-size:13px;color:var(--t3);line-height:1.6;margin-bottom:12px;}
+.tip-icon{color:var(--green);font-weight:900;flex-shrink:0;}
+
+@media(min-width:1100px){.student-layout-grid{display:grid;grid-template-columns:1fr 300px;gap:40px;align-items:start;}}
+</style>
+</head>
+<body>
+
+<nav class="navbar" id="nav">
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logomark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+    <span class="nav-wordmark">Mentorist</span>
+  </a>
+  <div class="nav-actions">
+    <span style="font-size:13px;color:var(--t4);font-weight:700;margin-right:8px;" id="navEmail"></span>
+    <div class="avatar avatar-sm" id="navAv"></div>
+    <button class="btn btn-ghost btn-sm" onclick="Auth.logout()">Exit</button>
+  </div>
+</nav>
+
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <div class="sidebar-label">Main Menu</div>
+    <button class="sidebar-link active" onclick="showView('ask')" id="sidebar-ask">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Ask Mentor
+    </button>
+    <button class="sidebar-link" onclick="showView('history')" id="sidebar-history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>My Activity
+    </button>
+    <div class="sidebar-label" style="margin-top:32px;">Settings</div>
+    <button class="sidebar-link" onclick="Auth.logout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign out
+    </button>
+  </aside>
+
+  <main class="dashboard-main">
+    <div class="dash-header reveal">
+      <div>
+        <h1 class="dash-greeting-name" id="greeting">Hi there.</h1>
+        <p class="dash-greeting-sub">Your personal roadmaps will appear here.</p>
+      </div>
+      <div class="profile-summary-pill" id="profileRow" style="display:none;">
+        <div class="psp-item">Grade: <span id="pGrade"></span></div>
+        <div class="psp-item">Interest: <span id="pInterest"></span></div>
+      </div>
+    </div>
+
+    <!-- ASK VIEW -->
+    <div id="view-ask" class="stagger">
+      <div class="student-layout-grid">
+        <div>
+          <div class="alert alert-green" id="scNotice" style="display:none;margin-bottom:32px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Your strategic question has been submitted. A peer mentor will respond within 48 hours.</span>
+          </div>
+
+          <div class="ask-card-premium" id="askForm">
+            <h2 class="ask-hd-title">New Strategic Question</h2>
+            <p class="ask-hd-sub">Be as specific as possible about your goals, current classes, and target outcomes. High context leads to the best peer guidance.</p>
+            
+            <div class="form-group">
+              <div class="form-label" role="heading" aria-level="5">Select Topics</div>
+              <div class="tag-group" id="topicButtons">
+                <button class="tag-pill" onclick="toggleT(this,'Course Strategy')">Course Strategy</button>
+                <button class="tag-pill" onclick="toggleT(this,'AP/IB Load')">AP/IB Load</button>
+                <button class="tag-pill" onclick="toggleT(this,'GPA Support')">GPA Support</button>
+                <button class="tag-pill" onclick="toggleT(this,'Narrative')">Narrative</button>
+                <button class="tag-pill" onclick="toggleT(this,'Extracurriculars')">Extracurriculars</button>
+                <button class="tag-pill" onclick="toggleT(this,'Summer Plans')">Summer Plans</button>
+                <button class="tag-pill" onclick="toggleT(this,'College Apps')">College Apps</button>
+                <button class="tag-pill" onclick="toggleT(this,'Career Prep')">Career Prep</button>
+                <button class="tag-pill" onclick="toggleT(this,'Life Help')">Life Help</button>
+                <button class="tag-pill" onclick="toggleT(this,'General')">General</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="qBody">What are you navigating?</label>
+              <textarea class="form-textarea" id="qBody" maxlength="1000" oninput="upCC(this)" placeholder="e.g. I am a sophomore aiming for STEM. Should I prioritize AP Physics or a research project this summer? How can I align my narrative for T20 schools?"></textarea>
+              <div class="char-count" id="bodyCC">0 / 1000</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="qMeta">Specific Context (Optional)</label>
+              <input type="text" class="form-input" id="qMeta" maxlength="200" placeholder="e.g. Current 3.8 UW GPA · Goal: Georgia Tech · Strong math background">
+            </div>
+
+            <div class="alert alert-info" style="margin-bottom:32px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+              <span>Mentors are students who have navigated these exact paths. Expect high-quality, lived-experience advice.</span>
+            </div>
+
+            <button class="btn btn-primary btn-lg btn-full" onclick="sendQ()">
+              Submit Question to Network
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-tips-col">
+          <div class="sidebar-card-tip">
+            <h6>Mentorship Tips</h6>
+            <div class="tip-item"><div class="tip-icon">✓</div>Specify the year level you're talking about.</div>
+            <div class="tip-item"><div class="tip-icon">✓</div>Mention specific AP/IB courses by name.</div>
+            <div class="tip-item"><div class="tip-icon">✓</div>Share your long-term major or interest.</div>
+            <div class="tip-item"><div class="tip-icon">✓</div>Focus on logic, not just 'what should I take'.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY VIEW -->
+    <div id="view-history" style="display:none;" class="stagger">
+      <div class="feed-header">
+        <h3>My Roadmap Inquiries</h3>
+        <span style="font-size:12px;color:var(--t4);font-weight:700;" id="qTotal">0 Total</span>
+      </div>
+      <div id="inquiryFeed"></div>
+    </div>
+  </main>
+</div>
+
+<script src="shared.js"></script>
+<script>
+  const user = Auth.requireAuth();
+  if (!user) { window.location.href = 'auth.html'; }
+  else if (!user.onboarded) { window.location.href = 'onboarding.html'; }
+  else if (user.role === 'mentor') { window.location.href = 'mentordashboard.html'; }
+
+  let selTopics = [];
+
+  function init() {
+    if (!user) return;
+    document.getElementById('navAv').textContent = Utils.initials(user.name);
+    document.getElementById('navEmail').textContent = user.email;
+    const h = new Date().getHours();
+    const g = h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+    document.getElementById('greeting').textContent = g+', '+user.name.split(' ')[0]+'.';
+    
+    const p = user.profile;
+    if (p) {
+      document.getElementById('profileRow').style.display = 'inline-flex';
+      const gm={'9':'9th','10':'10th','11':'11th','12':'12th','parent':'Parent','international':'Intl.'};
+      const im={stem:'STEM',business:'Business',humanities:'Humanities',arts:'Arts',medicine:'Med',law:'Law',undecided:'Exploring'};
+      document.getElementById('pGrade').textContent = gm[p.grade]||'—';
+      document.getElementById('pInterest').textContent = im[p.interest]||'—';
+    }
+  }
+
+  function showView(v) {
+    ['ask','history'].forEach(x => {
+      document.getElementById('view-'+x).style.display='none';
+      document.getElementById('sidebar-'+x).classList.remove('active');
+    });
+    document.getElementById('view-'+v).style.display = 'block';
+    document.getElementById('sidebar-'+v).classList.add('active');
+    if (v==='history') refreshFeed();
+  }
+
+  function toggleT(el, t) {
+    el.classList.toggle('active');
+    selTopics.includes(t) ? selTopics=selTopics.filter(x=>x!==t) : selTopics.push(t);
+  }
+
+  function upCC(el) {
+    const l=el.value.length;
+    const cc=document.getElementById('bodyCC');
+    cc.textContent=l+' / 1000';
+    cc.className='char-count'+(l>850?' warn':'')+(l>980?' over':'');
+  }
+
+  function sendQ() {
+    const text = document.getElementById('qBody').value.trim();
+    if (!text||text.length<20) { Utils.toast('Please provide a bit more context.','error'); return; }
+    
+    if(!confirm('Ready to submit your strategic inquiry? This will be sent to our peer mentor network.')) return;
+
+    QuestionStore.add({
+      studentEmail: user.email, studentName: user.name,
+      studentProfile: user.profile||{},
+      topics: selTopics.length ? selTopics : ['General'],
+      question: text,
+      context: document.getElementById('qMeta').value.trim()||null
+    });
+    // Reset
+    document.getElementById('qBody').value='';
+    document.getElementById('qMeta').value='';
+    document.getElementById('bodyCC').textContent='0 / 1000';
+    selTopics=[];
+    document.querySelectorAll('#topicButtons .tag-pill').forEach(p=>p.classList.remove('active'));
+    
+    document.getElementById('askForm').style.opacity='0.5';
+    document.getElementById('askForm').style.pointerEvents='none';
+    document.getElementById('scNotice').style.display='flex';
+    Utils.toast('Success. Sent to mentors.','success');
+    
+    setTimeout(()=> {
+      document.getElementById('scNotice').style.display='none';
+      document.getElementById('askForm').style.opacity='1';
+      document.getElementById('askForm').style.pointerEvents='all';
+    }, 8000);
+  }
+
+  function refreshFeed() {
+    const qs = QuestionStore.getForStudent(user.email);
+    document.getElementById('qTotal').textContent = qs.length+' Activity Link' + (qs.length!==1?'s':'');
+    const feed = document.getElementById('inquiryFeed');
+    if (!qs.length) {
+      feed.innerHTML=`<div class="empty-state">
+        <div class="empty-state-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <h3>No activity yet</h3>
+        <p>Once you ask your first strategic question, it will appear here alongside mentor feedback.</p>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="showView('ask')">Ask First Question</button>
+      </div>`;
+      return;
+    }
+    feed.innerHTML = qs.map(q => {
+      const isAns = q.answers?.length > 0;
+      const tags = (q.topics||[]).map(t=>`<span class="qtag-premium">${t}</span>`).join('');
+      const answersHtml = isAns ? q.answers.map((a, aIdx)=>`
+        <div class="mentor-profile-mini" style="justify-content: space-between; display:flex; width:100%;">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <div class="avatar avatar-md">${Utils.initials(a.mentorName)}</div>
+            <div class="mentor-info"><h5>${a.mentorName}</h5><p>${a.mentorBio||'Lead Mentor'}</p></div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); markHelpful('${q.id}', ${aIdx}, this)" style="color:${a.helpful?'var(--green)':'var(--t4)'}">
+            <svg viewBox="0 0 24 24" fill="${a.helpful?'currentColor':'none'}" stroke="currentColor" stroke-width="2.5" style="width:14px; margin-right:4px;"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+            ${a.helpful ? 'Helpful' : 'Mark Helpful'}
+          </button>
+        </div>
+        <div class="answer-content">${a.text}</div>
+      `).join('<div class="divider" style="margin:24px 0;"></div>') : '';
+
+      const deleteBtnHtml = !isAns ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); deleteQuestion('${q.id}')" style="color:var(--red); padding:4px 8px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; margin-right:4px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Withdraw</button>` : '';
+
+      return `<div class="qcard-luxury ${isAns?'open':''}" id="inq-${q.id}">
+        <div class="qcard-body" onclick="toggleInq('${q.id}', ${isAns})">
+          <div class="qcard-meta">
+            <div class="qcard-tags">${tags}</div>
+            <div style="display:flex; align-items:center; gap:12px;">
+              ${deleteBtnHtml}
+              <span class="qdate-simple">${Utils.relativeDate(q.createdAt)}</span>
+            </div>
+          </div>
+          <div class="qquestion-text">${q.question}</div>
+          ${q.context?`<div class="qctx-text">${q.context}</div>`:''}
+        </div>
+        ${isAns ? `<div class="answer-panel">${answersHtml}</div>` : ''}
+        <div class="qstatus-bar ${isAns?'qstatus-answered':'qstatus-pending'}">
+          <div class="dot-indicator" style="background:${isAns?'var(--green)':'var(--amber)'}"></div>
+          ${isAns ? `${q.answers.length} Mentor Feedback${q.answers.length>1?'s':''}` : 'Awaiting Peer Analysis — Expected within 48 hours'}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function toggleInq(id, hasAns) { if(hasAns) document.getElementById('inq-'+id).classList.toggle('open'); }
+
+  function markHelpful(qId, aIdx, btn) {
+    if (btn.innerText.includes('Helpful') && !btn.innerText.includes('Mark')) return;
+    const qs = QuestionStore.getAll();
+    const q = qs.find(x => x.id === qId);
+    if(q && q.answers[aIdx]) {
+      q.answers[aIdx].helpful = true;
+      QuestionStore.save(qs);
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2.5" style="width:14px; margin-right:4px;"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> Helpful`;
+      btn.style.color = 'var(--green)';
+      Utils.toast('Mentor notified of your appreciation.', 'success');
+    }
+  }
+
+  function deleteQuestion(id) {
+    if(!confirm('Are you sure you want to withdraw this question?')) return;
+    QuestionStore.delete(id);
+    Utils.toast('Question withdrawn successfully.', 'success');
+    refreshFeed();
+  }
+
+  // Scroll
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', ()=>nav.classList.toggle('scrolled', scrollY>60), {passive:true});
+
+  init();
+</script>
+</body>
+</html>

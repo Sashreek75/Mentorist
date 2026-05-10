@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Admin Dashboard — Mentorist</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    body {
+      background: var(--bg);
+    }
+
+    .admin-card {
+      background: var(--bg-1);
+      border: 1px solid var(--b1);
+      border-radius: var(--r-3xl);
+      padding: clamp(24px, 6vw, 48px);
+      margin-top: 40px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.4);
+    }
+
+    .admin-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--green), #1aff8e);
+    }
+
+    .table-wrap {
+      margin-top: 48px;
+      border: 1px solid var(--b1);
+      border-radius: var(--r-2xl);
+      background: var(--bg-2);
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      text-align: left;
+      padding: 16px 24px;
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--t4);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 800;
+      border-bottom: 1px solid var(--b1);
+    }
+
+    td {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--b1);
+      font-size: 14px;
+      color: var(--t2);
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .user-name {
+      font-weight: 700;
+      color: var(--t1);
+      font-size: 15px;
+    }
+
+    .user-email {
+      font-size: 12px;
+      color: var(--t4);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .st-pending {
+      background: rgba(245, 158, 11, 0.1);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .st-active {
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(0, 232, 122, 0.2);
+    }
+
+    .st-rejected {
+      background: rgba(239, 68, 68, 0.1);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .action-btns {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-action {
+      padding: 8px 16px;
+      border-radius: var(--r-lg);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .btn-approve {
+      background: var(--green);
+      color: #040404;
+    }
+
+    .btn-approve:hover {
+      background: #00ff85;
+      transform: translateY(-1px);
+    }
+
+    .btn-reject {
+      background: rgba(239, 68, 68, 0.1);
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .btn-reject:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #f87171;
+    }
+
+    .btn-undo {
+      background: var(--bg-3);
+      color: var(--t2);
+      border-color: var(--b1);
+    }
+    
+    .undo-banner {
+      background: var(--green-dim);
+      padding: 12px 24px;
+      border-radius: var(--r-xl);
+      border: 1px solid rgba(0,232,122,0.2);
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: slideDown 0.4s ease both;
+    }
+
+    @keyframes slideDown { 0%{opacity:0; transform:translateY(-10px);} 100%{opacity:1; transform:translateY(0);} }
+  </style>
+</head>
+
+<body>
+
+  <nav class="navbar">
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logomark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" />
+          <path d="M2 17l10 5 10-5" />
+          <path d="M2 12l10 5 10-5" />
+        </svg></div>
+      <span class="nav-wordmark">Admin Console</span>
+    </a>
+    <div class="nav-actions">
+      <button class="btn btn-ghost btn-sm" onclick="Auth.logout()">Log out</button>
+    </div>
+  </nav>
+
+  <div class="app-layout" style="max-width:1000px; margin:0 auto; padding-top:120px; padding-bottom:80px;">
+    <div id="undoContainer"></div>
+
+    <div class="admin-card">
+      <h1 style="font-family:var(--font-h); font-size:32px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">User Management</h1>
+      <p style="color:var(--t3); font-size:16px;">Review and process mentor applications manually.</p>
+
+      <div class="table-wrap">
+        <div id="userTable"></div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h1 style="font-family:var(--font-h); font-size:32px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">Content Moderation</h1>
+      <p style="color:var(--t3); font-size:16px;">Review and moderate student questions.</p>
+
+      <div class="table-wrap">
+        <div id="questionsTable"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="shared.js"></script>
+  <script>
+    const user = Auth.requireAuth();
+    if (!user || user.role !== 'admin') {
+      window.location.href = 'auth.html';
+    }
+
+    let lastAction = null;
+
+    function render() {
+      const users = UserStore.getAll();
+      const tableDiv = document.getElementById('userTable');
+
+      if (users.length === 0) {
+        tableDiv.innerHTML = '<div style="padding:80px; text-align:center; color:var(--t4); font-size:15px;">No users found.</div>';
+        return;
+      }
+
+      let html = '<table><thead><tr><th>User</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+
+      // Sort: Pending first, then active/rejected
+      const sortedUsers = [...users].sort((a,b) => {
+        if(a.status === 'pending' && b.status !== 'pending') return -1;
+        if(a.status !== 'pending' && b.status === 'pending') return 1;
+        return 0;
+      });
+
+      sortedUsers.forEach(u => {
+        const statusClass = `st-${u.status || 'pending'}`;
+        const canApprove = u.status !== 'active';
+        const canReject = u.status !== 'rejected';
+
+        let details = `<span class="badge badge-gray">${u.role}</span>`;
+        if (u.role === 'mentor' && u.applicationData) {
+          details += `<div style="font-size:12px; color:var(--t3); margin-top:6px; line-height:1.4;">
+            <strong>${u.applicationData.university}</strong><br>
+            ${u.applicationData.major}
+          </div>`;
+        }
+
+        html += `<tr>
+          <td>
+            <div class="user-info">
+              <span class="user-name">${u.name}</span>
+              <span class="user-email">${u.email}</span>
+            </div>
+          </td>
+          <td style="max-width:250px; white-space:normal; vertical-align:top;">${details}</td>
+          <td style="vertical-align:top;"><span class="status-pill ${statusClass}">${u.status || 'pending'}</span></td>
+          <td style="vertical-align:top;">
+            <div class="action-btns">
+              ${canApprove ? `<button class="btn-action btn-approve" onclick="performAction('${u.email}', 'active', 'approved')">Approve</button>` : ''}
+              ${canReject ? `<button class="btn-action btn-reject" onclick="performAction('${u.email}', 'rejected', 'rejected')">Reject</button>` : ''}
+              ${!canApprove && !canReject ? '—' : ''}
+            </div>
+          </td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      tableDiv.innerHTML = html;
+      renderUndo();
+    }
+
+    function performAction(email, newStatus, label) {
+      const users = UserStore.getAll();
+      const user = users.find(u => u.email === email);
+      if (!user) return;
+
+      lastAction = { 
+        email, 
+        oldStatus: user.status, 
+        oldRejectedAt: user.rejectedAt || null,
+        newStatus,
+        label 
+      };
+
+      const fields = { status: newStatus };
+      if (newStatus === 'rejected') {
+        fields.rejectedAt = new Date().toISOString();
+      } else {
+        fields.rejectedAt = null;
+      }
+
+      UserStore.updateUserFields(email, fields);
+      Utils.toast(`User ${label} successfully.`, 'success');
+      render();
+    }
+
+    function undoLast() {
+      if (!lastAction) return;
+      UserStore.updateUserFields(lastAction.email, { 
+        status: lastAction.oldStatus,
+        rejectedAt: lastAction.oldRejectedAt
+      });
+      lastAction = null;
+      Utils.toast('Action undone.', 'info');
+      render();
+    }
+
+    function renderUndo() {
+      const container = document.getElementById('undoContainer');
+      if (!lastAction) {
+        container.innerHTML = '';
+        return;
+      }
+      container.innerHTML = `
+        <div class="undo-banner">
+          <span style="color:var(--green); font-size:14px; font-weight:600;">Account ${lastAction.label}! Accidentally clicked?</span>
+          <button class="btn-action btn-undo" onclick="undoLast()">Undo Action</button>
+        </div>
+      `;
+    }
+
+    function renderQuestions() {
+      const qs = QuestionStore.getAll();
+      const tableDiv = document.getElementById('questionsTable');
+
+      if (qs.length === 0) {
+        tableDiv.innerHTML = '<div style="padding:80px; text-align:center; color:var(--t4); font-size:15px;">No questions found.</div>';
+        return;
+      }
+
+      let html = '<table><thead><tr><th>Student</th><th>Question Preview</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+
+      qs.forEach(q => {
+        const isAns = q.answers?.length > 0;
+        const ansCount = q.answers?.length || 0;
+        html += `<tr>
+          <td>
+            <div class="user-info">
+              <span class="user-name">${q.studentName}</span>
+              <span class="user-email">${q.studentEmail}</span>
+            </div>
+          </td>
+          <td style="max-width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            <div style="font-weight:700; color:var(--t1); font-size:13px; margin-bottom:4px;">${(q.topics||[]).join(', ') || 'General'}</div>
+            <div style="font-size:13px; color:var(--t3); text-overflow:ellipsis; overflow:hidden;">${q.question}</div>
+          </td>
+          <td style="vertical-align:top;">
+            <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
+              <span class="status-pill ${isAns?'st-active':'st-pending'}">${isAns?'Answered':'Pending'}</span>
+              ${isAns ? `<span style="font-size:11px; color:var(--t4); font-weight:600;">${ansCount} Response${ansCount!==1?'s':''}</span>` : ''}
+            </div>
+          </td>
+          <td style="vertical-align:top;">
+            <div class="action-btns">
+              <button class="btn-action btn-reject" onclick="deleteQuestion('${q.id}')">Delete</button>
+            </div>
+          </td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      tableDiv.innerHTML = html;
+    }
+
+    function deleteQuestion(id) {
+      if(!confirm('Delete this question permanently?')) return;
+      const qs = QuestionStore.getAll().filter(q => q.id !== id);
+      QuestionStore.save(qs);
+      Utils.toast('Question deleted.', 'info');
+      renderQuestions();
+    }
+
+    render();
+    renderQuestions();
+  </script>
+</body>
+
+</html>

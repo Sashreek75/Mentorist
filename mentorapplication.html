@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Mentor Application — Mentorist</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    body {
+      background: var(--bg);
+    }
+
+    .app-layout {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 100px 24px 80px;
+    }
+
+    .app-card {
+      background: var(--bg-1);
+      border: 1px solid var(--b1);
+      border-radius: var(--r-3xl);
+      padding: clamp(24px, 6vw, 48px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .app-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--green), var(--green-2));
+    }
+
+    .app-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .app-title {
+      font-family: var(--font-h);
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--t1);
+      margin-bottom: 12px;
+      letter-spacing: -0.03em;
+    }
+
+    .app-sub {
+      font-size: 16px;
+      color: var(--t3);
+      max-width: 540px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    .form-visual-wrap {
+      background: var(--bg-2);
+      border: 1px solid var(--b1);
+      border-radius: var(--r-2xl);
+      overflow: hidden;
+      margin-top: 40px;
+      aspect-ratio: 16/9;
+      width: 100%;
+      position: relative;
+    }
+
+    .form-visual-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .pending-notice {
+      background: var(--green-dim);
+      padding: 24px;
+      border-radius: var(--r-xl);
+      border: 1px solid rgba(0, 232, 122, 0.25);
+      margin-top: 40px;
+      display: flex;
+      gap: 16px;
+    }
+
+    .pn-icon {
+      font-size: 24px;
+    }
+
+    .pn-text h4 {
+      font-weight: 800;
+      color: var(--green);
+      margin-bottom: 4px;
+    }
+
+    .pn-text p {
+      font-size: 14px;
+      color: var(--t2);
+      line-height: 1.6;
+    }
+
+    .rejected-notice {
+      background: rgba(239, 68, 68, 0.1);
+      padding: 24px;
+      border-radius: var(--r-xl);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      margin-top: 40px;
+      display: flex;
+      gap: 16px;
+    }
+
+    .rejected-notice h4 {
+      font-weight: 800;
+      color: #f87171;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="navbar">
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logomark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" />
+          <path d="M2 17l10 5 10-5" />
+          <path d="M2 12l10 5 10-5" />
+        </svg></div>
+      <span class="nav-wordmark">Mentorist</span>
+    </a>
+    <div class="nav-actions">
+      <button class="btn btn-ghost btn-sm" onclick="Auth.logout()">Log out</button>
+    </div>
+  </nav>
+
+  <div class="app-layout">
+    <div class="app-header reveal">
+      <h1 class="app-title">Apply as a Mentor</h1>
+      <p class="app-sub">We review every mentor application manually to ensure all strategic guidance remains
+        high-quality and verified.</p>
+    </div>
+
+    <main class="app-card stagger" id="applicationMain">
+      <div id="noticeContainer">
+        <div class="pending-notice">
+          <div class="pn-icon">🕒</div>
+          <div class="pn-text">
+            <h4>Review Policy</h4>
+            <p>After you submit the form below, our team will review your qualifications. You will receive an approval
+              notification within 48 hours. Once approved, you can access the Mentor Dashboard.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- APPLICATION VISUAL & CALL TO ACTION -->
+      <div class="form-visual-wrap">
+        <img src="mentor_application_visual.png" alt="Mentorship Path">
+      </div>
+
+      <div id="ctaSection" style="margin-top:40px; text-align:left;">
+        <h3 style="font-family:var(--font-h); font-size:24px; color:var(--t1); margin-bottom:12px;">Step 1: Submit Your Info</h3>
+        <p style="color:var(--t3); font-size:15px; margin-bottom:32px;">
+          Complete the official Mentorist Application. This ensures we have all the data needed for your review.
+        </p>
+        
+        <div id="appForm">
+          <div class="form-group">
+            <label class="form-label" for="appUniversity">University / College</label>
+            <input type="text" class="form-input" id="appUniversity" placeholder="e.g. Stanford University '26">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="appMajor">Major / Field of Study</label>
+            <input type="text" class="form-input" id="appMajor" placeholder="e.g. Computer Science">
+          </div>
+          <div class="form-group" style="margin-bottom: 24px;">
+            <label class="form-label" for="appExperience">Why do you want to be a mentor?</label>
+            <textarea class="form-textarea" id="appExperience" placeholder="Share a brief story about your high school experience and what strategies worked for you..." style="min-height:120px;"></textarea>
+          </div>
+          <button class="btn btn-primary btn-lg btn-full" onclick="submitApplication()">Submit Application</button>
+        </div>
+
+        <div id="appSuccess" style="display:none; text-align:center; padding: 40px; background: rgba(0,232,122,0.05); border-radius: var(--r-xl); border: 1px dashed var(--green);">
+          <div style="font-size:32px; margin-bottom:16px;">✅</div>
+          <h4 style="font-size:18px; font-weight:700; color:var(--t1); margin-bottom:8px;">Application Received</h4>
+          <p style="font-size:14px; color:var(--t3);">Your application is now under manual review by our administrative team. Check back here for updates.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:40px; text-align:center;">
+        <p style="font-size:13px; color:var(--t4); margin-bottom:20px;">Already submitted? We're processing your
+          application now.</p>
+        <button class="btn btn-secondary" onclick="checkStatus()">Check My Status</button>
+      </div>
+    </main>
+  </div>
+
+  <script src="shared.js"></script>
+  <script>
+    const user = Auth.requireAuth();
+    if (!user || user.role !== 'mentor') { window.location.href = 'index.html'; }
+    if (user.status === 'active') { Auth.routeAfterLogin(user); }
+
+    // Rejection handling
+    if (user.status === 'rejected') {
+      const rejectedAt = new Date(user.rejectedAt);
+      const now = new Date();
+      const diffHrs = (now - rejectedAt) / (1000 * 60 * 60);
+
+      if (diffHrs < 24) {
+        document.getElementById('noticeContainer').innerHTML = `
+          <div class="rejected-notice">
+            <div class="pn-icon">🛑</div>
+            <div class="pn-text">
+              <h4>Application Rejected</h4>
+              <p>Your application was not approved at this time. To maintain quality standards, you cannot re-apply for 24 hours.</p>
+            </div>
+          </div>
+        `;
+        document.getElementById('ctaSection').innerHTML = `
+          <div style="padding:48px 24px; background:var(--bg-2); border-radius:var(--r-xl); border:1px solid var(--b1);">
+            <p style="color:var(--t4); font-size:14px; margin-bottom:12px; font-weight:600;">COOLDOWN IN EFFECT</p>
+            <p style="color:var(--t2); font-size:15px;">Please check back tomorrow to re-initiate your application.</p>
+          </div>
+        `;
+      } else {
+        // More than 24 hours? Let them try again?
+        // Actually, status is still rejected. We should probably reset it to pending if they try again.
+        // For now, just show the normal view but maybe with a note.
+        Utils.toast('Your rejection cooldown has expired. You may re-apply.', 'info');
+      }
+    }
+
+    function checkStatus() {
+      if (user.status === 'rejected') {
+        Utils.toast('Your previous application was rejected. See the notice above.', 'error');
+      } else {
+        Utils.toast('Your application is still under review. Check back soon!', 'info');
+      }
+    }
+
+    function submitApplication() {
+      const uni = document.getElementById('appUniversity').value.trim();
+      const major = document.getElementById('appMajor').value.trim();
+      const exp = document.getElementById('appExperience').value.trim();
+      
+      if(!uni || !major || !exp) {
+        Utils.toast('Please fill out all fields.', 'error');
+        return;
+      }
+      
+      Auth.updateUser({ 
+        applicationData: { university: uni, major: major, experience: exp },
+        appliedAt: new Date().toISOString(),
+        status: 'pending',
+        rejectedAt: null
+      });
+      
+      document.getElementById('appForm').style.display = 'none';
+      document.getElementById('appSuccess').style.display = 'block';
+      Utils.toast('Application submitted successfully!', 'success');
+    }
+
+    if (user.appliedAt) {
+      const formEl = document.getElementById('appForm');
+      if (formEl) formEl.style.display = 'none';
+      const succEl = document.getElementById('appSuccess');
+      if (succEl) succEl.style.display = 'block';
+    }
+  </script>
+</body>
+
+</html>

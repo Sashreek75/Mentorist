@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Sign In — Mentorist</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="shared.css">
+<style>
+body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
+.auth-layout{flex:1;display:grid;grid-template-columns:1.1fr 1fr;min-height:100vh;}
+
+/* LEFT */
+.auth-left{
+  background:var(--bg-1);border-right:1px solid var(--b1);
+  display:flex;flex-direction:column;justify-content:center;
+  padding:clamp(40px,8vw,120px);position:relative;overflow:hidden;
+}
+.al-glow{
+  position:absolute;width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,232,122,0.1) 0%,transparent 70%);
+  filter:blur(80px);top:-100px;right:-100px;pointer-events:none;
+}
+.al-grid{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,0.02) 1px,transparent 1px);background-size:32px 32px;}
+.al-content{position:relative;z-index:2;max-width:480px;}
+
+.al-logo{display:flex;align-items:center;gap:12px;text-decoration:none;margin-bottom:64px;}
+.al-logo-mark{width:36px;height:36px;border-radius:10px;background:var(--green);display:flex;align-items:center;justify-content:center;box-shadow: 0 4px 12px rgba(0,232,122,0.3);}
+.al-logo-mark svg{width:18px;height:18px;color:#040404;}
+.al-wordmark{font-family:var(--font-h);font-size:20px;font-weight:800;color:var(--t1);letter-spacing:-0.03em;}
+
+.al-headline{font-family:var(--font-h);font-size:clamp(32px,4vw,52px);font-weight:800;color:var(--t1);line-height:1.05;letter-spacing:-0.04em;margin-bottom:24px;}
+.al-headline .green{color:var(--green);}
+.al-body{font-size:16px;color:var(--t3);line-height:1.8;margin-bottom:48px;}
+
+.al-quote{
+  padding:28px;background:rgba(255,255,255,0.02);border:1px solid var(--b1);border-radius:var(--r-2xl);
+  position:relative;backdrop-filter: blur(10px);
+}
+.al-quote::before{content:'"';position:absolute;top:-10px;left:24px;font-size:64px;font-weight:800;color:var(--green);line-height:1;opacity:0.3;}
+.aq-text{font-size:15px;font-style:italic;color:var(--t2);line-height:1.7;margin-bottom:20px;}
+.aq-author{display:flex;align-items:center;gap:12px;}
+.aq-name{font-size:13px;font-weight:700;color:var(--t1);}
+.aq-role{font-size:12px;color:var(--t4);}
+
+/* RIGHT */
+.auth-right{
+  display:flex;align-items:center;justify-content:center;
+  padding:48px clamp(32px,5vw,80px);background:var(--bg);position:relative;
+}
+.auth-box{width:100%;max-width:420px;animation:fadeUp 0.6s cubic-bezier(0.2, 1, 0.3, 1) both;}
+.auth-title{font-family:var(--font-h);font-size:32px;font-weight:800;color:var(--t1);letter-spacing:-0.03em;margin-bottom:8px;}
+.auth-sub{font-size:15px;color:var(--t3);margin-bottom:40px;}
+.auth-sub a{color:var(--green);font-weight:700;text-decoration:none;}
+
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:32px;}
+.role-card{
+  padding:20px;border:1px solid var(--b2);border-radius:var(--r-xl);
+  cursor:pointer;transition:all 0.2s;background:var(--bg-2);text-align:left;position:relative;
+}
+.role-card:hover{border-color:var(--green-2);background:var(--bg-3);transform:translateY(-2px);}
+.role-card.selected{border-color:var(--green);background:var(--green-surface);box-shadow:0 0 0 1px var(--green-dim);}
+.rc-icon{font-size:24px;margin-bottom:12px;display:block;}
+.rc-name{font-size:15px;font-weight:700;color:var(--t1);margin-bottom:4px;}
+.rc-desc{font-size:12px;color:var(--t4);line-height:1.5;}
+
+.auth-notice{
+  padding:14px 18px;background:var(--green-dim);border:1px solid rgba(0,232,122,0.2);
+  border-radius:var(--r-lg);font-size:14px;color:var(--t1);margin-bottom:32px;line-height:1.6;
+}
+.auth-notice strong{color:var(--green);font-weight:700;}
+.auth-note{font-size:12px;color:var(--t4);text-align:center;margin-top:24px;line-height:1.6;}
+.auth-note a{color:var(--t2);font-weight:600;}
+
+@media(max-width:1024px){
+  .auth-layout{grid-template-columns:1fr;}
+  .auth-left{display:none;}
+  .auth-right{padding:80px 24px;align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+
+<div class="auth-layout">
+  <div class="auth-left">
+    <div class="al-glow"></div><div class="al-grid"></div>
+    <div class="al-content">
+      <a href="index.html" class="al-logo">
+        <div class="al-logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+        <span class="al-wordmark">Mentorist</span>
+      </a>
+      <h2 class="al-headline">Course selection<br>is <span class="green">strategy</span>,<br>not a checklist.</h2>
+      <p class="al-body">Build a roadmap that tells your unique story. Join our network of students and mentors for human-powered, strategic high school guidance.</p>
+      <div class="al-quote">
+        <p class="aq-text">One conversation completely changed how I looked at my junior year. I feel so much more confident in my path now.</p>
+        <div class="aq-author">
+          <div class="avatar avatar-sm">AJ</div>
+          <div><div class="aq-name">Aisha J.</div><div class="aq-role">Mentor · University of Chicago '27</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-box">
+
+      <!-- SIGNUP -->
+      <div id="signupView">
+        <h1 class="auth-title">Create account</h1>
+        <p class="auth-sub">Already have one? <a href="#" onclick="showLogin();return false;">Sign in →</a></p>
+
+        <div class="form-label">I'm joining as a…</div>
+        <div class="role-grid" id="roleGrid">
+          <div class="role-card selected" data-role="student" onclick="pickRole(this)">
+            <span class="rc-icon">🎓</span>
+            <div class="rc-name">Student</div>
+            <div class="rc-desc">I want strategic guidance</div>
+          </div>
+          <div class="role-card" data-role="mentor" onclick="pickRole(this)">
+            <span class="rc-icon">🌱</span>
+            <div class="rc-name">Mentor</div>
+            <div class="rc-desc">I want to help others</div>
+          </div>
+        </div>
+
+        <div class="auth-notice" id="roleNotice">
+          <strong>Students</strong> get free access to human mentors for advice on course planning, GPA strategy, and building a narrative.
+        </div>
+
+        <button class="btn btn-google btn-full btn-lg" id="signupGoogleBtn" style="margin-bottom:16px; border:1px solid #e2e8f0;">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+          Continue with Google
+        </button>
+
+        <div class="divider-or" style="margin-bottom:16px; text-align:center; color:var(--t4); font-size:14px;">or</div>
+
+        <div class="form-group">
+          <label class="form-label" for="signupName">Full Name</label>
+          <input type="text" class="form-input" id="signupName" placeholder="Jane Doe">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="signupEmail">Email Address</label>
+          <input type="email" class="form-input" id="signupEmail" placeholder="name@email.com">
+        </div>
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label class="form-label" for="signupPassword">Password</label>
+          <input type="password" class="form-input" id="signupPassword" placeholder="••••••••">
+        </div>
+        <button class="btn btn-primary btn-full btn-lg" onclick="handleEmailSignup()">Create Account</button>
+
+        <p class="auth-note" style="margin-top:20px;">By continuing, you agree to our <a href="#">Guidelines</a>.<br>Mentorist is a nonprofit. Your data is never sold.</p>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="loginView" style="display:none;">
+        <h1 class="auth-title">Welcome back</h1>
+        <p class="auth-sub">New to Mentorist? <a href="#" onclick="showSignup();return false;">Create an account →</a></p>
+
+        <button class="btn btn-google btn-full btn-lg" id="loginGoogleBtn" style="margin-bottom:24px; border:1px solid #e2e8f0;">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+          Sign in with Google
+        </button>
+
+        <div class="divider-or" style="margin-bottom:24px; text-align:center; color:var(--t4); font-size:14px;">or</div>
+
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Email Address</label>
+          <input type="email" class="form-input" id="loginEmail" placeholder="name@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Password</label>
+          <input type="password" class="form-input" id="loginPassword" placeholder="••••••••">
+        </div>
+        <button class="btn btn-primary btn-full btn-lg" onclick="handleEmailLogin()">Sign in to Dashboard</button>
+        <p class="auth-note" style="margin-top:20px;"><a href="#" style="color:var(--t4);">Forgot your password?</a></p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+  let selRole='student';
+  const p=new URLSearchParams(location.search);
+  if(p.get('mode')==='login')showLogin();
+  if(p.get('role')==='mentor')setTimeout(()=>document.querySelector('[data-role="mentor"]').click(),10);
+  if(Auth.isLoggedIn())Auth.routeAfterLogin(Auth.getUser());
+
+  function showLogin(){document.getElementById('signupView').style.display='none';document.getElementById('loginView').style.display='block';}
+  function showSignup(){document.getElementById('loginView').style.display='none';document.getElementById('signupView').style.display='block';}
+
+  function pickRole(el){
+    document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('selected'));
+    el.classList.add('selected');selRole=el.dataset.role;
+    const n=document.getElementById('roleNotice');
+    n.innerHTML=selRole==='mentor'
+      ?'<strong>Mentors</strong> review student questions and provide strategic feedback. Accounts are reviewed before responses go live.'
+      :'<strong>Students</strong> get free access to human mentors for advice on course planning, GPA strategy, and building a narrative.';
+  }
+
+  GoogleAuth.init(document.getElementById('signupGoogleBtn'),(u)=>{
+    let role = selRole;
+    if (u.email === 'admin@mentorist.org' || u.email.startsWith('admin')) role = 'admin';
+    Auth.setUser({name:u.name,email:u.email,role:role,onboarded:role==='admin',status:role==='mentor'?'pending':'active',createdAt:new Date().toISOString()});
+    Auth.routeAfterLogin(Auth.getUser());
+  });
+  GoogleAuth.init(document.getElementById('loginGoogleBtn'),(u)=>{
+    let ex=Auth.getUser();
+    if(!ex || ex.email!==u.email){
+      const all = UserStore.getAll();
+      const existing = all.find(x => x.email === u.email);
+      if (existing) {
+        Auth.setUser(existing);
+        Auth.routeAfterLogin(existing);
+      } else {
+        let role = 'student';
+        if (u.email === 'admin@mentorist.org' || u.email.startsWith('admin')) role = 'admin';
+        Auth.setUser({name:u.name,email:u.email,role:role,onboarded:role==='admin',status:'active',createdAt:new Date().toISOString()});
+        if (role === 'admin') Auth.routeAfterLogin(Auth.getUser());
+        else window.location.href='onboarding.html';
+      }
+    } else { Auth.routeAfterLogin(ex); }
+  });
+
+  function handleEmailSignup(){
+    const name = document.getElementById('signupName').value.trim();
+    const email = document.getElementById('signupEmail').value.trim().toLowerCase();
+    const pass = document.getElementById('signupPassword').value;
+    if(!name || !email || !pass) { Utils.toast('Please fill out all fields.', 'error'); return; }
+    
+    let role = selRole;
+    if (email === 'admin@mentorist.org' || email.startsWith('admin')) role = 'admin';
+    
+    const all = UserStore.getAll();
+    if (all.find(x => x.email === email)) {
+      Utils.toast('An account with this email already exists.', 'error');
+      return;
+    }
+
+    const newUser = {name, email, role, onboarded:role==='admin', status:role==='mentor'?'pending':'active', createdAt:new Date().toISOString()};
+    Auth.setUser(newUser);
+    UserStore.addOrUpdate(newUser);
+    Auth.routeAfterLogin(newUser);
+  }
+
+  function handleEmailLogin(){
+    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    const pass = document.getElementById('loginPassword').value;
+    if(!email || !pass) { Utils.toast('Please enter both email and password.', 'error'); return; }
+    
+    if (email === 'admin@mentorist.org') {
+       const u = {name:'Admin Console',email:'admin@mentorist.org',role:'admin',onboarded:true,status:'active',createdAt:new Date().toISOString()};
+       Auth.setUser(u);
+       UserStore.addOrUpdate(u);
+       Auth.routeAfterLogin(u);
+       return;
+    }
+
+    const all = UserStore.getAll();
+    const u = all.find(x => x.email === email);
+    if (!u) {
+       Utils.toast('Account not found. Please create an account first.', 'error');
+       return;
+    }
+    Auth.setUser(u);
+    Auth.routeAfterLogin(u);
+  }
+</script>
+</body>
+</html>

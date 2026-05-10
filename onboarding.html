@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Onboarding — Mentorist</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="shared.css">
+    <style>
+        body {
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .on-layout {
+            max-width: 800px;
+            width: 100%;
+            padding: 100px 24px 80px;
+        }
+
+        .on-card-premium {
+            background: var(--bg-1);
+            border: 1px solid var(--b1);
+            border-radius: var(--r-3xl);
+            padding: clamp(32px, 8vw, 80px);
+            position: relative;
+            overflow: hidden;
+            animation: scaleIn 0.8s cubic-bezier(0.2, 1, 0.3, 1);
+            box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.7);
+        }
+
+        .on-card-premium::after {
+            content: '';
+            position: absolute;
+            top: -10%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(0, 232, 122, 0.1) 0%, transparent 70%);
+            filter: blur(60px);
+            pointer-events: none;
+        }
+
+        .on-card-premium::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+        }
+
+        .on-header {
+            text-align: center;
+            margin-bottom: 64px;
+            animation: fadeUp 0.8s cubic-bezier(0.2, 1, 0.3, 1);
+        }
+
+        .on-eyebrow {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--green);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .on-title {
+            font-size: clamp(28px, 5vw, 42px);
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.03em;
+        }
+
+        .on-progress-top {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 48px;
+        }
+
+        .p-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--b2);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .p-dot.active {
+            background: var(--green);
+            box-shadow: 0 0 15px var(--green);
+            transform: scale(1.2);
+        }
+
+        .p-dot.complete {
+            background: var(--green-dim);
+            border: 1px solid rgba(0, 232, 122, 0.3);
+        }
+
+        .step-content {
+            display: none;
+            min-height: 300px;
+            animation: fadeUp 0.6s cubic-bezier(0.2, 1, 0.3, 1) forwards;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        .step-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--t1);
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .step-sub {
+            font-size: 16px;
+            color: var(--t3);
+            margin-bottom: 40px;
+            line-height: 1.7;
+        }
+
+        .choices-flex {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        .choice-card {
+            padding: 20px 22px;
+            border: 1.5px solid var(--b2);
+            border-radius: var(--r-lg);
+            cursor: pointer;
+            transition: all 0.15s;
+            background: var(--bg-2);
+            text-align: left;
+        }
+
+        .choice-card:hover {
+            border-color: rgba(0, 232, 122, 0.35);
+            background: var(--bg-3);
+            transform: translateY(-2px);
+        }
+
+        .choice-card.selected {
+            border-color: var(--green-2);
+            background: rgba(0, 196, 104, 0.08);
+            box-shadow: 0 0 0 1px rgba(0, 196, 104, 0.15);
+        }
+
+        .rc-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--t1);
+            margin-bottom: 4px;
+        }
+
+        .rc-desc {
+            font-size: 12px;
+            color: var(--t4);
+            line-height: 1.4;
+        }
+
+        .profile-summary-premium {
+            background: var(--bg-2);
+            border-radius: var(--r-2xl);
+            padding: 40px;
+            border: 1px solid var(--b2);
+            position: relative;
+        }
+
+        .ps-item {
+            margin-bottom: 24px;
+        }
+
+        .ps-label {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t4);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .ps-val {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--t1);
+        }
+
+        .ps-item:last-child {
+            margin-bottom: 0;
+        }
+
+        @media(max-width:640px) {
+            .on-layout {
+                padding-top: 60px;
+            }
+
+            .on-card-premium {
+                padding: 32px 24px;
+            }
+
+            .choices-flex {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="on-layout">
+
+        <!--
+    BACK BUTTON
+    Uses ?no_redirect=true so index.html does NOT immediately redirect
+    a logged-in user back to the dashboard.
+    The param is checked in index.html's script block.
+  -->
+        <div
+            style="display:flex;justify-content:flex-start;margin-bottom:32px;animation:fadeUp 0.8s cubic-bezier(0.2,1,0.3,1);">
+            <a href="index.html?no_redirect=true" class="btn btn-ghost btn-sm"
+                style="display:inline-flex;align-items:center;gap:8px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                    style="width:16px;height:16px;">
+                    <path d="M19 12H5m7-7-7 7 7 7" />
+                </svg>
+                Back to Home
+            </a>
+        </div>
+
+        <div class="on-header">
+            <span class="on-eyebrow" id="stepIndicator">Step 1 of 5</span>
+            <h1 class="on-title" id="mainHeader">Welcome, Navigator.</h1>
+        </div>
+
+        <div class="on-progress-top" id="dotGrid">
+            <div class="p-dot active"></div>
+            <div class="p-dot"></div>
+            <div class="p-dot"></div>
+            <div class="p-dot"></div>
+            <div class="p-dot"></div>
+        </div>
+
+        <main class="on-card-premium">
+
+            <!-- STEP 1: GRADE -->
+            <div class="step-content active" id="step-0">
+                <h2 class="step-title">Current Standing</h2>
+                <p class="step-sub">Which stage of your high school journey are you in?</p>
+                <div class="choices-flex">
+                    <div class="choice-card" onclick="setV('grade','9',this)">
+                        <div class="rc-name">9th Grade</div>
+                        <div class="rc-desc">Freshman Year</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('grade','10',this)">
+                        <div class="rc-name">10th Grade</div>
+                        <div class="rc-desc">Sophomore Year</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('grade','11',this)">
+                        <div class="rc-name">11th Grade</div>
+                        <div class="rc-desc">Junior Year</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('grade','12',this)">
+                        <div class="rc-name">12th Grade</div>
+                        <div class="rc-desc">Senior Year</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('grade','parent',this)">
+                        <div class="rc-name">Parent</div>
+                        <div class="rc-desc">Supporting a student</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('grade','international',this)">
+                        <div class="rc-name">International</div>
+                        <div class="rc-desc">Outside the US system</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: INTEREST -->
+            <div class="step-content" id="step-1">
+                <h2 class="step-title">Academic Interest</h2>
+                <p class="step-sub">We'll match you with mentors specializing in your future field.</p>
+                <div class="choices-flex">
+                    <div class="choice-card" onclick="setV('interest','stem',this)">
+                        <div class="rc-name">STEM Track</div>
+                        <div class="rc-desc">Engineering, Tech, CS</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('interest','medicine',this)">
+                        <div class="rc-name">Medicine</div>
+                        <div class="rc-desc">Bio, Chem, Health</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('interest','business',this)">
+                        <div class="rc-name">Business</div>
+                        <div class="rc-desc">Finance, Economics</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('interest','humanities',this)">
+                        <div class="rc-name">Humanities</div>
+                        <div class="rc-desc">History, Politics, Law</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('interest','arts',this)">
+                        <div class="rc-name">Arts & Design</div>
+                        <div class="rc-desc">Digital, Visual Arts</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('interest','undecided',this)">
+                        <div class="rc-name">Exploring</div>
+                        <div class="rc-desc">General strategy</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3: RIGOR -->
+            <div class="step-content" id="step-2">
+                <h2 class="step-title">Course Rigor</h2>
+                <p class="step-sub">How challenging is your current schedule compared to your school's best?</p>
+                <div class="choices-flex">
+                    <div class="choice-card" onclick="setV('rigor','standard',this)">
+                        <div class="rc-name">Standard</div>
+                        <div class="rc-desc">Standard college-prep classes</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('rigor','rigorous',this)">
+                        <div class="rc-name">Rigorous</div>
+                        <div class="rc-desc">A mix of Honors/AP/IB</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('rigor','extreme',this)">
+                        <div class="rc-name">Most Rigorous</div>
+                        <div class="rc-desc">4+ AP/IB courses/year</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 4: GOAL -->
+            <div class="step-content" id="step-3">
+                <h2 class="step-title">The Big Objective</h2>
+                <p class="step-sub">What's the single most important thing you want to achieve?</p>
+                <div class="form-group">
+                    <label class="form-label" for="goal">Primary Goal</label>
+                    <textarea class="form-textarea"
+                        placeholder="e.g. Navigating the STEM track to get into a top engineering school like Stanford while maintaining my GPA."
+                        id="goal" oninput="upPB(this)"></textarea>
+                </div>
+                <button class="btn btn-primary btn-full btn-lg" onclick="advanceFromGoal()">
+                    Review My Profile
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                        <path d="M5 12h14m-7-7 7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- STEP 5: SUMMARY -->
+            <div class="step-content" id="step-complete">
+                <h2 class="step-title">Profile Built.</h2>
+                <p class="step-sub">Here's how mentors will see your background. High-quality context ensures precise
+                    advice.
+                </p>
+                <div class="profile-summary-premium">
+                    <div class="ps-item"><span class="ps-label">Education</span><span class="ps-val" id="sumEdu"></span>
+                    </div>
+                    <div class="ps-item"><span class="ps-label">Field Focus</span><span class="ps-val"
+                            id="sumFocus"></span></div>
+                    <div class="ps-item"><span class="ps-label">Course Rigor</span><span class="ps-val"
+                            id="sumRigor"></span>
+                    </div>
+                    <div class="ps-item"><span class="ps-label">Long-term Strategy</span><span class="ps-val"
+                            id="sumGoal"></span>
+                    </div>
+                </div>
+                <div class="alert alert-info" style="margin:40px 0;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 8v4m0 4h.01" />
+                    </svg>
+                    <span>Accounts are nonprofit. Your profile is only used to match you with appropriate peer
+                        mentors.</span>
+                </div>
+                <button class="btn btn-primary btn-full btn-lg" onclick="finish()">
+                    Complete Onboarding
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                        <path d="M5 12h14m-7-7 7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="shared.js"></script>
+    <script>
+        /* ── Auth guard ── */
+        const user = Auth.requireAuth();
+
+        if (!user) {
+            // Not logged in at all — send to auth
+            window.location.href = 'auth.html';
+        } else if (user.onboarded) {
+            // Already completed onboarding — go to dashboard
+            Auth.routeAfterLogin(user);
+        } else if (user.role === 'mentor') {
+            // Mentors skip the quiz entirely
+            completeMentor();
+        }
+
+        /* ── State ── */
+        let data = {};
+        let curStep = 0;
+        const steps = ['step-0', 'step-1', 'step-2', 'step-3', 'step-complete'];
+
+        /* ── Card selection + auto-advance ── */
+        function setV(key, val, el) {
+            data[key] = val;
+
+            // Highlight selected card
+            el.closest('.choices-flex').querySelectorAll('.choice-card')
+                .forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+
+            // Brief visual confirmation, then advance
+            setTimeout(advance, 200);
+        }
+
+        function upPB(el) {
+            data.goal = el.value;
+        }
+
+        function advanceFromGoal() {
+            data.goal = document.getElementById('goal').value.trim();
+            advance();
+        }
+
+        /* ── Step navigation ── */
+        function advance() {
+            if (curStep >= steps.length - 1) return;
+
+            // Hide current step
+            const current = document.getElementById(steps[curStep]);
+            current.classList.remove('active');
+            current.style.display = 'none';
+
+            curStep++;
+
+            // Show and animate next step
+            const next = document.getElementById(steps[curStep]);
+            next.style.display = 'block';
+            requestAnimationFrame(() => requestAnimationFrame(() => next.classList.add('active')));
+
+            updateMeta();
+        }
+
+        function updateMeta() {
+            const isLast = curStep === steps.length - 1;
+
+            document.getElementById('stepIndicator').textContent =
+                `Step ${curStep + 1} of ${steps.length}`;
+
+            document.getElementById('mainHeader').textContent =
+                isLast ? 'Confirm Strategy.' : 'Welcome, Navigator.';
+
+            document.querySelectorAll('.p-dot').forEach((dot, i) => {
+                dot.className = 'p-dot';
+                if (i === curStep) dot.classList.add('active');
+                else if (i < curStep) dot.classList.add('complete');
+            });
+
+            if (isLast) renderSummary();
+        }
+
+        /* ── Summary render ── */
+        function renderSummary() {
+            const gradeMap = {
+                '9': '9th Grade Student', '10': '10th Grade Student',
+                '11': '11th Grade Student', '12': '12th Grade Student',
+                parent: 'Parent Explorer', international: 'International Applicant'
+            };
+            const interestMap = {
+                stem: 'STEM-focused Track', medicine: 'Medical Track Focus',
+                business: 'Business Track', humanities: 'Humanities Focus',
+                arts: 'Arts & Design Field', undecided: 'Interdisciplinary Focus'
+            };
+            const rigorMap = {
+                standard: 'Standard College-Prep',
+                rigorous: 'Honors / AP / IB Mix',
+                extreme: 'Maximum Rigor (4+ APs)'
+            };
+
+            document.getElementById('sumEdu').textContent = gradeMap[data.grade] || '—';
+            document.getElementById('sumFocus').textContent = interestMap[data.interest] || '—';
+            document.getElementById('sumRigor').textContent = rigorMap[data.rigor] || '—';
+            document.getElementById('sumGoal').textContent = data.goal || 'Not yet defined';
+        }
+
+        /* ── Completion ── */
+        function finish() {
+            Auth.updateUser({ profile: data, onboarded: true });
+            const updated = Auth.getUser();
+            window.location.href = (updated.role === 'mentor')
+                ? 'mentordashboard.html'
+                : 'studentdashboard.html';
+        }
+
+        function completeMentor() {
+            Auth.updateUser({ onboarded: true });
+            window.location.href = 'mentordashboard.html';
+        }
+    </script>
+</body>
+
+</html>

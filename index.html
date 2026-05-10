@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mentorist — Navigate High School Strategically</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ─── HERO ─── */
+.hero{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:120px 24px 100px;position:relative;overflow:hidden;
+}
+.hero-content{max-width:1200px;width:100%;margin:0 auto;display:grid;grid-template-columns:1.2fr 1fr;gap:64px;align-items:center;}
+.hero-text{position:relative;z-index:10;}
+
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  border:1px solid rgba(0,232,122,0.3);border-radius:999px;
+  padding:8px 20px;font-size:12px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--green);background:var(--green-dim);margin-bottom:32px;
+  animation:fadeUp 0.7s ease both;
+}
+.ey-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 2s infinite;}
+
+.hero-title{
+  font-family:var(--font-h);font-size:clamp(48px, 6vw, 84px);font-weight:800;
+  line-height:1.05;letter-spacing:-0.04em;color:var(--t1);margin-bottom:24px;
+}
+.hero-title .green{
+  background:linear-gradient(to right, var(--green), #1aff8e);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  display:block;
+}
+.hero-sub{
+  font-size:clamp(17px, 2vw, 20px);color:var(--t2);
+  line-height:1.7;max-width:540px;margin-bottom:48px;
+}
+
+.hero-visual{position:relative;display:flex;justify-content:center;align-items:center;}
+.hero-img-wrap{
+  position:relative;width:100%;aspect-ratio:1/1;max-width:500px;
+  border-radius:var(--r-3xl);overflow:hidden;
+  border:1px solid var(--b2);box-shadow: 0 32px 64px -16px rgba(0,0,0,0.6);
+  animation:scaleIn 1s cubic-bezier(0.2, 1, 0.3, 1) 0.2s both;
+}
+.hero-img-wrap img{width:100%;height:100%;object-fit:cover;}
+.hero-glow-blob{
+  position:absolute;width:150%;height:150%;
+  background:radial-gradient(circle,rgba(0,232,122,0.1) 0%,transparent 60%);
+  filter:blur(80px);z-index:-1;animation:pulse 4s infinite;
+}
+
+/* ─── FEATURES ─── */
+.section-hd{text-align:center;margin-bottom:64px;}
+.section-hd h2{font-family:var(--font-h);font-size:clamp(32px, 4vw, 56px);font-weight:800;letter-spacing:-0.03em;color:var(--t1);line-height:1.1;}
+.section-hd .green{color:var(--green);}
+
+.pill-card{
+  background:rgba(255,255,255,0.02);border:1px solid var(--b1);
+  border-radius:var(--r-3xl);padding:48px;transition:all 0.4s;
+  display:flex;flex-direction:column;gap:16px;position:relative;overflow:hidden;
+}
+.pill-card:hover{background:rgba(255,255,255,0.04);border-color:var(--b3);transform:translateY(-8px);}
+.pill-card::before{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:4px;
+  background:var(--green);transform:scaleX(0);transform-origin:right;transition:transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.pill-card:hover::before{transform:scaleX(1);transform-origin:left;}
+
+.pill-num{font-size:13px;font-weight:800;color:var(--green);letter-spacing:0.1em;}
+.pill-card h3{font-family:var(--font-h);font-size:24px;font-weight:700;color:var(--t1);}
+.pill-card p{color:var(--t2);line-height:1.8;font-size:15px;}
+
+/* ─── MARQUEE ─── */
+.marquee-wrap{border-top:1px solid var(--b1);border-bottom:1px solid var(--b1);overflow:hidden;padding:20px 0;background:var(--bg-1);}
+.marquee-inner{display:flex;width:max-content;animation:marquee 40s linear infinite;}
+.marquee-item{display:inline-flex;align-items:center;gap:16px;padding:0 32px;font-size:13px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--t4);white-space:nowrap;}
+.marquee-dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+
+/* ─── HOW IT WORKS ─── */
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:64px;}
+.step-card{background:var(--bg-1);border:1px solid var(--b1);border-radius:var(--r-2xl);padding:40px 32px;position:relative;z-index:1;}
+.step-idx{font-size:48px;font-weight:800;color:var(--b2);position:absolute;top:20px;right:32px;z-index:-1;line-height:1;}
+.step-card h4{font-family:var(--font-h);font-size:20px;font-weight:700;margin-bottom:12px;color:var(--t1);}
+
+/* ─── CTA ─── */
+.cta-box{
+  background:linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
+  border:1px solid var(--b1);border-radius:var(--r-3xl);padding:80px 48px;
+  text-align:center;position:relative;overflow:hidden;
+}
+.cta-box::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at center, rgba(0,232,122,0.1), transparent 70%);
+  pointer-events:none;
+}
+
+footer{background:var(--bg);border-top:1px solid var(--b1);padding:48px 24px;color:var(--t4);}
+.footer-inner{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:24px;}
+
+@media(max-width:960px){
+  .hero-content{grid-template-columns:1fr;text-align:center;}
+  .hero-text{order:2;}
+  .hero-visual{order:1;}
+  .hero-img-wrap{max-width: 300px; margin: 0 auto;}
+  .hero-sub{margin-left:auto;margin-right:auto;}
+  .steps-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar" id="nav">
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logomark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </div>
+    <span class="nav-wordmark">Mentorist</span>
+  </a>
+  <div class="nav-links">
+    <a href="#about" class="nav-link">Strategy</a>
+    <a href="#how" class="nav-link">Process</a>
+    <a href="#who" class="nav-link">Network</a>
+  </div>
+  <div class="nav-actions" id="navActions">
+    <a href="auth.html?mode=login" class="nav-sign-in">Sign in</a>
+    <a href="auth.html?mode=signup" class="nav-get-started">Join Free</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-text">
+      <div class="hero-eyebrow"><div class="ey-dot"></div>Free · Nonprofit · High-Impact</div>
+      <h1 class="hero-title">Navigate High School <span class="green">Strategically.</span></h1>
+      <p class="hero-sub">Get personalized roadmap advice on course selection, GPA strategy, and application narratives from mentors who have actually lived the US high school system.</p>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <a href="auth.html?mode=signup" onclick="sessionStorage.removeItem('mn_suppress_redirect')" class="btn btn-primary">Get Free Guidance <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></a>
+        <a href="#about" class="btn btn-secondary">Learn the Strategy</a>
+      </div>
+      <p style="font-size:12px;color:var(--t4);margin-top:24px;font-weight:600;">No algorithms · Human mentors · Always free</p>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-glow-blob"></div>
+      <div class="hero-img-wrap">
+        <img src="mentor_hero_abstract_1773956918216.png" alt="Strategic Guidance">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-inner">
+    <span class="marquee-item"><span class="marquee-dot"></span>Course Strategy</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>AP & IB Selection</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>GPA Management</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Narrative Building</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Stem Tracks</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>College Readiness</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Extracurriculars</span>
+    <!-- Repeat -->
+    <span class="marquee-item"><span class="marquee-dot"></span>Course Strategy</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>AP & IB Selection</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>GPA Management</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Narrative Building</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Stem Tracks</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>College Readiness</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Extracurriculars</span>
+  </div>
+</div>
+
+<!-- MISSION -->
+<section class="section" id="about" style="padding:160px 24px;">
+  <div class="s-inner">
+    <div class="section-hd reveal">
+      <div class="badge badge-green" style="margin-bottom:16px;">The Challenge</div>
+      <h2>High school is a <span class="green">strategy game.</span><br>Most students don't know the rules.</h2>
+      <p class="hero-sub" style="margin:24px auto 0;">Taking the "hardest classes" isn't a strategy. We help you build a coherent path that tells a story colleges actually want to read.</p>
+    </div>
+    <div class="choice-grid c2 reveal" style="grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:24px;margin-top:80px;">
+      <div class="pill-card">
+        <div class="pill-num">01</div>
+        <h3>Strategic Selection</h3>
+        <p>Which APs, in what order, and why. We help you build a four-year plan that signals rigor and focus without needless burnout.</p>
+      </div>
+      <div class="pill-card">
+        <div class="pill-num">02</div>
+        <h3>GPA Optimization</h3>
+        <p>How to balance challenge with consistency. Learn when to push, when to pivot, and how to maintain a competitive profile.</p>
+      </div>
+      <div class="pill-card">
+        <div class="pill-num">03</div>
+        <h3>Narrative Building</h3>
+        <p>Colleges don't want well-rounded students — they want a well-rounded class of specialists. We help you find your specialist story.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how" style="background:var(--bg-1);padding:140px 24px;">
+  <div class="s-inner">
+    <div class="section-hd reveal">
+      <div class="badge badge-amber" style="margin-bottom:16px;">The Process</div>
+      <h2>Simple. Human. <span class="green">Fast.</span></h2>
+    </div>
+    <div class="steps-grid reveal">
+      <div class="step-card">
+        <div class="step-idx">01</div>
+        <h4>Create Account</h4>
+        <p style="font-size:14px;color:var(--t3);line-height:1.7;">Sign in with Google and answer 4 quick questions about your goals so we can match you perfectly.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-idx">02</div>
+        <h4>Ask Your Question</h4>
+        <p style="font-size:14px;color:var(--t3);line-height:1.7;">Tell us your specific dilemma. The more context you provide, the more strategic our mentors can be.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-idx">03</div>
+        <h4>Get Real Feedback</h4>
+        <p style="font-size:14px;color:var(--t3);line-height:1.7;">A mentor with relevant personal experience reviews your file and responds within 48 hours.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section" style="padding:140px 24px;">
+  <div class="s-inner">
+    <div class="cta-box reveal">
+      <h2 style="font-family:var(--font-h);font-size:clamp(32px, 5vw, 64px);font-weight:800;color:var(--t1);margin-bottom:24px;">Plan your path.<br><span class="green">Start for free.</span></h2>
+      <p style="color:var(--t2);font-size:18px;max-width:500px;margin:0 auto 40px;line-height:1.6;">Join 1,000+ students navigating the US high school system with expert peer guidance.</p>
+      <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;position:relative;z-index:10;">
+        <a href="auth.html?mode=signup" onclick="sessionStorage.removeItem('mn_suppress_redirect')" class="btn btn-primary btn-lg">Get Started Now</a>
+        <a href="auth.html?mode=signup&role=mentor" onclick="sessionStorage.removeItem('mn_suppress_redirect')" class="btn btn-secondary btn-lg">Join as a Mentor</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="nav-logomark" style="width:32px;height:32px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:#040404;"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+      <span style="font-weight:800;color:var(--t2);letter-spacing:-0.02em;">Mentorist</span>
+    </div>
+    <div style="font-size:13px;font-weight:500;">&copy; 2025 Mentorist Nonprofit. All rights reserved. · <a href="auth.html?mode=login" style="color:var(--t3);">Admin Login</a> · <a href="mailto:hello@mentorist.org" style="color:var(--t3);">Contact Us</a></div>
+  </div>
+</footer>
+
+<script src="shared.js"></script>
+<script>
+  if(typeof Auth!=='undefined' && Auth.isLoggedIn()){
+    const user = Auth.getUser();
+    const actions = document.getElementById('navActions');
+    const params = new URLSearchParams(window.location.search);
+    
+    // Only auto-redirect if NOT explicitly coming from onboarding
+    if(!params.has('no_redirect')) {
+      Auth.routeAfterLogin(user);
+    }
+
+    // Update buttons in case they stay or go back
+    if(actions) {
+      actions.innerHTML = `
+        <a href="#" onclick="Auth.logout()" class="nav-sign-in">Log out</a>
+        <button onclick="sessionStorage.removeItem('mn_suppress_redirect'); Auth.routeAfterLogin(Auth.getUser());" class="nav-get-started" style="border:none; cursor:pointer;">${user.onboarded ? 'Dashboard' : 'Continue Quiz'}</button>
+      `;
+    }
+  }
+  
+  // Nav scroll
+  const nav=document.getElementById('nav');
+  window.addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>60),{passive:true});
+
+  // Scroll reveal
+  const ro=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');ro.unobserve(e.target);}});
+  },{threshold:0.12});
+  document.querySelectorAll('.reveal').forEach(el=>ro.observe(el));
+</script>
+</body>
+</html>
