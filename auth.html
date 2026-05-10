@@ -200,7 +200,7 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
 
   GoogleAuth.init(document.getElementById('signupGoogleBtn'),(u)=>{
     let role = selRole;
-    if (u.email === 'admin@mentorist.org' || u.email.startsWith('admin')) role = 'admin';
+    if (u.email.endsWith('@mentorist.org') || u.email.startsWith('admin')) role = 'admin';
     Auth.setUser({name:u.name,email:u.email,role:role,onboarded:role==='admin',status:role==='mentor'?'pending':'active',createdAt:new Date().toISOString()});
     Auth.routeAfterLogin(Auth.getUser());
   });
@@ -214,10 +214,9 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         Auth.routeAfterLogin(existing);
       } else {
         let role = 'student';
-        if (u.email === 'admin@mentorist.org' || u.email.startsWith('admin')) role = 'admin';
+        if (u.email.endsWith('@mentorist.org')) role = 'admin';
         Auth.setUser({name:u.name,email:u.email,role:role,onboarded:role==='admin',status:'active',createdAt:new Date().toISOString()});
-        if (role === 'admin') Auth.routeAfterLogin(Auth.getUser());
-        else window.location.href='onboarding.html';
+        Auth.routeAfterLogin(Auth.getUser());
       }
     } else { Auth.routeAfterLogin(ex); }
   });

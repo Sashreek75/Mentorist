@@ -405,6 +405,10 @@
         } else if (user.onboarded) {
             // Already completed onboarding — go to dashboard
             Auth.routeAfterLogin(user);
+        } else if (user.role === 'admin') {
+            // Admins skip the quiz entirely
+            Auth.updateUser({ onboarded: true });
+            window.location.href = 'admin.html';
         } else if (user.role === 'mentor') {
             // Mentors skip the quiz entirely
             completeMentor();

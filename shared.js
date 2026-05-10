@@ -52,7 +52,12 @@ const Auth = {
     // Ensure user is in UserStore
     UserStore.addOrUpdate(user);
     
-    if (user.role === "admin") {
+    if (user.role === "admin" || user.email.endsWith('@mentorist.org')) {
+      if (user.role !== 'admin') {
+        user.role = 'admin';
+        this.setUser(user);
+        UserStore.addOrUpdate(user);
+      }
       window.location.href = "admin.html";
       return;
     } else if (user.role === "mentor") {
