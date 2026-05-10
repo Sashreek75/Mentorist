@@ -171,6 +171,38 @@
       animation: slideDown 0.4s ease both;
     }
 
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .stat-card {
+      background: var(--bg-1);
+      border: 1px solid var(--b1);
+      border-radius: var(--r-2xl);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .stat-val {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--green);
+      font-family: var(--font-h);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--t4);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
     @keyframes slideDown { 0%{opacity:0; transform:translateY(-10px);} 100%{opacity:1; transform:translateY(0);} }
   </style>
 </head>
@@ -192,12 +224,18 @@
     </div>
   </nav>
 
-  <div class="app-layout" style="max-width:1000px; margin:0 auto; padding-top:120px; padding-bottom:80px;">
+  <div class="app-layout" style="max-width:1100px; margin:0 auto; padding-top:120px; padding-bottom:80px;">
     <div id="undoContainer"></div>
 
+    <h1 style="font-family:var(--font-h); font-size:42px; font-weight:800; color:var(--t1); letter-spacing:-0.04em; margin-bottom:40px;">Founder <span style="color:var(--green);">Impact</span> Dashboard</h1>
+
+    <div class="stats-grid" id="statsGrid">
+      <!-- Dynamic Stats -->
+    </div>
+
     <div class="admin-card">
-      <h1 style="font-family:var(--font-h); font-size:32px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">User Management</h1>
-      <p style="color:var(--t3); font-size:16px;">Review and process mentor applications manually.</p>
+      <h2 style="font-family:var(--font-h); font-size:28px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">User Management</h2>
+      <p style="color:var(--t3); font-size:15px;">Review and process mentor applications manually.</p>
 
       <div class="table-wrap">
         <div id="userTable"></div>
@@ -205,8 +243,8 @@
     </div>
 
     <div class="admin-card">
-      <h1 style="font-family:var(--font-h); font-size:32px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">Content Moderation</h1>
-      <p style="color:var(--t3); font-size:16px;">Review and moderate student questions.</p>
+      <h2 style="font-family:var(--font-h); font-size:28px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">Content Moderation</h2>
+      <p style="color:var(--t3); font-size:15px;">Review and moderate student questions.</p>
 
       <div class="table-wrap">
         <div id="questionsTable"></div>
@@ -219,6 +257,7 @@
     const user = Auth.requireAuth();
     if (!user || user.role !== 'admin') {
       window.location.href = 'auth.html';
+      throw new Error("Unauthorized access");
     }
 
     let lastAction = null;
@@ -379,10 +418,51 @@
       QuestionStore.save(qs);
       Utils.toast('Question deleted.', 'info');
       renderQuestions();
+      renderStats();
     }
 
-    render();
-    renderQuestions();
+    function renderStats() {
+      const users = UserStore.getAll();
+      const qs = QuestionStore.getAll();
+      
+      const studentCount = users.filter(u => u.role === 'student').length;
+      const mentorCount = users.filter(u => u.role === 'mentor' && u.status === 'active').length;
+      const pendingMentors = users.filter(u => u.role === 'mentor' && u.status === 'pending').length;
+      const totalQuestions = qs.length;
+      const answeredQuestions = qs.filter(q => q.answers && q.answers.length > 0).length;
+      
+      const grid = document.getElementById('statsGrid');
+      grid.innerHTML = `
+        <div class="stat-card">
+          <div class="stat-val">${studentCount}</div>
+          <div class="stat-label">Total Students</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">${mentorCount}</div>
+          <div class="stat-label">Active Mentors</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">${pendingMentors}</div>
+          <div class="stat-label">Pending Apps</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">${totalQuestions}</div>
+          <div class="stat-label">Inquiries Sent</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">${answeredQuestions}</div>
+          <div class="stat-label">Strategic Responses</div>
+        </div>
+      `;
+    }
+
+    function initAdmin() {
+      render();
+      renderQuestions();
+      renderStats();
+    }
+
+    initAdmin();
   </script>
 </body>
 
