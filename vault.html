@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Knowledge Vault — Mentorist</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="shared.css">
+<style>
+body{background:var(--bg);}
+.vault-hero{
+  padding:120px 24px 60px;text-align:center;position:relative;overflow:hidden;
+  background:linear-gradient(180deg, var(--bg-1) 0%, var(--bg) 100%);
+}
+.vault-hero::after{
+  content:'';position:absolute;top:-20%;left:50%;transform:translateX(-50%);width:600px;height:400px;
+  background:radial-gradient(circle, rgba(0,232,122,0.08), transparent 70%);
+  filter:blur(60px);pointer-events:none;z-index:0;
+}
+.vh-title{font-family:var(--font-h);font-size:clamp(32px, 5vw, 56px);font-weight:800;color:var(--t1);margin-bottom:16px;letter-spacing:-0.03em;position:relative;z-index:1;}
+.vh-sub{font-size:16px;color:var(--t3);max-width:600px;margin:0 auto 40px;line-height:1.7;position:relative;z-index:1;}
+
+.search-container-premium{
+  max-width:700px;margin:0 auto 48px;position:relative;z-index:10;
+}
+.search-input-wrap{
+  position:relative;background:var(--bg-1);border:1px solid var(--b2);border-radius:var(--r-2xl);
+  padding:8px;display:flex;align-items:center;transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+}
+.search-input-wrap:focus-within{border-color:var(--green);transform:translateY(-2px);box-shadow: 0 25px 60px rgba(0,232,122,0.1);}
+.search-icon{margin-left:16px;color:var(--t4);flex-shrink:0;}
+.search-input{
+  flex:1;background:none;border:none;padding:12px 16px;font-size:16px;color:var(--t1);outline:none;
+}
+
+.vault-grid{
+  display:grid;grid-template-columns:repeat(auto-fill, minmax(340px, 1fr));gap:24px;
+  max-width:1200px;margin:0 auto;padding:0 24px 100px;
+}
+
+.v-card{
+  background:var(--bg-1);border:1px solid var(--b1);border-radius:var(--r-2xl);
+  padding:32px;transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display:flex;flex-direction:column;gap:16px;position:relative;cursor:pointer;
+}
+.v-card:hover{border-color:var(--b3);transform:translateY(-6px);background:var(--bg-2);box-shadow: 0 15px 40px rgba(0,0,0,0.4);}
+.v-tag-group{display:flex;gap:8px;flex-wrap:wrap;}
+.v-tag{font-size:10px;font-weight:800;color:var(--green);background:var(--green-dim);padding:3px 10px;border-radius:var(--r-pill);text-transform:uppercase;letter-spacing:0.05em;}
+
+.v-question{font-size:17px;font-weight:700;color:var(--t1);line-height:1.5;margin-bottom:8px;}
+.v-context{font-size:13px;color:var(--t4);line-height:1.6;font-style:italic;margin-bottom:12px;padding-left:12px;border-left:1px solid var(--b2);}
+
+.v-footer{
+  margin-top:auto;padding-top:16px;border-top:1px solid var(--b1);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.v-mentor-count{font-size:12px;color:var(--t4);font-weight:600;}
+.v-view-btn{font-size:12px;font-weight:800;color:var(--green);display:flex;align-items:center;gap:6px;}
+
+/* Detail Modal */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);
+  z-index:1000;display:none;align-items:center;justify-content:center;padding:24px;
+}
+.modal-content{
+  background:var(--bg-1);border:1px solid var(--b1);border-radius:var(--r-3xl);
+  max-width:800px;width:100%;max-height:85vh;overflow-y:auto;position:relative;
+  animation:scaleIn 0.4s cubic-bezier(0.2, 1, 0.3, 1);
+}
+.modal-close{
+  position:absolute;top:24px;right:24px;color:var(--t4);cursor:pointer;transition:color 0.2s;
+}
+.modal-close:hover{color:var(--t1);}
+.modal-body{padding:48px;}
+
+.ans-item{margin-bottom:32px;padding-bottom:32px;border-bottom:1px dashed var(--b2);}
+.ans-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+.ans-mentor{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.ans-content{font-size:15px;color:var(--t2);line-height:1.8;white-space:pre-wrap;}
+
+@media(max-width:768px){.vault-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<nav class="navbar" id="nav">
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logomark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+    <span class="nav-wordmark">Mentorist</span>
+  </a>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="vault.html" class="nav-link active">Vault</a>
+  </div>
+  <div class="nav-actions" id="navActions">
+    <a href="auth.html?mode=login" class="nav-sign-in">Sign in</a>
+    <a href="auth.html?mode=signup" class="nav-get-started">Join Free</a>
+  </div>
+</nav>
+
+<section class="vault-hero reveal">
+  <h1 class="vh-title">Strategic <span style="color:var(--green);">Knowledge</span> Vault</h1>
+  <p class="vh-sub">A community library of strategic guidance. Browse anonymized inquiries and lived-experience feedback from our mentor network.</p>
+  
+  <div class="search-container-premium">
+    <div class="search-input-wrap">
+      <div class="search-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+      <input type="text" class="search-input" id="vaultSearch" placeholder="Search by topic, course, or keyword (e.g. 'AP Physics', 'STEM', 'GPA')..." oninput="filterVault()">
+    </div>
+  </div>
+</section>
+
+<main class="vault-grid" id="vaultGrid"></main>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-close" onclick="closeModal()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="nav-logomark" style="width:32px;height:32px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:#040404;"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+      <span style="font-weight:800;color:var(--t2);letter-spacing:-0.02em;">Mentorist</span>
+    </div>
+    <div style="font-size:13px;font-weight:500;">&copy; 2025 Mentorist Nonprofit. Community Resource.</div>
+  </div>
+</footer>
+
+<script src="shared.js"></script>
+<script>
+  let allQuestions = [];
+  
+  function initVault() {
+    // Sync nav
+    const user = Auth.getUser();
+    if(user) {
+      const actions = document.getElementById('navActions');
+      actions.innerHTML = `<a href="index.html" class="nav-sign-in">Home</a><a href="${user.role==='mentor'?'mentordashboard.html':user.role==='admin'?'admin.html':'studentdashboard.html'}" class="nav-get-started">My Dashboard</a>`;
+    }
+
+    // Load data - Only show questions that have answers (the "Knowledge" part)
+    const qs = QuestionStore.getAll();
+    allQuestions = qs.filter(q => q.answers && q.answers.length > 0);
+    renderVault(allQuestions);
+  }
+
+  function renderVault(qs) {
+    const grid = document.getElementById('vaultGrid');
+    if(qs.length === 0) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;">
+        <div class="empty-state-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <h3>No resources found</h3>
+        <p>Try adjusting your search or check back later as mentors answer more inquiries.</p>
+      </div>`;
+      return;
+    }
+
+    grid.innerHTML = qs.map(q => {
+      const tags = (q.topics||[]).map(t => `<span class="v-tag">${t}</span>`).join('');
+      return `
+        <div class="v-card stagger" onclick="openQuestion('${q.id}')">
+          <div class="v-tag-group">${tags}</div>
+          <div class="v-question">${q.question}</div>
+          ${q.context ? `<div class="v-context">${q.context}</div>` : ''}
+          <div class="v-footer">
+            <span class="v-mentor-count">${q.answers.length} Strategist${q.answers.length>1?'s':''}</span>
+            <span class="v-view-btn">Review Advice <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function filterVault() {
+    const term = document.getElementById('vaultSearch').value.toLowerCase();
+    const filtered = allQuestions.filter(q => {
+      const matchTopic = q.topics && q.topics.some(t => t.toLowerCase().includes(term));
+      const matchQ = q.question.toLowerCase().includes(term);
+      const matchCtx = q.context && q.context.toLowerCase().includes(term);
+      return matchTopic || matchQ || matchCtx;
+    });
+    renderVault(filtered);
+  }
+
+  function openQuestion(id) {
+    const q = allQuestions.find(x => x.id === id);
+    if(!q) return;
+
+    const body = document.getElementById('modalBody');
+    body.innerHTML = `
+      <div class="v-tag-group" style="margin-bottom:16px;">${(q.topics||[]).map(t => `<span class="v-tag">${t}</span>`).join('')}</div>
+      <h2 style="font-family:var(--font-h); font-size:28px; color:var(--t1); margin-bottom:12px; line-height:1.3;">${q.question}</h2>
+      ${q.context ? `<div class="v-context" style="font-size:15px; margin-bottom:40px;">Context provided: ${q.context}</div>` : ''}
+      
+      <div class="divider" style="margin-bottom:40px;"></div>
+      
+      <h3 style="font-size:12px; font-weight:800; color:var(--t4); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:24px;">Strategic Mentor Responses</h3>
+      ${q.answers.map(a => `
+        <div class="ans-item">
+          <div class="ans-mentor">
+            <div class="avatar avatar-md">${Utils.initials(a.mentorName)}</div>
+            <div>
+              <div style="font-weight:700; color:var(--t1);">${a.mentorName}</div>
+              <div style="font-size:11px; color:var(--t4); font-weight:600;">${a.mentorBio || 'Verified Strategist'}</div>
+            </div>
+          </div>
+          <div class="ans-content">${a.text}</div>
+        </div>
+      `).join('')}
+    `;
+
+    document.getElementById('modalOverlay').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').style.display = 'none';
+    document.body.style.overflow = 'auto';
+  }
+
+  initVault();
+</script>
+</body>
+</html>
