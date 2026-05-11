@@ -426,8 +426,8 @@
       const qs = QuestionStore.getAll();
       
       const studentCount = users.filter(u => u.role === 'student').length;
-      const mentorCount = users.filter(u => u.role === 'mentor' && u.status === 'active').length;
-      const pendingMentors = users.filter(u => u.role === 'mentor' && u.status === 'pending').length;
+      const mentorCount = users.filter(u => u.role === 'mentor').length;
+      const activeMentors = users.filter(u => u.role === 'mentor' && u.status === 'active').length;
       const totalQuestions = qs.length;
       const answeredQuestions = qs.filter(q => q.answers && q.answers.length > 0).length;
       
@@ -439,11 +439,11 @@
         </div>
         <div class="stat-card">
           <div class="stat-val">${mentorCount}</div>
-          <div class="stat-label">Active Mentors</div>
+          <div class="stat-label">Total Mentors</div>
         </div>
         <div class="stat-card">
-          <div class="stat-val">${pendingMentors}</div>
-          <div class="stat-label">Pending Apps</div>
+          <div class="stat-val">${activeMentors}</div>
+          <div class="stat-label">Active Guidance</div>
         </div>
         <div class="stat-card">
           <div class="stat-val">${totalQuestions}</div>
