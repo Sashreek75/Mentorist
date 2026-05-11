@@ -254,11 +254,9 @@
 
   <script src="shared.js"></script>
   <script>
-    const user = Auth.requireAuth();
-    if (!user || user.role !== 'admin') {
-      window.location.href = 'auth.html';
-      throw new Error("Unauthorized access");
-    }
+    // Public access for Founder Dashboard (Read-only for non-admins)
+    const user = Auth.getUser();
+    const isAdmin = user && (user.role === 'admin' || user.email.endsWith('@mentorist.org'));
 
     let lastAction = null;
 
@@ -271,7 +269,7 @@
         return;
       }
 
-      let html = '<table><thead><tr><th>User</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+      let html = `<table><thead><tr><th>User</th><th>Role</th><th>Status</th>${isAdmin ? '<th>Actions</th>' : ''}</tr></thead><tbody>`;
 
       // Sort: Pending first, then active/rejected
       const sortedUsers = [...users].sort((a,b) => {
@@ -302,15 +300,16 @@
           </td>
           <td style="max-width:250px; white-space:normal; vertical-align:top;">${details}</td>
           <td style="vertical-align:top;"><span class="status-pill ${statusClass}">${u.status || 'pending'}</span></td>
+          ${isAdmin ? `
           <td style="vertical-align:top;">
             <div class="action-btns">
-              ${u.email === user.email ? '<span style="color:var(--t4); font-style:italic; font-size:12px;">Current Session</span>' : `
+              ${user && u.email === user.email ? '<span style="color:var(--t4); font-style:italic; font-size:12px;">Current Session</span>' : `
                 ${canApprove ? `<button class="btn-action btn-approve" onclick="performAction('${u.email}', 'active', 'approved')">Approve</button>` : ''}
                 ${canReject ? `<button class="btn-action btn-reject" onclick="performAction('${u.email}', 'rejected', 'rejected')">Reject</button>` : ''}
                 ${!canApprove && !canReject ? '—' : ''}
               `}
             </div>
-          </td>
+          </td>` : ''}
         </tr>`;
       });
 
@@ -378,7 +377,7 @@
         return;
       }
 
-      let html = '<table><thead><tr><th>Student</th><th>Question Preview</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+      let html = `<table><thead><tr><th>Student</th><th>Question Preview</th><th>Status</th>${isAdmin ? '<th>Actions</th>' : ''}</tr></thead><tbody>`;
 
       qs.forEach(q => {
         const isAns = q.answers?.length > 0;
@@ -400,11 +399,12 @@
               ${isAns ? `<span style="font-size:11px; color:var(--t4); font-weight:600;">${ansCount} Response${ansCount!==1?'s':''}</span>` : ''}
             </div>
           </td>
+          ${isAdmin ? `
           <td style="vertical-align:top;">
             <div class="action-btns">
               <button class="btn-action btn-reject" onclick="deleteQuestion('${q.id}')">Delete</button>
             </div>
-          </td>
+          </td>` : ''}
         </tr>`;
       });
 
