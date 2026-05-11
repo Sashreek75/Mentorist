@@ -244,6 +244,31 @@
     </div>
 
     <div class="admin-card">
+      <h2 style="font-family:var(--font-h); font-size:28px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">Strategy Announcements</h2>
+      <p style="color:var(--t3); font-size:15px; margin-bottom:24px;">Broadcast competitions, summer programs, and opportunities to all students.</p>
+      
+      <div style="background:var(--bg-2); border:1px solid var(--b1); border-radius:var(--r-xl); padding:24px; margin-bottom:32px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div>
+            <label style="display:block; font-size:11px; font-weight:700; color:var(--t4); text-transform:uppercase; margin-bottom:8px;">Alert Title</label>
+            <input type="text" id="alTitle" placeholder="e.g. Stanford AI Research Program" style="width:100%; background:var(--bg-1); border:1px solid var(--b2); border-radius:var(--r-lg); padding:10px; color:var(--t1);">
+          </div>
+          <div>
+            <label style="display:block; font-size:11px; font-weight:700; color:var(--t4); text-transform:uppercase; margin-bottom:8px;">Category / Tag</label>
+            <input type="text" id="alTag" placeholder="e.g. Summer Program" style="width:100%; background:var(--bg-1); border:1px solid var(--b2); border-radius:var(--r-lg); padding:10px; color:var(--t1);">
+          </div>
+        </div>
+        <label style="display:block; font-size:11px; font-weight:700; color:var(--t4); text-transform:uppercase; margin-bottom:8px;">Announcement Details</label>
+        <textarea id="alBody" placeholder="Describe the opportunity and why it's strategic for students..." style="width:100%; background:var(--bg-1); border:1px solid var(--b2); border-radius:var(--r-lg); padding:10px; color:var(--t1); height:80px; margin-bottom:16px;"></textarea>
+        <button class="btn btn-primary" onclick="createAlert()" style="width:100%;">Broadcast Strategy Alert</button>
+      </div>
+
+      <div class="table-wrap">
+        <div id="alertsTable"></div>
+      </div>
+    </div>
+
+    <div class="admin-card">
       <h2 style="font-family:var(--font-h); font-size:28px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">Content Moderation</h2>
       <p style="color:var(--t3); font-size:15px;">Review and moderate student questions.</p>
 
@@ -461,6 +486,51 @@
       render();
       renderQuestions();
       renderStats();
+      renderAlerts();
+    }
+
+    function createAlert() {
+      const title = document.getElementById('alTitle').value;
+      const tag = document.getElementById('alTag').value;
+      const body = document.getElementById('alBody').value;
+      if(!title || !body) return Utils.toast('Title and body required', 'error');
+
+      AlertStore.add({ title, tag: tag || 'Opportunity', body, author: user.name });
+      Utils.toast('Strategy alert broadcasted!', 'success');
+      
+      document.getElementById('alTitle').value = '';
+      document.getElementById('alTag').value = '';
+      document.getElementById('alBody').value = '';
+      renderAlerts();
+    }
+
+    function renderAlerts() {
+      const als = AlertStore.getAll();
+      const div = document.getElementById('alertsTable');
+      if(als.length === 0) {
+        div.innerHTML = '<div style="padding:40px; text-align:center; color:var(--t4); font-size:14px;">No active broadcasts.</div>';
+        return;
+      }
+
+      let html = '<table><thead><tr><th>Broadcast</th><th>Author</th><th>Date</th>${isAdmin ? "<th>Actions</th>" : ""}</tr></thead><tbody>';
+      als.forEach(a => {
+        html += `<tr>
+          <td>
+            <div style="font-weight:700; color:var(--t1);">${a.title}</div>
+            <div style="font-size:12px; color:var(--t4);">${a.tag}</div>
+          </td>
+          <td><span style="font-size:13px; color:var(--t3);">${a.author}</span></td>
+          <td><span style="font-size:12px; color:var(--t4);">${new Date(a.createdAt).toLocaleDateString()}</span></td>
+          ${isAdmin ? `<td><button class="btn-action btn-reject" onclick="deleteAlert('${a.id}')">Delete</button></td>` : ''}
+        </tr>`;
+      });
+      div.innerHTML = html + '</tbody></table>';
+    }
+
+    function deleteAlert(id) {
+      if(!confirm('Remove this broadcast?')) return;
+      AlertStore.delete(id);
+      renderAlerts();
     }
 
     initAdmin();

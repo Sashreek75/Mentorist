@@ -111,11 +111,15 @@ body{background:var(--bg);}
   </aside>
 
   <main class="dashboard-main">
+    <div class="dashboard-hero reveal">
+      <h1 class="dash-greeting-name" id="greeting">Hi there.</h1>
+      <p class="dash-greeting-sub">Strategic logic for high school success. What are you navigating today?</p>
+    </div>
+
+    <div id="alertsContainer" style="margin-bottom:32px;"></div>
+
     <div class="dash-header reveal">
-      <div>
-        <h1 class="dash-greeting-name" id="greeting">Hi there.</h1>
-        <p class="dash-greeting-sub">Your personal roadmaps will appear here.</p>
-      </div>
+      <div></div>
       <div class="profile-summary-pill" id="profileRow" style="display:none;">
         <div class="psp-item">Grade: <span id="pGrade"></span></div>
         <div class="psp-item">Interest: <span id="pInterest"></span></div>
@@ -210,9 +214,9 @@ body{background:var(--bg);}
     if (!user) return;
     document.getElementById('navAv').textContent = Utils.initials(user.name);
     document.getElementById('navEmail').textContent = user.email;
-    const h = new Date().getHours();
-    const g = h<12?'Good morning':h<17?'Good afternoon':'Good evening';
-    document.getElementById('greeting').textContent = g+', '+user.name.split(' ')[0]+'.';
+    if(user.name) document.getElementById('greeting').innerText = `Hi ${user.name.split(' ')[0]}.`;
+    renderAlerts();
+    refreshFeed();
     
     const p = user.profile;
     if (p) {
@@ -276,6 +280,36 @@ body{background:var(--bg);}
       document.getElementById('askForm').style.opacity='1';
       document.getElementById('askForm').style.pointerEvents='all';
     }, 8000);
+  }
+
+  function renderAlerts() {
+    const als = AlertStore.getAll();
+    const container = document.getElementById('alertsContainer');
+    if(!container) return;
+    if(als.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = als.slice(0, 3).map(a => `
+      <div class="alert-card stagger" style="background:var(--bg-1); border:1px solid var(--green); border-radius:var(--r-xl); padding:20px 24px; display:flex; align-items:center; gap:24px; margin-bottom:12px; position:relative; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+        <div style="position:absolute; top:0; left:0; width:4px; height:100%; background:var(--green);"></div>
+        <div style="background:var(--green-dim); width:48px; height:48px; border-radius:var(--r-lg); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><path d="M18 8a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V8z"/><path d="M10 12l2 2 4-4"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+            <span style="font-size:10px; font-weight:800; color:var(--green); background:var(--green-dim); padding:3px 10px; border-radius:var(--r-pill); text-transform:uppercase; letter-spacing:0.05em;">${a.tag}</span>
+            <span style="font-size:16px; font-weight:700; color:var(--t1);">${a.title}</span>
+          </div>
+          <p style="font-size:14px; color:var(--t3); line-height:1.5; margin:0;">${a.body}</p>
+        </div>
+        <div style="text-align:right; flex-shrink:0; border-left:1px solid var(--b1); padding-left:24px;">
+          <div style="font-size:11px; color:var(--t4); font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">Strategy Lead</div>
+          <div style="font-size:13px; font-weight:700; color:var(--t2);">${a.author}</div>
+        </div>
+      </div>
+    `).join('');
   }
 
   function refreshFeed() {

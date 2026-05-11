@@ -154,6 +154,26 @@ const QuestionStore = {
   }
 };
 
+/* ===== ALERT STORE (GLOBAL ANNOUNCEMENTS) ===== */
+const AlertStore = {
+  getAll() {
+    try { const r = localStorage.getItem("mn_alerts"); return r ? JSON.parse(r) : []; }
+    catch { return []; }
+  },
+  save(als) { localStorage.setItem("mn_alerts", JSON.stringify(als)); },
+  add(al) {
+    const als = this.getAll();
+    const nal = { id: "al_" + Date.now(), ...al, createdAt: new Date().toISOString() };
+    als.unshift(nal);
+    this.save(als);
+    return nal;
+  },
+  delete(id) {
+    const als = this.getAll().filter(a => a.id !== id);
+    this.save(als);
+  }
+};
+
 /* ===== UTILS ===== */
 const Utils = {
   initials(name) {

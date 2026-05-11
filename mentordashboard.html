@@ -91,6 +91,8 @@ body{background:var(--bg);}
       <p class="mh-sub">Welcome back. Your strategic guidance helps students navigate everything from course logic and college apps to career prep and life help. Here are the open roadmaps awaiting your lived-experience input.</p>
     </div>
 
+    <div id="alertsContainer" style="margin-bottom:32px;"></div>
+
     <div class="filter-bar-premium reveal">
       <div class="filter-tabs" id="filterTabs">
         <button class="tag-pill active" onclick="setF('all',this)">Public Feed</button>
@@ -100,6 +102,7 @@ body{background:var(--bg);}
         <button class="tag-pill" onclick="setF('Career Prep',this)">Career Prep</button>
         <button class="tag-pill" onclick="setF('Life Help',this)">Life Help</button>
       </div>
+      <button class="btn btn-primary btn-sm" onclick="openBroadcastModal()">Broadcast Opportunity</button>
       <div style="font-size:12px;color:var(--t4);font-weight:700;" id="qCount">0 Available</div>
     </div>
 
@@ -121,8 +124,80 @@ body{background:var(--bg);}
     if (!user) return;
     document.getElementById('navAv').textContent = Utils.initials(user.name);
     document.getElementById('navEmail').textContent = user.email;
-    document.getElementById('greeting').textContent = 'Hi '+user.name.split(' ')[0]+'.';
+    if(user.name) document.getElementById('greeting').innerText = `Hi ${user.name.split(' ')[0]}.`;
+    renderAlerts();
     render();
+  }
+
+  function renderAlerts() {
+    const als = AlertStore.getAll();
+    const container = document.getElementById('alertsContainer');
+    if(als.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = als.slice(0, 2).map(a => `
+      <div class="alert-card stagger" style="background:var(--bg-1); border:1px solid var(--green); border-radius:var(--r-xl); padding:16px 24px; display:flex; align-items:center; gap:20px; margin-bottom:12px; position:relative; overflow:hidden;">
+        <div style="position:absolute; top:0; left:0; width:4px; height:100%; background:var(--green);"></div>
+        <div style="background:var(--green-dim); width:40px; height:40px; border-radius:var(--r-lg); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><path d="M18 8a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V8z"/><path d="M10 12l2 2 4-4"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+            <span style="font-size:10px; font-weight:800; color:var(--green); background:var(--green-dim); padding:2px 8px; border-radius:var(--r-pill); text-transform:uppercase;">${a.tag}</span>
+            <span style="font-size:14px; font-weight:700; color:var(--t1);">${a.title}</span>
+          </div>
+          <p style="font-size:13px; color:var(--t3); margin:0;">${a.body}</p>
+        </div>
+        <div style="text-align:right; flex-shrink:0;">
+          <div style="font-size:11px; color:var(--t4); font-weight:600;">Broadcasted by</div>
+          <div style="font-size:12px; font-weight:700; color:var(--t2);">${a.author}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function openBroadcastModal() {
+    const html = `
+      <div id="bcModal" style="position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:2000; display:flex; align-items:center; justify-content:center; padding:24px;">
+        <div style="background:var(--bg-1); border:1px solid var(--b1); border-radius:var(--r-2xl); width:100%; max-width:500px; padding:40px; position:relative;">
+          <h2 style="font-family:var(--font-h); font-size:28px; font-weight:800; color:var(--t1); margin-bottom:8px;">Broadcast Opportunity</h2>
+          <p style="color:var(--t4); font-size:14px; margin-bottom:24px;">Alert all Mentorist students about a competition, summer program, or key resource.</p>
+          
+          <div style="margin-bottom:16px;">
+            <label style="display:block; font-size:11px; font-weight:700; color:var(--t4); text-transform:uppercase; margin-bottom:8px;">Title</label>
+            <input type="text" id="bcTitle" placeholder="e.g. Conrad Challenge 2025" style="width:100%; background:var(--bg-2); border:1px solid var(--b2); border-radius:var(--r-lg); padding:12px; color:var(--t1);">
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="display:block; font-size:11px; font-weight:700; color:var(--t4); text-transform:uppercase; margin-bottom:8px;">Category</label>
+            <input type="text" id="bcTag" placeholder="e.g. Competition" style="width:100%; background:var(--bg-2); border:1px solid var(--b2); border-radius:var(--r-lg); padding:12px; color:var(--t1);">
+          </div>
+          <div style="margin-bottom:24px;">
+            <label style="display:block; font-size:11px; font-weight:700; color:var(--t4); text-transform:uppercase; margin-bottom:8px;">Details</label>
+            <textarea id="bcBody" placeholder="Briefly explain the opportunity..." style="width:100%; background:var(--bg-2); border:1px solid var(--b2); border-radius:var(--r-lg); padding:12px; color:var(--t1); height:100px;"></textarea>
+          </div>
+          
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <button class="btn btn-ghost" onclick="document.getElementById('bcModal').remove()">Cancel</button>
+            <button class="btn btn-primary" onclick="submitBroadcast()">Send Alert</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', html);
+  }
+
+  function submitBroadcast() {
+    const title = document.getElementById('bcTitle').value;
+    const tag = document.getElementById('bcTag').value;
+    const body = document.getElementById('bcBody').value;
+    if(!title || !body) return Utils.toast('Please fill all fields', 'error');
+
+    AlertStore.add({ title, tag: tag||'Alert', body, author: user.name });
+    Utils.toast('Strategic Alert sent to all students!', 'success');
+    document.getElementById('bcModal').remove();
+    renderAlerts();
   }
 
   function setSidebarF(f, el) {
