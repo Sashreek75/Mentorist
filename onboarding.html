@@ -265,27 +265,27 @@
             <!-- STEP 1: GRADE -->
             <div class="step-content active" id="step-0">
                 <h2 class="step-title">Current Standing</h2>
-                <p class="step-sub">Which stage of your high school journey are you in?</p>
+                <p class="step-sub">Which stage of your current journey are you in?</p>
                 <div class="choices-flex">
-                    <div class="choice-card" onclick="setV('grade','9',this)">
-                        <div class="rc-name">9th Grade</div>
-                        <div class="rc-desc">Freshman Year</div>
+                    <div class="choice-card" onclick="setV('grade','highschool',this)">
+                        <div class="rc-name">High School</div>
+                        <div class="rc-desc">Currently in secondary ed</div>
                     </div>
-                    <div class="choice-card" onclick="setV('grade','10',this)">
-                        <div class="rc-name">10th Grade</div>
-                        <div class="rc-desc">Sophomore Year</div>
+                    <div class="choice-card" onclick="setV('grade','college',this)">
+                        <div class="rc-name">Undergrad</div>
+                        <div class="rc-desc">Currently in College/Uni</div>
                     </div>
-                    <div class="choice-card" onclick="setV('grade','11',this)">
-                        <div class="rc-name">11th Grade</div>
-                        <div class="rc-desc">Junior Year</div>
+                    <div class="choice-card" onclick="setV('grade','gap',this)">
+                        <div class="rc-name">Gap Year</div>
+                        <div class="rc-desc">Exploring before next step</div>
                     </div>
-                    <div class="choice-card" onclick="setV('grade','12',this)">
-                        <div class="rc-name">12th Grade</div>
-                        <div class="rc-desc">Senior Year</div>
+                    <div class="choice-card" onclick="setV('grade','grad',this)">
+                        <div class="rc-name">Early Career</div>
+                        <div class="rc-desc">Post-grad or starting out</div>
                     </div>
                     <div class="choice-card" onclick="setV('grade','parent',this)">
                         <div class="rc-name">Parent</div>
-                        <div class="rc-desc">Supporting a student</div>
+                        <div class="rc-desc">Supporting a navigator</div>
                     </div>
                     <div class="choice-card" onclick="setV('grade','international',this)">
                         <div class="rc-name">International</div>
@@ -489,8 +489,8 @@
         /* ── Summary render ── */
         function renderSummary() {
             const gradeMap = {
-                '9': '9th Grade Student', '10': '10th Grade Student',
-                '11': '11th Grade Student', '12': '12th Grade Student',
+                'highschool': 'High School Navigator', 'college': 'Undergrad Navigator',
+                'gap': 'Gap Year Explorer', 'grad': 'Early Career Navigator',
                 parent: 'Parent Explorer', international: 'International Applicant'
             };
             const interestMap = {

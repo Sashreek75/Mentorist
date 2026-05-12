@@ -228,3 +228,118 @@ const GoogleAuth = {
     onSuccess({ name: name.trim(), email: email.trim().toLowerCase() });
   }
 };
+
+/* ===== MOBILE NAVIGATION LOGIC ===== */
+const MobileNav = {
+  init() {
+    this.createMobileMenu();
+    this.setupDashboardNav();
+    this.bindEvents();
+  },
+
+  createMobileMenu() {
+    const navbar = document.querySelector('.navbar');
+    if (!navbar || document.querySelector('.mobile-menu')) return;
+
+    // Add Toggle Button
+    const toggle = document.createElement('button');
+    toggle.className = 'nav-menu-toggle';
+    toggle.setAttribute('aria-label', 'Toggle Menu');
+    toggle.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`;
+    navbar.appendChild(toggle);
+
+    // Create Overlay
+    const menu = document.createElement('div');
+    menu.className = 'mobile-menu';
+    
+    const navLinks = document.querySelector('.nav-links')?.cloneNode(true);
+    const navActions = document.querySelector('.nav-actions')?.cloneNode(true);
+    
+    if (navLinks) menu.appendChild(navLinks);
+    if (navActions) {
+      navActions.style.display = 'flex'; // Ensure visible in mobile menu
+      menu.appendChild(navActions);
+    }
+
+    document.body.appendChild(menu);
+    this.menu = menu;
+    this.toggle = toggle;
+  },
+
+  setupDashboardNav() {
+    // Only inject on dashboard pages
+    const path = window.location.pathname;
+    const isDashboard = path.includes('dashboard') || path.includes('admin.html');
+    if (!isDashboard || document.querySelector('.bottom-nav')) return;
+
+    const user = Auth.getUser();
+    if (!user) return;
+
+    const bNav = document.createElement('nav');
+    bNav.className = 'bottom-nav';
+
+    let items = [];
+    if (user.role === 'admin') {
+      items = [
+        { label: 'Admin', icon: 'shield', link: 'admin.html' },
+        { label: 'Vault', icon: 'archive', link: 'vault.html' },
+        { label: 'Logout', icon: 'log-out', link: '#', action: () => Auth.logout() }
+      ];
+    } else if (user.role === 'mentor') {
+      items = [
+        { label: 'Home', icon: 'home', link: 'mentordashboard.html' },
+        { label: 'Vault', icon: 'archive', link: 'vault.html' },
+        { label: 'Logout', icon: 'log-out', link: '#', action: () => Auth.logout() }
+      ];
+    } else {
+      items = [
+        { label: 'Home', icon: 'home', link: 'studentdashboard.html' },
+        { label: 'Vault', icon: 'archive', link: 'vault.html' },
+        { label: 'Logout', icon: 'log-out', link: '#', action: () => Auth.logout() }
+      ];
+    }
+
+    const icons = {
+      home: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`,
+      archive: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>`,
+      shield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>`,
+      'log-out': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>`
+    };
+
+    items.forEach(item => {
+      const a = document.createElement('a');
+      a.href = item.link;
+      a.className = `bottom-nav-item ${path.includes(item.link) ? 'active' : ''}`;
+      if (item.action) a.onclick = (e) => { e.preventDefault(); item.action(); };
+      
+      a.innerHTML = `
+        ${icons[item.icon]}
+        <span>${item.label}</span>
+      `;
+      bNav.appendChild(a);
+    });
+
+    document.body.appendChild(bNav);
+  },
+
+  bindEvents() {
+    if (!this.toggle) return;
+    this.toggle.addEventListener('click', () => {
+      this.menu.classList.toggle('active');
+      const isActive = this.menu.classList.contains('active');
+      this.toggle.innerHTML = isActive 
+        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`
+        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`;
+    });
+
+    // Close menu on link click
+    this.menu.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        this.menu.classList.remove('active');
+        this.toggle.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`;
+      });
+    });
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => MobileNav.init());

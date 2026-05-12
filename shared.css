@@ -134,6 +134,83 @@ body::after{
 }
 .nav-get-started:hover{background:#1aff8e;box-shadow:0 8px 25px rgba(0,232,122,0.35);transform:translateY(-2px);}
 
+/* ===== MOBILE MENU BUTTON ===== */
+.nav-menu-toggle {
+  display: none;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  color: var(--t1);
+  border-radius: var(--r-md);
+  background: var(--b1);
+  border: 1px solid var(--b2);
+  cursor: pointer;
+  z-index: 210;
+}
+.nav-menu-toggle svg { width: 24px; height: 24px; }
+
+/* ===== MOBILE OVERLAY MENU ===== */
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 205;
+  display: flex;
+  flex-direction: column;
+  padding: 100px 24px 40px;
+  transform: translateX(100%);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+}
+.mobile-menu.active { transform: translateX(0); }
+.mobile-menu .nav-link {
+  font-size: 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--b1);
+  border-radius: 0;
+}
+.mobile-menu .nav-actions {
+  margin-top: auto;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+.mobile-menu .btn { width: 100%; height: 56px; font-size: 16px; }
+
+/* ===== BOTTOM NAVIGATION (DASHBOARDS) ===== */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 68px;
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--glass-border);
+  z-index: 150;
+  padding: 0 12px;
+  align-items: center;
+  justify-content: space-around;
+}
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--t3);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+}
+.bottom-nav-item svg { width: 22px; height: 22px; }
+.bottom-nav-item.active { color: var(--green); }
+
+
 /* ===== BUTTONS ===== */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:10px;
@@ -322,29 +399,38 @@ body::after{
 
 @media(max-width:960px){
   .sidebar{display:none;}
-  .dashboard-main{margin-left:0;max-width:100%;padding:32px 20px;}
+  .dashboard-main{margin-left:0;max-width:100%;padding:32px 20px 100px;}
   .navbar{padding:0 20px;}
   .nav-links{display:none;}
+  .nav-actions { display: none; }
+  .nav-menu-toggle { display: flex; }
+  .bottom-nav { display: flex; }
 }
 
 @media(max-width:640px){
   :root {
-    --r-3xl: 24px; /* Tighter corners for mobile cards */
+    --r-3xl: 24px;
   }
-  .dashboard-main{padding:24px 16px 80px;}
-  .hero-title{font-size:36px;text-align:center;}
+  .dashboard-main{padding:24px 16px 100px;}
+  .hero-title{font-size:38px;text-align:center;}
   .hero-sub{font-size:15px;text-align:center;}
   .hero-visual{margin-top:40px;}
   .nav-actions .btn-sm{padding:8px 16px;font-size:13px;}
   .btn-lg{padding:14px 28px;font-size:15px;width:100%;}
   
-  /* Responsive Tables */
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -16px;padding:0 16px;}
+  
+  /* Stack cards in grid */
+  .choice-grid.c2, .grid-2, .steps-grid, .role-grid, .stats-grid { grid-template-columns: 1fr !important; }
+  
+  .card, .pill-card { padding: 24px; }
+
+  .section-hd h2 { font-size: 32px; }
 }
 
 @media(max-width:400px){
   .navbar{padding:0 12px;}
-  .nav-wordmark{display:none;} /* Just icon on ultra-small */
+  .nav-wordmark{display:none;}
 }
 
 /* Global Responsive Fixes */
@@ -353,6 +439,9 @@ body::after{
   .grid-2, .choice-grid.c2 { grid-template-columns: 1fr; }
   .card, .admin-card, .on-card-premium { padding: 24px; }
   .table-wrap { margin-top: 32px; }
+  
+  /* Hide scrollbar on mobile for cleaner look */
+  ::-webkit-scrollbar { display: none; }
 }
 
 @media(max-width:480px) {
@@ -360,5 +449,13 @@ body::after{
   body { font-size: 14px; }
   .hero-eyebrow { font-size: 10px; padding: 6px 14px; }
   .on-progress-top { margin-bottom: 32px; gap: 8px; }
+  
+  .hero-title { font-size: 34px; }
+  .section-hd h2 { font-size: 28px; }
 }
+
+/* Utilities */
+.hide-mobile { @media(max-width: 640px) { display: none !important; } }
+.show-mobile { display: none; @media(max-width: 640px) { display: block !important; } }
+
 

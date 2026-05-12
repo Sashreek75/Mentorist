@@ -113,7 +113,7 @@ body{background:var(--bg);}
   <main class="dashboard-main">
     <div class="dashboard-hero reveal">
       <h1 class="dash-greeting-name" id="greeting">Hi there.</h1>
-      <p class="dash-greeting-sub">Strategic logic for high school success. What are you navigating today?</p>
+      <p class="dash-greeting-sub">Strategic logic for academic and career success. What are you navigating today?</p>
     </div>
 
     <div id="alertsContainer" style="margin-bottom:32px;"></div>
@@ -137,7 +137,7 @@ body{background:var(--bg);}
 
           <div class="ask-card-premium" id="askForm">
             <h2 class="ask-hd-title">New Strategic Question</h2>
-            <p class="ask-hd-sub">Be as specific as possible about your goals, current classes, and target outcomes. High context leads to the best peer guidance.</p>
+            <p class="ask-hd-sub">Be as specific as possible about your goals, current milestones, and target outcomes. High context leads to the best peer guidance.</p>
             
             <div class="form-group">
               <div class="form-label" role="heading" aria-level="5">Select Topics</div>
@@ -157,13 +157,13 @@ body{background:var(--bg);}
 
             <div class="form-group">
               <label class="form-label" for="qBody">What are you navigating?</label>
-              <textarea class="form-textarea" id="qBody" maxlength="1000" oninput="upCC(this)" placeholder="e.g. I am a sophomore aiming for STEM. Should I prioritize AP Physics or a research project this summer? How can I align my narrative for T20 schools?"></textarea>
+              <textarea class="form-textarea" id="qBody" maxlength="1000" oninput="upCC(this)" placeholder="e.g. I am a college sophomore aiming for SWE. Should I prioritize a personal project or a local internship? How can I align my narrative for top-tier companies?"></textarea>
               <div class="char-count" id="bodyCC">0 / 1000</div>
             </div>
 
             <div class="form-group">
               <label class="form-label" for="qMeta">Specific Context (Optional)</label>
-              <input type="text" class="form-input" id="qMeta" maxlength="200" placeholder="e.g. Current 3.8 UW GPA · Goal: Georgia Tech · Strong math background">
+              <input type="text" class="form-input" id="qMeta" maxlength="200" placeholder="e.g. Current 3.8 GPA · Goal: SWE at Google · Strong backend background">
             </div>
 
             <div class="alert alert-info" style="margin-bottom:32px;">
@@ -223,7 +223,7 @@ body{background:var(--bg);}
       document.getElementById('profileRow').style.display = 'inline-flex';
       const gm={'9':'9th','10':'10th','11':'11th','12':'12th','parent':'Parent','international':'Intl.'};
       const im={stem:'STEM',business:'Business',humanities:'Humanities',arts:'Arts',medicine:'Med',law:'Law',undecided:'Exploring'};
-      document.getElementById('pGrade').textContent = gm[p.grade]||'—';
+      document.getElementById('pGrade').textContent = gm[p.grade]||p.grade||'—';
       document.getElementById('pInterest').textContent = im[p.interest]||'—';
     }
   }
