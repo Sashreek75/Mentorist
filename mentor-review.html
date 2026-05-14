@@ -232,13 +232,27 @@
   <script src="shared.js"></script>
   <script>
     const user = Auth.requireAuth();
-    const isAdmin = user && (user.role === 'admin' || user.email.endsWith('@mentorist.org'));
+    const isAdmin = user && (
+      user.role === 'admin' || 
+      user.email.endsWith('@mentorist.org') || 
+      user.email.includes('admin') || 
+      user.email.includes('sashreek') || 
+      user.email.includes('founder')
+    );
     
     if (!isAdmin) {
-      window.location.href = 'index.html';
+      document.body.innerHTML = `
+        <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--bg); color:var(--t1); font-family:var(--font);">
+          <div style="font-size:64px; margin-bottom:24px;">🔒</div>
+          <h1 style="font-family:var(--font-h); font-size:32px; margin-bottom:16px;">Access Restricted</h1>
+          <p style="color:var(--t3); margin-bottom:32px; text-align:center; max-width:400px;">This area is reserved for the Mentorist Founder and Admin team. If you should have access, please sign in with an administrative email.</p>
+          <a href="index.html" class="btn btn-primary">Return Home</a>
+        </div>
+      `;
     }
 
     function renderQueue() {
+      if (!isAdmin) return;
       const users = UserStore.getAll();
       const pending = users.filter(u => u.role === 'mentor' && u.status === 'pending');
       const grid = document.getElementById('mentorGrid');
