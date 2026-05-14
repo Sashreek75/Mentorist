@@ -257,19 +257,20 @@ footer{background:var(--bg);border-top:1px solid var(--b1);padding:48px 24px;col
   if(typeof Auth!=='undefined' && Auth.isLoggedIn()){
     const user = Auth.getUser();
     const actions = document.getElementById('navActions');
-    const params = new URLSearchParams(window.location.search);
     
-    // Only auto-redirect if NOT explicitly coming from onboarding
-    if(!params.has('no_redirect')) {
-      Auth.routeAfterLogin(user);
-    }
-
-    // Update buttons in case they stay or go back
+    // Update buttons to show Dashboard instead of Join Free
     if(actions) {
       actions.innerHTML = `
         <a href="#" onclick="Auth.logout()" class="nav-sign-in">Log out</a>
-        <button onclick="sessionStorage.removeItem('mn_suppress_redirect'); Auth.routeAfterLogin(Auth.getUser());" class="nav-get-started" style="border:none; cursor:pointer;">${user.onboarded ? 'Dashboard' : 'Continue Quiz'}</button>
+        <button onclick="Auth.routeAfterLogin(Auth.getUser())" class="nav-get-started" style="border:none; cursor:pointer;">${user.onboarded ? 'Go to Dashboard' : 'Continue Setup'}</button>
       `;
+    }
+    
+    // Also update the hero button
+    const heroBtn = document.querySelector('.hero .btn-primary');
+    if(heroBtn) {
+      heroBtn.innerHTML = `${user.onboarded ? 'Go to Dashboard' : 'Continue Setup'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>`;
+      heroBtn.onclick = (e) => { e.preventDefault(); Auth.routeAfterLogin(user); };
     }
   }
   

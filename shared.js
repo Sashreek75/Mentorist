@@ -36,19 +36,6 @@ const Auth = {
   routeAfterLogin(user) {
     if (!user) { window.location.href = "auth.html"; return; }
     
-    // Bulletproof suppress check
-    const p = new URLSearchParams(window.location.search);
-    if (p.has('no_redirect')) {
-      sessionStorage.setItem('mn_suppress_redirect', '1');
-      return;
-    }
-    if (sessionStorage.getItem('mn_suppress_redirect') === '1') {
-      // Only suppress on landing page
-      if (window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/')) {
-        return;
-      }
-    }
-
     // Ensure user is in UserStore
     UserStore.addOrUpdate(user);
     
