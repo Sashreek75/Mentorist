@@ -234,9 +234,24 @@
       <!-- Dynamic Stats -->
     </div>
 
+    <div class="admin-card" id="mentorReviewCenter" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+        <div>
+          <h2 style="font-family:var(--font-h); font-size:28px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">Mentor Review Center</h2>
+          <p style="color:var(--t3); font-size:15px;">There are pending mentor applications that require your strategic review.</p>
+        </div>
+        <div style="background:var(--green-dim); padding:8px 16px; border-radius:var(--r-lg); border:1px solid rgba(0,232,122,0.3);">
+          <span id="pendingCountBadge" style="font-size:14px; font-weight:800; color:var(--green);">0 Pending</span>
+        </div>
+      </div>
+      <div id="pendingMentorGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+        <!-- Pending Mentors Rendered Here -->
+      </div>
+    </div>
+
     <div class="admin-card">
       <h2 style="font-family:var(--font-h); font-size:28px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">User Management</h2>
-      <p style="color:var(--t3); font-size:15px;">Review and process mentor applications manually.</p>
+      <p style="color:var(--t3); font-size:15px;">Review and manage all registered accounts on the platform.</p>
 
       <div class="table-wrap">
         <div id="userTable"></div>
@@ -244,25 +259,42 @@
     </div>
 
     <div class="admin-card">
-      <h2 style="font-family:var(--font-h); font-size:28px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">Strategy Announcements</h2>
-      <p style="color:var(--t3); font-size:15px; margin-bottom:24px;">Broadcast competitions, summer programs, and opportunities to all students.</p>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px;">
+        <div>
+          <h2 style="font-family:var(--font-h); font-size:28px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">Founder Broadcast Center</h2>
+          <p style="color:var(--t3); font-size:15px;">Send strategic opportunities and critical updates directly to every Mentorist user.</p>
+        </div>
+        <div style="background:var(--green-dim); padding:10px 16px; border-radius:var(--r-lg); border:1px solid rgba(0,232,122,0.2);">
+          <span style="font-size:11px; font-weight:800; color:var(--green); text-transform:uppercase; letter-spacing:0.05em;">Founder Status: Active</span>
+        </div>
+      </div>
       
-      <div style="background:var(--bg-2); border:1px solid var(--b1); border-radius:var(--r-xl); padding:24px; margin-bottom:32px;">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+      <div style="background:var(--bg-2); border:1px solid var(--b1); border-radius:var(--r-xl); padding:32px; margin-bottom:32px; position:relative; overflow:hidden;">
+        <div style="position:absolute; top:0; right:0; padding:12px; opacity:0.1;">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V8z"/><path d="M10 12l2 2 4-4"/></svg>
+        </div>
+        
+        <div style="display:grid; grid-template-columns:1.2fr 0.8fr; gap:20px; margin-bottom:20px;">
           <div>
-            <label style="display:block; font-size:11px; font-weight:700; color:var(--t4); text-transform:uppercase; margin-bottom:8px;">Alert Title</label>
-            <input type="text" id="alTitle" placeholder="e.g. Stanford AI Research Program" style="width:100%; background:var(--bg-1); border:1px solid var(--b2); border-radius:var(--r-lg); padding:10px; color:var(--t1);">
+            <label style="display:block; font-size:11px; font-weight:700; color:var(--t4); text-transform:uppercase; margin-bottom:8px; letter-spacing:0.05em;">Broadcast Title</label>
+            <input type="text" id="alTitle" placeholder="e.g. Stanford SIMR Applications Open" style="width:100%; background:var(--bg-1); border:1px solid var(--b2); border-radius:var(--r-lg); padding:14px; color:var(--t1); font-weight:600;">
           </div>
           <div>
-            <label style="display:block; font-size:11px; font-weight:700; color:var(--t4); text-transform:uppercase; margin-bottom:8px;">Category / Tag</label>
-            <input type="text" id="alTag" placeholder="e.g. Summer Program" style="width:100%; background:var(--bg-1); border:1px solid var(--b2); border-radius:var(--r-lg); padding:10px; color:var(--t1);">
+            <label style="display:block; font-size:11px; font-weight:700; color:var(--t4); text-transform:uppercase; margin-bottom:8px; letter-spacing:0.05em;">Context Tag</label>
+            <input type="text" id="alTag" placeholder="e.g. STEM Opportunity" style="width:100%; background:var(--bg-1); border:1px solid var(--b2); border-radius:var(--r-lg); padding:14px; color:var(--t1);">
           </div>
         </div>
-        <label style="display:block; font-size:11px; font-weight:700; color:var(--t4); text-transform:uppercase; margin-bottom:8px;">Announcement Details</label>
-        <textarea id="alBody" placeholder="Describe the opportunity and why it's strategic for students..." style="width:100%; background:var(--bg-1); border:1px solid var(--b2); border-radius:var(--r-lg); padding:10px; color:var(--t1); height:80px; margin-bottom:16px;"></textarea>
-        <button class="btn btn-primary" onclick="createAlert()" style="width:100%;">Broadcast Strategy Alert</button>
+        
+        <label style="display:block; font-size:11px; font-weight:700; color:var(--t4); text-transform:uppercase; margin-bottom:8px; letter-spacing:0.05em;">Broadcast Message</label>
+        <textarea id="alBody" placeholder="Provide details on the opportunity and why students/mentors should take action..." style="width:100%; background:var(--bg-1); border:1px solid var(--b2); border-radius:var(--r-lg); padding:14px; color:var(--t1); height:120px; margin-bottom:24px; line-height:1.6; resize:none;"></textarea>
+        
+        <button class="btn btn-primary btn-lg" onclick="createAlert()" style="width:100%; height:56px; font-size:16px;">
+          Push Global Broadcast
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:18px; height:18px; margin-left:8px;"><path d="m22 2-11 11M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </button>
       </div>
 
+      <div style="font-size:12px; color:var(--t4); font-weight:700; margin-bottom:16px; text-transform:uppercase; letter-spacing:0.1em;">Previous Broadcasts</div>
       <div class="table-wrap">
         <div id="alertsTable"></div>
       </div>
@@ -289,13 +321,52 @@
     function render() {
       const users = UserStore.getAll();
       const tableDiv = document.getElementById('userTable');
+      const reviewCenter = document.getElementById('mentorReviewCenter');
+      const pendingGrid = document.getElementById('pendingMentorGrid');
+      const pendingBadge = document.getElementById('pendingCountBadge');
+
+      const pendingMentors = users.filter(u => u.role === 'mentor' && u.status === 'pending');
+      
+      // Update Review Center
+      if (pendingMentors.length > 0 && isAdmin) {
+        reviewCenter.style.display = 'block';
+        pendingBadge.textContent = `${pendingMentors.length} Pending`;
+        
+        pendingGrid.innerHTML = pendingMentors.map(u => `
+          <div style="background:var(--bg-2); border:1px solid var(--b1); border-radius:var(--r-2xl); padding:24px; position:relative;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+              <div class="user-info">
+                <span class="user-name" style="font-size:18px;">${u.name}</span>
+                <span class="user-email">${u.email}</span>
+              </div>
+              <span class="status-pill st-pending">Pending</span>
+            </div>
+            
+            <div style="margin-bottom:20px; padding:16px; background:rgba(255,255,255,0.02); border-radius:var(--r-lg); border:1px solid var(--b1);">
+              <div style="font-size:11px; font-weight:800; color:var(--t4); text-transform:uppercase; margin-bottom:8px; letter-spacing:0.05em;">Academic Credentials</div>
+              <div style="color:var(--t1); font-weight:700; font-size:14px; margin-bottom:4px;">${u.applicationData?.university || 'N/A'}</div>
+              <div style="color:var(--t3); font-size:13px;">${u.applicationData?.major || 'No major specified'}</div>
+              
+              <div style="font-size:11px; font-weight:800; color:var(--t4); text-transform:uppercase; margin:16px 0 8px; letter-spacing:0.05em;">Statement of Intent</div>
+              <div style="color:var(--t2); font-size:13px; line-height:1.6; font-style:italic;">"${u.applicationData?.experience || 'No experience details provided.'}"</div>
+            </div>
+            
+            <div class="action-btns" style="width:100%;">
+              <button class="btn btn-primary btn-sm" style="flex:1; height:40px;" onclick="performAction('${u.email}', 'active', 'approved')">Approve Mentor</button>
+              <button class="btn btn-ghost btn-sm" style="flex:1; height:40px; border:1px solid var(--b1);" onclick="performAction('${u.email}', 'rejected', 'rejected')">Reject</button>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        reviewCenter.style.display = 'none';
+      }
 
       if (users.length === 0) {
         tableDiv.innerHTML = '<div style="padding:80px; text-align:center; color:var(--t4); font-size:15px;">No users found.</div>';
         return;
       }
 
-      let html = `<table><thead><tr><th>User</th><th>Role</th><th>Status</th>${isAdmin ? '<th>Actions</th>' : ''}</tr></thead><tbody>`;
+      let html = `<table><thead><tr><th>User</th><th>Role / Credentials</th><th>Status</th>${isAdmin ? '<th>Actions</th>' : ''}</tr></thead><tbody>`;
 
       // Sort: Pending first, then active/rejected
       const sortedUsers = [...users].sort((a,b) => {
@@ -332,7 +403,7 @@
               ${user && u.email === user.email ? '<span style="color:var(--t4); font-style:italic; font-size:12px;">Current Session</span>' : `
                 ${canApprove ? `<button class="btn-action btn-approve" onclick="performAction('${u.email}', 'active', 'approved')">Approve</button>` : ''}
                 ${canReject ? `<button class="btn-action btn-reject" onclick="performAction('${u.email}', 'rejected', 'rejected')">Reject</button>` : ''}
-                ${!canApprove && !canReject ? '—' : ''}
+                ${!canApprove && !canReject ? '<span style="color:var(--t4);">—</span>' : ''}
               `}
             </div>
           </td>` : ''}

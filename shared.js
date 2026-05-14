@@ -342,4 +342,83 @@ const MobileNav = {
   }
 };
 
-document.addEventListener('DOMContentLoaded', () => MobileNav.init());
+document.addEventListener('DOMContentLoaded', () => {
+  MobileNav.init();
+  GlobalBroadcast.init();
+});
+
+/* ===== GLOBAL BROADCAST SYSTEM ===== */
+const GlobalBroadcast = {
+  init() {
+    const alerts = AlertStore.getAll();
+    if (!alerts.length) return;
+
+    const dismissed = JSON.parse(localStorage.getItem('mn_dismissed_alerts') || '[]');
+    const latest = alerts[0]; // Focus on the most recent broadcast
+
+    if (!dismissed.includes(latest.id)) {
+      // Check if we are on a dashboard or landing page
+      const isDashboard = window.location.pathname.includes('dashboard') || window.location.pathname.includes('admin.html');
+      if (isDashboard) {
+        setTimeout(() => this.show(latest), 1000);
+      }
+    }
+  },
+
+  show(al) {
+    const overlay = document.createElement('div');
+    overlay.className = 'broadcast-overlay';
+    overlay.style.cssText = `
+      position:fixed; inset:0; background:rgba(0,0,0,0.85); 
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      z-index:9999; display:flex; align-items:center; justify-content:center;
+      padding:24px; animation:fadeIn 0.4s ease;
+    `;
+
+    const card = document.createElement('div');
+    card.style.cssText = `
+      background:var(--bg-1); border:1px solid var(--green);
+      border-radius:var(--r-3xl); width:100%; max-width:540px;
+      padding:48px; position:relative; overflow:hidden;
+      box-shadow: 0 0 60px rgba(0,232,122,0.15);
+      animation:scaleIn 0.5s cubic-bezier(0.2, 1, 0.3, 1);
+    `;
+
+    card.innerHTML = `
+      <div style="position:absolute; top:0; left:0; width:100%; height:4px; background:linear-gradient(90deg, var(--green), #1aff8e);"></div>
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+        <span style="font-size:10px; font-weight:800; color:var(--green); background:var(--green-dim); padding:4px 12px; border-radius:var(--r-pill); text-transform:uppercase; letter-spacing:0.1em; border:1px solid rgba(0,232,122,0.2);">${al.tag || 'Global Update'}</span>
+        <span style="font-size:12px; color:var(--t4); font-weight:600;">Broadcasted by Founder</span>
+      </div>
+      <h2 style="font-family:var(--font-h); font-size:32px; font-weight:800; color:var(--t1); margin-bottom:16px; letter-spacing:-0.03em; line-height:1.2;">${al.title}</h2>
+      <p style="font-size:16px; color:var(--t2); line-height:1.7; margin-bottom:32px;">${al.body}</p>
+      
+      <div style="display:flex; gap:16px;">
+        <button id="bcClose" class="btn btn-primary btn-lg btn-full" style="flex:1;">Got it, thanks!</button>
+      </div>
+    `;
+
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+
+    document.getElementById('bcClose').onclick = () => {
+      this.dismiss(al.id);
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity 0.3s';
+      setTimeout(() => {
+        overlay.remove();
+        document.body.style.overflow = 'auto';
+      }, 300);
+    };
+  },
+
+  dismiss(id) {
+    const dismissed = JSON.parse(localStorage.getItem('mn_dismissed_alerts') || '[]');
+    if (!dismissed.includes(id)) {
+      dismissed.push(id);
+      localStorage.setItem('mn_dismissed_alerts', JSON.stringify(dismissed));
+    }
+  }
+};
+
