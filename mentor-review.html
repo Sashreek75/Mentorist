@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Mentor Review Center — Mentorist</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    body { background: var(--bg); }
+    
+    .review-layout {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 120px 24px 80px;
+    }
+
+    .review-header {
+      margin-bottom: 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .rh-left h1 {
+      font-family: var(--font-h);
+      font-size: 42px;
+      font-weight: 800;
+      color: var(--t1);
+      letter-spacing: -0.04em;
+      margin-bottom: 12px;
+    }
+
+    .rh-left p {
+      font-size: 16px;
+      color: var(--t3);
+      max-width: 600px;
+    }
+
+    .queue-stats {
+      display: flex;
+      gap: 16px;
+    }
+
+    .q-stat {
+      background: var(--bg-1);
+      border: 1px solid var(--b1);
+      padding: 16px 24px;
+      border-radius: var(--r-2xl);
+      text-align: center;
+    }
+
+    .q-stat-val {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--green);
+      font-family: var(--font-h);
+    }
+
+    .q-stat-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--t4);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .mentor-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 24px;
+    }
+
+    .mentor-card {
+      background: var(--bg-1);
+      border: 1px solid var(--b1);
+      border-radius: var(--r-3xl);
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.2, 1, 0.3, 1);
+    }
+
+    .mentor-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--green);
+      box-shadow: 0 20px 40px rgba(0,232,122,0.1);
+    }
+
+    .mentor-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--green);
+      opacity: 0.3;
+    }
+
+    .mc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+    }
+
+    .mc-user {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .mc-name {
+      font-family: var(--font-h);
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--t1);
+    }
+
+    .mc-email {
+      font-size: 13px;
+      color: var(--t4);
+    }
+
+    .mc-tag {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--green);
+      background: var(--green-dim);
+      padding: 4px 10px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border: 1px solid rgba(0,232,122,0.2);
+    }
+
+    .mc-data {
+      background: var(--bg-2);
+      border: 1px solid var(--b1);
+      border-radius: var(--r-2xl);
+      padding: 20px;
+      margin-bottom: 24px;
+      flex: 1;
+    }
+
+    .mc-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--t4);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .mc-val {
+      color: var(--t1);
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 16px;
+    }
+
+    .mc-bio {
+      color: var(--t2);
+      font-size: 14px;
+      line-height: 1.6;
+      font-style: italic;
+    }
+
+    .mc-actions {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 12px;
+    }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 120px 40px;
+      background: var(--bg-1);
+      border: 2px dashed var(--b1);
+      border-radius: var(--r-3xl);
+    }
+
+    .empty-state h2 {
+      font-family: var(--font-h);
+      font-size: 24px;
+      color: var(--t1);
+      margin-bottom: 12px;
+    }
+
+    .empty-state p {
+      color: var(--t4);
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="admin.html" class="nav-logo">
+      <div class="nav-logomark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+      <span class="nav-wordmark">Review Center</span>
+    </a>
+    <div class="nav-actions">
+      <a href="admin.html" class="btn btn-ghost btn-sm">Dashboard</a>
+      <button class="btn btn-ghost btn-sm" onclick="Auth.logout()">Log out</button>
+    </div>
+  </nav>
+
+  <div class="review-layout">
+    <div class="review-header">
+      <div class="rh-left">
+        <h1>Mentor <span style="color:var(--green);">Review</span> Queue</h1>
+        <p>Analyze and approve academic mentors to ensure high-quality strategic guidance for the Mentorist community.</p>
+      </div>
+      <div class="queue-stats">
+        <div class="q-stat">
+          <div class="q-stat-val" id="countVal">0</div>
+          <div class="q-stat-label">Pending</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="mentorGrid" class="mentor-grid">
+      <!-- Mentors injected here -->
+    </div>
+  </div>
+
+  <script src="shared.js"></script>
+  <script>
+    const user = Auth.requireAuth();
+    const isAdmin = user && (user.role === 'admin' || user.email.endsWith('@mentorist.org'));
+    
+    if (!isAdmin) {
+      window.location.href = 'index.html';
+    }
+
+    function renderQueue() {
+      const users = UserStore.getAll();
+      const pending = users.filter(u => u.role === 'mentor' && u.status === 'pending');
+      const grid = document.getElementById('mentorGrid');
+      const count = document.getElementById('countVal');
+      
+      count.textContent = pending.length;
+
+      if (pending.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <div style="font-size:48px; margin-bottom:24px;">✨</div>
+            <h2>Queue is Clear</h2>
+            <p>All mentor applications have been processed. Great work!</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = pending.map(u => `
+        <div class="mentor-card">
+          <div class="mc-header">
+            <div class="mc-user">
+              <span class="mc-name">${u.name}</span>
+              <span class="mc-email">${u.email}</span>
+            </div>
+            <span class="mc-tag">Pending Review</span>
+          </div>
+
+          <div class="mc-data">
+            <div class="mc-label">Academic Background</div>
+            <div class="mc-val">${u.applicationData?.university || 'N/A'}</div>
+            <div class="mc-val" style="font-size:13px; color:var(--t3);">${u.applicationData?.major || 'No major specified'}</div>
+            
+            <div class="mc-label" style="margin-top:20px;">Why Mentor?</div>
+            <div class="mc-bio">"${u.applicationData?.experience || 'No statement provided.'}"</div>
+          </div>
+
+          <div class="mc-actions">
+            <button class="btn btn-primary btn-lg" onclick="handleReview('${u.email}', 'active', 'approved')">Approve Account</button>
+            <button class="btn btn-ghost btn-lg" style="border:1px solid var(--b1);" onclick="handleReview('${u.email}', 'rejected', 'rejected')">Reject</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function handleReview(email, status, label) {
+      UserStore.updateUserFields(email, { 
+        status: status,
+        rejectedAt: status === 'rejected' ? new Date().toISOString() : null
+      });
+      Utils.toast(`Mentor ${label} successfully.`, 'success');
+      renderQueue();
+    }
+
+    renderQueue();
+  </script>
+</body>
+</html>

@@ -234,14 +234,17 @@
       <!-- Dynamic Stats -->
     </div>
 
-    <div class="admin-card" id="mentorReviewCenter" style="display:none;">
+    <div class="admin-card" id="mentorReviewCenter" style="display:none; border-color: var(--green); box-shadow: 0 0 40px rgba(0,232,122,0.1);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
         <div>
           <h2 style="font-family:var(--font-h); font-size:28px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">Mentor Review Center</h2>
           <p style="color:var(--t3); font-size:15px;">There are pending mentor applications that require your strategic review.</p>
         </div>
-        <div style="background:var(--green-dim); padding:8px 16px; border-radius:var(--r-lg); border:1px solid rgba(0,232,122,0.3);">
-          <span id="pendingCountBadge" style="font-size:14px; font-weight:800; color:var(--green);">0 Pending</span>
+        <div style="display:flex; gap:12px; align-items:center;">
+          <a href="mentor-review.html" class="btn btn-primary btn-sm">Open Full Review Center</a>
+          <div style="background:var(--green-dim); padding:8px 16px; border-radius:var(--r-lg); border:1px solid rgba(0,232,122,0.3);">
+            <span id="pendingCountBadge" style="font-size:14px; font-weight:800; color:var(--green);">0 Pending</span>
+          </div>
         </div>
       </div>
       <div id="pendingMentorGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
