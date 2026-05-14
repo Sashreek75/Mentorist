@@ -39,7 +39,7 @@ const Auth = {
     // Ensure user is in UserStore
     UserStore.addOrUpdate(user);
     
-    if (user.role === "admin" || user.email.endsWith('@mentorist.org') || user.email.includes('admin') || user.email.includes('sashreek') || user.email.includes('founder')) {
+    if (user.role === "admin" || user.email.endsWith('@mentorist.org')) {
       if (user.role !== 'admin') {
         user.role = 'admin';
         this.setUser(user);
@@ -158,6 +158,32 @@ const AlertStore = {
   delete(id) {
     const als = this.getAll().filter(a => a.id !== id);
     this.save(als);
+  }
+};
+
+/* ===== ADMIN AUTH (PASSWORD GATE) ===== */
+const AdminAuth = {
+  PASS: "mentorististhebest",
+  check() {
+    return sessionStorage.getItem("mn_admin_session") === "active";
+  },
+  authenticate() {
+    const p = prompt("Enter Admin Password:");
+    if (p === this.PASS) {
+      sessionStorage.setItem("mn_admin_session", "active");
+      return true;
+    }
+    alert("Incorrect password.");
+    return false;
+  },
+  require() {
+    if (!this.check()) {
+      if (this.authenticate()) {
+        window.location.reload();
+      } else {
+        window.location.href = "index.html";
+      }
+    }
   }
 };
 

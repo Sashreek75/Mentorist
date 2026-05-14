@@ -315,15 +315,9 @@
 
   <script src="shared.js"></script>
   <script>
-    // Public access for Founder Dashboard (Read-only for non-admins)
+    AdminAuth.require();
+    const isAdmin = AdminAuth.check();
     const user = Auth.getUser();
-    const isAdmin = user && (
-      user.role === 'admin' || 
-      user.email.endsWith('@mentorist.org') || 
-      user.email.includes('admin') || 
-      user.email.includes('sashreek') || 
-      user.email.includes('founder')
-    );
 
     let lastAction = null;
 
