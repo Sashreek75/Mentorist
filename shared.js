@@ -5,8 +5,63 @@
 
 const CONFIG = {
   GOOGLE_CLIENT_ID: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
-  MENTOR_FORM_URL:  "https://forms.gle/JzCzRqB4PmBnqvzA8"
+  MENTOR_FORM_URL:  "https://forms.gle/JzCzRqB4PmBnqvzA8",
+  SUPABASE_URL: "https://vmuukfegnjotlgvdqfrx.supabase.co",
+  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtdXVrZmVnbmpvdGxndmRxZnJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTY2MzYsImV4cCI6MjA5NDUzMjYzNn0.FswR9i0EgMZ5UPs8NpE-es4i3HonKQXilqBPA0ulT3Q"
 };
+
+const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+
+// Handle Supabase Auth State globally
+supabase.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_IN' && session) {
+    let user = session.user;
+    let role = user.user_metadata.role;
+    let pendingRole = localStorage.getItem('pendingRole');
+    
+    // First time login via signup (role not set in DB yet)
+    if (!role && pendingRole) {
+      const { data } = await supabase.auth.updateUser({
+        data: { role: pendingRole, status: pendingRole === 'mentor' ? 'pending' : 'active', onboarded: pendingRole === 'admin' }
+      });
+      user = data.user;
+      localStorage.removeItem('pendingRole');
+    }
+    
+    // Admin override check
+    if (user.email.endsWith('@mentorist.org') || user.email.startsWith('admin')) {
+        const { data } = await supabase.auth.updateUser({ data: { role: 'admin', onboarded: true, status: 'active' }});
+        user = data.user;
+    }
+
+    // Fallback
+    if (!user.user_metadata.role) {
+       const { data } = await supabase.auth.updateUser({ data: { role: 'student', status: 'active', onboarded: false }});
+       user = data.user;
+    }
+
+    const appUser = {
+      email: user.email,
+      name: user.user_metadata.full_name || user.user_metadata.name || "User",
+      role: user.user_metadata.role || 'student',
+      status: user.user_metadata.status || 'active',
+      onboarded: user.user_metadata.onboarded || false
+    };
+    
+    Auth.setUser(appUser);
+    UserStore.addOrUpdate(appUser); // Sync local store for UI purposes temporarily
+    
+    // Auto-route only if we are currently on the auth page
+    if (window.location.pathname.includes('auth.html')) {
+        Auth.routeAfterLogin(appUser);
+    }
+  } else if (event === 'SIGNED_OUT') {
+    localStorage.removeItem("mn_user");
+    if (!window.location.pathname.includes('index.html') && !window.location.pathname.includes('auth.html')) {
+        window.location.href = "index.html";
+    }
+  }
+});
 
 /* ===== AUTH ===== */
 const Auth = {
@@ -22,11 +77,9 @@ const Auth = {
     UserStore.addOrUpdate(nu);
   },
   isLoggedIn() { return !!this.getUser(); },
-  logout() {
+  async logout() {
     if(!confirm("Are you sure you want to log out?")) return;
-    localStorage.removeItem("mn_user");
-    sessionStorage.removeItem('mn_suppress_redirect');
-    window.location.href = "index.html";
+    await supabase.auth.signOut();
   },
   requireAuth() {
     const u = this.getUser();
@@ -222,23 +275,24 @@ const Utils = {
   }
 };
 
-/* ===== GOOGLE AUTH PLACEHOLDER ===== */
+/* ===== GOOGLE AUTH VIA SUPABASE ===== */
 const GoogleAuth = {
-  init(btn, onSuccess) {
+  init(btn, isSignup = false) {
     if (!btn) return;
-    btn.addEventListener("click", () => this.simulate(onSuccess));
-  },
-  simulate(onSuccess) {
-    /*
-      PRODUCTION: Replace with Google Identity Services:
-      google.accounts.id.initialize({ client_id: CONFIG.GOOGLE_CLIENT_ID, callback: ... });
-      google.accounts.id.prompt();
-    */
-    const name = prompt("(Demo) Enter your name:");
-    if (!name || !name.trim()) return;
-    const email = prompt("(Demo) Enter your email:");
-    if (!email || !email.trim()) return;
-    onSuccess({ name: name.trim(), email: email.trim().toLowerCase() });
+    btn.addEventListener("click", async () => {
+      if (isSignup) {
+        // Save selected role before redirecting out to Google
+        const roleCard = document.querySelector('.role-card.selected');
+        if (roleCard) localStorage.setItem('pendingRole', roleCard.dataset.role);
+      }
+      
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + window.location.pathname
+        }
+      });
+    });
   }
 };
 

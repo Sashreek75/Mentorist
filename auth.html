@@ -178,6 +178,7 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="shared.js"></script>
 <script>
   let selRole='student';
@@ -198,71 +199,54 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
       :'<strong>Students</strong> get free access to human mentors for advice on course planning, GPA strategy, and building a narrative.';
   }
 
-  GoogleAuth.init(document.getElementById('signupGoogleBtn'),(u)=>{
-    let role = selRole;
-    if (u.email.endsWith('@mentorist.org') || u.email.startsWith('admin')) role = 'admin';
-    Auth.setUser({name:u.name,email:u.email,role:role,onboarded:role==='admin',status:role==='mentor'?'pending':'active',createdAt:new Date().toISOString()});
-    Auth.routeAfterLogin(Auth.getUser());
-  });
-  GoogleAuth.init(document.getElementById('loginGoogleBtn'),(u)=>{
-    let ex=Auth.getUser();
-    if(!ex || ex.email!==u.email){
-      const all = UserStore.getAll();
-      const existing = all.find(x => x.email === u.email);
-      if (existing) {
-        Auth.setUser(existing);
-        Auth.routeAfterLogin(existing);
-      } else {
-        let role = 'student';
-        if (u.email.endsWith('@mentorist.org')) role = 'admin';
-        Auth.setUser({name:u.name,email:u.email,role:role,onboarded:role==='admin',status:'active',createdAt:new Date().toISOString()});
-        Auth.routeAfterLogin(Auth.getUser());
-      }
-    } else { Auth.routeAfterLogin(ex); }
-  });
+  GoogleAuth.init(document.getElementById('signupGoogleBtn'), true);
+  GoogleAuth.init(document.getElementById('loginGoogleBtn'), false);
 
-  function handleEmailSignup(){
+  async function handleEmailSignup(){
     const name = document.getElementById('signupName').value.trim();
     const email = document.getElementById('signupEmail').value.trim().toLowerCase();
     const pass = document.getElementById('signupPassword').value;
     if(!name || !email || !pass) { Utils.toast('Please fill out all fields.', 'error'); return; }
     
     let role = selRole;
-    if (email === 'admin@mentorist.org' || email.startsWith('admin')) role = 'admin';
+    if (email.endsWith('@mentorist.org') || email.startsWith('admin')) role = 'admin';
     
-    const all = UserStore.getAll();
-    if (all.find(x => x.email === email)) {
-      Utils.toast('An account with this email already exists.', 'error');
-      return;
-    }
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: pass,
+      options: {
+        data: {
+          full_name: name,
+          role: role,
+          status: role === 'mentor' ? 'pending' : 'active',
+          onboarded: role === 'admin'
+        }
+      }
+    });
 
-    const newUser = {name, email, role, onboarded:role==='admin', status:role==='mentor'?'pending':'active', createdAt:new Date().toISOString()};
-    Auth.setUser(newUser);
-    UserStore.addOrUpdate(newUser);
-    Auth.routeAfterLogin(newUser);
+    if (error) {
+      Utils.toast(error.message, 'error');
+    } else {
+      Utils.toast('Account created! Logging in...', 'success');
+      // The onAuthStateChange listener in shared.js automatically routes the user
+    }
   }
 
-  function handleEmailLogin(){
+  async function handleEmailLogin(){
     const email = document.getElementById('loginEmail').value.trim().toLowerCase();
     const pass = document.getElementById('loginPassword').value;
     if(!email || !pass) { Utils.toast('Please enter both email and password.', 'error'); return; }
     
-    if (email === 'admin@mentorist.org') {
-       const u = {name:'Admin Console',email:'admin@mentorist.org',role:'admin',onboarded:true,status:'active',createdAt:new Date().toISOString()};
-       Auth.setUser(u);
-       UserStore.addOrUpdate(u);
-       Auth.routeAfterLogin(u);
-       return;
-    }
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: pass
+    });
 
-    const all = UserStore.getAll();
-    const u = all.find(x => x.email === email);
-    if (!u) {
-       Utils.toast('Account not found. Please create an account first.', 'error');
-       return;
+    if (error) {
+      Utils.toast('Invalid login credentials.', 'error');
+    } else {
+      // The onAuthStateChange listener in shared.js automatically routes the user
     }
-    Auth.setUser(u);
-    Auth.routeAfterLogin(u);
   }
 </script>
 </body>
