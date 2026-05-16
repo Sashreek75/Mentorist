@@ -211,7 +211,7 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
     let role = selRole;
     if (email.endsWith('@mentorist.org') || email.startsWith('admin')) role = 'admin';
     
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await supabaseClient.auth.signUp({
       email,
       password: pass,
       options: {
@@ -237,7 +237,7 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
     const pass = document.getElementById('loginPassword').value;
     if(!email || !pass) { Utils.toast('Please enter both email and password.', 'error'); return; }
     
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
       email,
       password: pass
     });

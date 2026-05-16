@@ -10,10 +10,10 @@ const CONFIG = {
   SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtdXVrZmVnbmpvdGxndmRxZnJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTY2MzYsImV4cCI6MjA5NDUzMjYzNn0.FswR9i0EgMZ5UPs8NpE-es4i3HonKQXilqBPA0ulT3Q"
 };
 
-const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+const supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
 
 // Handle Supabase Auth State globally
-supabase.auth.onAuthStateChange(async (event, session) => {
+supabaseClient.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session) {
     let user = session.user;
     let role = user.user_metadata.role;
@@ -21,7 +21,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     
     // First time login via signup (role not set in DB yet)
     if (!role && pendingRole) {
-      const { data } = await supabase.auth.updateUser({
+      const { data } = await supabaseClient.auth.updateUser({
         data: { role: pendingRole, status: pendingRole === 'mentor' ? 'pending' : 'active', onboarded: pendingRole === 'admin' }
       });
       user = data.user;
@@ -30,13 +30,13 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     
     // Admin override check
     if (user.email.endsWith('@mentorist.org') || user.email.startsWith('admin')) {
-        const { data } = await supabase.auth.updateUser({ data: { role: 'admin', onboarded: true, status: 'active' }});
+        const { data } = await supabaseClient.auth.updateUser({ data: { role: 'admin', onboarded: true, status: 'active' }});
         user = data.user;
     }
 
     // Fallback
     if (!user.user_metadata.role) {
-       const { data } = await supabase.auth.updateUser({ data: { role: 'student', status: 'active', onboarded: false }});
+       const { data } = await supabaseClient.auth.updateUser({ data: { role: 'student', status: 'active', onboarded: false }});
        user = data.user;
     }
 
@@ -79,7 +79,7 @@ const Auth = {
   isLoggedIn() { return !!this.getUser(); },
   async logout() {
     if(!confirm("Are you sure you want to log out?")) return;
-    await supabase.auth.signOut();
+    await supabaseClient.auth.signOut();
   },
   requireAuth() {
     const u = this.getUser();
@@ -286,7 +286,7 @@ const GoogleAuth = {
         if (roleCard) localStorage.setItem('pendingRole', roleCard.dataset.role);
       }
       
-      await supabase.auth.signInWithOAuth({
+      await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin + window.location.pathname
