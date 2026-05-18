@@ -529,6 +529,8 @@
       const studentCount = users.filter(u => u.role === 'student').length;
       const mentorCount = users.filter(u => u.role === 'mentor').length;
       const activeMentors = users.filter(u => u.role === 'mentor' && u.status === 'active').length;
+      const pendingMentors = users.filter(u => u.role === 'mentor' && u.status === 'pending').length;
+      const rejectedMentors = users.filter(u => u.role === 'mentor' && u.status === 'rejected').length;
       const totalQuestions = qs.length;
       const answeredQuestions = qs.filter(q => q.answers && q.answers.length > 0).length;
       
@@ -545,6 +547,14 @@
         <div class="stat-card">
           <div class="stat-val">${activeMentors}</div>
           <div class="stat-label">Active Guidance</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">${pendingMentors}</div>
+          <div class="stat-label">Mentor Reviews</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">${rejectedMentors}</div>
+          <div class="stat-label">Rejected Mentors</div>
         </div>
         <div class="stat-card">
           <div class="stat-val">${totalQuestions}</div>
@@ -587,7 +597,7 @@
         return;
       }
 
-      let html = '<table><thead><tr><th>Broadcast</th><th>Author</th><th>Date</th>${isAdmin ? "<th>Actions</th>" : ""}</tr></thead><tbody>';
+      let html = `<table><thead><tr><th>Broadcast</th><th>Author</th><th>Date</th>${isAdmin ? '<th>Actions</th>' : ''}</tr></thead><tbody>`;
       als.forEach(a => {
         html += `<tr>
           <td>

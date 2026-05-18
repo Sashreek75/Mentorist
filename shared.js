@@ -12,11 +12,18 @@ const CONFIG = {
 
 const supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
 
+function inferRoleFromEmail(email = "") {
+  const lower = String(email).toLowerCase();
+  if (lower.endsWith("@mentorist.org") || lower.startsWith("admin")) return "admin";
+  return "student";
+}
+
 // Handle Supabase Auth State globally
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session) {
     let user = session.user;
-    let role = user.user_metadata.role;
+    const metadata = user.user_metadata || {};
+    let role = metadata.role;
     let pendingRole = localStorage.getItem('pendingRole');
     
     // First time login via signup (role not set in DB yet)
@@ -35,18 +42,12 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     }
 
     // Fallback
-    if (!user.user_metadata.role) {
+    if (!user.user_metadata?.role) {
        const { data } = await supabaseClient.auth.updateUser({ data: { role: 'student', status: 'active', onboarded: false }});
        user = data.user;
     }
 
-    const appUser = {
-      email: user.email,
-      name: user.user_metadata.full_name || user.user_metadata.name || "User",
-      role: user.user_metadata.role || 'student',
-      status: user.user_metadata.status || 'active',
-      onboarded: user.user_metadata.onboarded || false
-    };
+    const appUser = Auth.fromSupabaseUser(user);
     
     Auth.setUser(appUser);
     UserStore.addOrUpdate(appUser); // Sync local store for UI purposes temporarily
@@ -65,6 +66,17 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
 
 /* ===== AUTH ===== */
 const Auth = {
+  fromSupabaseUser(user) {
+    const metadata = user?.user_metadata || {};
+    const role = metadata.role || inferRoleFromEmail(user?.email);
+    return {
+      email: user?.email || "",
+      name: metadata.full_name || metadata.name || user?.email?.split("@")[0] || "User",
+      role,
+      status: metadata.status || (role === "mentor" ? "pending" : "active"),
+      onboarded: metadata.onboarded ?? role === "admin"
+    };
+  },
   getUser() {
     try { const r = localStorage.getItem("mn_user"); return r ? JSON.parse(r) : null; }
     catch { return null; }
@@ -488,4 +500,4 @@ const GlobalBroadcast = {
     }
   }
 };
-
+
