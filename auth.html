@@ -211,24 +211,29 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
     let role = selRole;
     if (email.endsWith('@mentorist.org') || email.startsWith('admin')) role = 'admin';
     
-    const { data, error } = await supabaseClient.auth.signUp({
-      email,
-      password: pass,
-      options: {
-        data: {
-          full_name: name,
-          role: role,
-          status: role === 'mentor' ? 'pending' : 'active',
-          onboarded: role === 'admin'
+    try {
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password: pass,
+        options: {
+          data: {
+            full_name: name,
+            role: role,
+            status: role === 'mentor' ? 'pending' : 'active',
+            onboarded: role === 'admin'
+          }
         }
-      }
-    });
+      });
 
-    if (error) {
-      Utils.toast(error.message, 'error');
-    } else {
-      Utils.toast('Account created! Logging in...', 'success');
-      // The onAuthStateChange listener in shared.js automatically routes the user
+      if (error) {
+        Utils.toast(error.message, 'error');
+      } else if (data && data.user && !data.session) {
+        Utils.toast('Account created! Please check your email to confirm your account.', 'info');
+      } else {
+        Utils.toast('Account created! Logging in...', 'success');
+      }
+    } catch (err) {
+      Utils.toast(err.message || 'An unexpected error occurred during signup.', 'error');
     }
   }
 
@@ -237,15 +242,17 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
     const pass = document.getElementById('loginPassword').value;
     if(!email || !pass) { Utils.toast('Please enter both email and password.', 'error'); return; }
     
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-      email,
-      password: pass
-    });
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password: pass
+      });
 
-    if (error) {
-      Utils.toast('Invalid login credentials.', 'error');
-    } else {
-      // The onAuthStateChange listener in shared.js automatically routes the user
+      if (error) {
+        Utils.toast(error.message || 'Invalid login credentials.', 'error');
+      }
+    } catch (err) {
+      Utils.toast(err.message || 'An unexpected error occurred during login.', 'error');
     }
   }
 </script>
