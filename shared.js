@@ -69,13 +69,40 @@ const Auth = {
   fromSupabaseUser(user) {
     const metadata = user?.user_metadata || {};
     const role = metadata.role || inferRoleFromEmail(user?.email);
+    const stored = UserStore.getByEmail(user?.email);
     return {
       email: user?.email || "",
-      name: metadata.full_name || metadata.name || user?.email?.split("@")[0] || "User",
-      role,
-      status: metadata.status || (role === "mentor" ? "pending" : "active"),
-      onboarded: metadata.onboarded ?? role === "admin"
+      name: stored?.name || metadata.full_name || metadata.name || user?.email?.split("@")[0] || "User",
+      role: stored?.role || role,
+      status: stored?.status || metadata.status || (role === "mentor" ? "pending" : "active"),
+      onboarded: stored?.onboarded ?? metadata.onboarded ?? role === "admin",
+      profile: stored?.profile ?? metadata.profile,
+      applicationData: stored?.applicationData ?? metadata.applicationData,
+      rejectedAt: stored?.rejectedAt ?? metadata.rejectedAt ?? null
     };
+  },
+  syncCurrentUserFromStore(email) {
+    const current = this.getUser();
+    const targetEmail = email || current?.email;
+    if (!targetEmail) return null;
+
+    const stored = UserStore.getByEmail(targetEmail);
+    if (!stored) return current;
+
+    const merged = this.normalizeUser({ ...(current || {}), ...stored });
+    this.setUser(merged);
+    return merged;
+  },
+  normalizeUser(user) {
+    if (!user) return null;
+    const role = user.role || inferRoleFromEmail(user.email);
+    const merged = {
+      ...user,
+      role: user.email ? (user.email.endsWith('@mentorist.org') || user.email.startsWith('admin') ? 'admin' : role) : role,
+      status: user.status || (role === "mentor" ? "pending" : "active"),
+      onboarded: user.onboarded ?? role === "admin"
+    };
+    return merged;
   },
   getUser() {
     try { const r = localStorage.getItem("mn_user"); return r ? JSON.parse(r) : null; }
@@ -100,6 +127,8 @@ const Auth = {
   },
   routeAfterLogin(user) {
     if (!user) { window.location.href = "auth.html"; return; }
+    
+    user = this.normalizeUser(this.syncCurrentUserFromStore(user.email) || user);
     
     // Ensure user is in UserStore
     UserStore.addOrUpdate(user);
@@ -136,6 +165,10 @@ const UserStore = {
     try { const r = localStorage.getItem("mn_all_users"); return r ? JSON.parse(r) : []; }
     catch { return []; }
   },
+  getByEmail(email) {
+    if (!email) return null;
+    return this.getAll().find(u => u.email === email) || null;
+  },
   save(users) { localStorage.setItem("mn_all_users", JSON.stringify(users)); },
   addOrUpdate(user) {
     const users = this.getAll();
@@ -158,7 +191,10 @@ const UserStore = {
       this.save(users);
       const curr = Auth.getUser();
       if (curr && curr.email === email) {
-        Auth.setUser({ ...curr, ...fields });
+        const synced = Auth.syncCurrentUserFromStore(email);
+        if (synced && window.location.pathname.includes('mentorapplication.html') && synced.role === 'mentor' && synced.status === 'active') {
+          Auth.routeAfterLogin(synced);
+        }
       }
     }
   }
@@ -424,6 +460,20 @@ const MobileNav = {
 document.addEventListener('DOMContentLoaded', () => {
   MobileNav.init();
   GlobalBroadcast.init();
+});
+
+window.addEventListener('storage', (event) => {
+  if (event.key !== 'mn_all_users') return;
+  const current = Auth.getUser();
+  if (!current?.email) return;
+  const refreshed = Auth.syncCurrentUserFromStore(current.email);
+  if (!refreshed) return;
+  if (window.location.pathname.includes('mentorapplication.html') && refreshed.role === 'mentor' && refreshed.status === 'active') {
+    Auth.routeAfterLogin(refreshed);
+  }
+  if (window.location.pathname.includes('auth.html') && refreshed.status) {
+    Auth.routeAfterLogin(refreshed);
+  }
 });
 
 /* ===== GLOBAL BROADCAST SYSTEM ===== */

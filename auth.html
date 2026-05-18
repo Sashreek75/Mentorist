@@ -314,17 +314,18 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
   }
 
   function loginLocally(localUser) {
-    let role = localUser.role || 'student';
+    const existing = UserStore.getByEmail(localUser.email);
+    let role = existing?.role || localUser.role || 'student';
     if (localUser.email.endsWith('@mentorist.org') || localUser.email.startsWith('admin')) {
       role = 'admin';
     }
 
     const appUser = makeAppUser(
       localUser.email,
-      localUser.name || "Sandbox User",
+      existing?.name || localUser.name || "Sandbox User",
       role,
-      role === 'mentor' ? 'pending' : 'active',
-      role === 'admin'
+      existing?.status || (role === 'mentor' ? 'pending' : 'active'),
+      existing?.onboarded ?? role === 'admin'
     );
 
     finishLocalLogin(appUser, 'Logged in successfully via Local Sandbox Mode!');
