@@ -9,7 +9,8 @@ const CONFIG = {
   SUPABASE_URL: "https://vmuukfegnjotlgvdqfrx.supabase.co",
   SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtdXVrZmVnbmpvdGxndmRxZnJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTY2MzYsImV4cCI6MjA5NDUzMjYzNn0.FswR9i0EgMZ5UPs8NpE-es4i3HonKQXilqBPA0ulT3Q",
   TABLES: {
-    users: "mentorist_profiles"
+    users: "mentorist_profiles",
+    questions: "mentorist_questions"
   }
 };
 
@@ -63,6 +64,40 @@ function fromRemoteUser(row) {
     approvedAt: row.approved_at || row.approvedAt || null,
     rejectedAt: row.rejected_at || row.rejectedAt || null,
     lastSeenAt: row.last_seen_at || row.lastSeenAt || null,
+    updatedAt: row.updated_at || row.updatedAt || null
+  };
+}
+
+function toRemoteQuestion(q) {
+  if (!q?.id) return null;
+  return cleanObject({
+    id: q.id,
+    student_email: q.studentEmail || null,
+    student_name: q.studentName || null,
+    student_profile: q.studentProfile || null,
+    topics: q.topics || [],
+    question: q.question || "",
+    context: q.context || null,
+    answers: q.answers || [],
+    status: q.status || "pending",
+    created_at: q.createdAt || new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  });
+}
+
+function fromRemoteQuestion(row) {
+  if (!row?.id) return null;
+  return {
+    id: row.id,
+    studentEmail: row.student_email || row.studentEmail || "",
+    studentName: row.student_name || row.studentName || "",
+    studentProfile: row.student_profile || row.studentProfile || {},
+    topics: row.topics || [],
+    question: row.question || "",
+    context: row.context || null,
+    answers: row.answers || [],
+    status: row.status || "pending",
+    createdAt: row.created_at || row.createdAt || new Date().toISOString(),
     updatedAt: row.updated_at || row.updatedAt || null
   };
 }
@@ -245,8 +280,14 @@ const UserStore = {
         .order("updated_at", { ascending: false });
       if (error) throw error;
       const remoteUsers = (data || []).map(fromRemoteUser).filter(Boolean);
-      const merged = mergeUsersByEmail([...this.getAll(), ...remoteUsers]);
+      const localUsers = this.getAll();
+      const merged = mergeUsersByEmail([...localUsers, ...remoteUsers]);
       this.save(merged);
+      for (const localUser of localUsers) {
+        if (localUser?.email && !remoteUsers.some(remote => remote.email === localUser.email)) {
+          void this.persistRemote(localUser);
+        }
+      }
       return merged;
     } catch (err) {
       console.warn("Mentorist remote sync unavailable, using local cache.", err?.message || err);
@@ -312,14 +353,62 @@ const QuestionStore = {
     catch { return []; }
   },
   save(qs) { localStorage.setItem("mn_questions", JSON.stringify(qs)); },
+  async refreshFromRemote() {
+    try {
+      const { data, error } = await supabaseClient
+        .from(CONFIG.TABLES.questions)
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      const remoteQuestions = (data || []).map(fromRemoteQuestion).filter(Boolean);
+      const local = this.getAll();
+      const merged = [...remoteQuestions];
+      for (const q of local) {
+        if (!merged.some(r => r.id === q.id)) merged.push(q);
+      }
+      this.save(merged);
+      for (const localQuestion of local) {
+        if (localQuestion?.id && !remoteQuestions.some(remote => remote.id === localQuestion.id)) {
+          void this.persistRemote(localQuestion);
+        }
+      }
+      return merged;
+    } catch (err) {
+      console.warn("Mentorist remote question sync unavailable, using local cache.", err?.message || err);
+      return this.getAll();
+    }
+  },
+  async persistRemote(question) {
+    const row = toRemoteQuestion(question);
+    if (!row) return;
+    try {
+      const { error } = await supabaseClient
+        .from(CONFIG.TABLES.questions)
+        .upsert(row, { onConflict: "id" });
+      if (error) throw error;
+    } catch (err) {
+      console.warn("Unable to persist Mentorist question remotely.", err?.message || err);
+    }
+  },
   add(q) {
     const qs = this.getAll();
-    const nq = { id: "q_" + Date.now(), ...q, createdAt: new Date().toISOString(), status: "pending", answers: [] };
+    const nq = {
+      id: `q_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      ...q,
+      studentEmail: q.studentEmail ? String(q.studentEmail).toLowerCase() : q.studentEmail,
+      createdAt: new Date().toISOString(),
+      status: "pending",
+      answers: []
+    };
     qs.unshift(nq);
     this.save(qs);
+    void this.persistRemote(nq);
     return nq;
   },
-  getForStudent(email) { return this.getAll().filter(q => q.studentEmail === email); },
+  getForStudent(email) {
+    const target = String(email || '').toLowerCase();
+    return this.getAll().filter(q => String(q.studentEmail || '').toLowerCase() === target);
+  },
   addAnswer(questionId, answer) {
     const qs = this.getAll();
     const q = qs.find(x => x.id === questionId);
@@ -328,11 +417,13 @@ const QuestionStore = {
       q.answers.push({ ...answer, createdAt: new Date().toISOString() });
       q.status = 'answered';
       this.save(qs);
+      void this.persistRemote(q);
     }
   },
   delete(id) {
     const qs = this.getAll().filter(q => q.id !== id);
     this.save(qs);
+    void supabaseClient.from(CONFIG.TABLES.questions).delete().eq('id', id);
   },
   deleteAnswer(questionId, aIdx) {
     const qs = this.getAll();
@@ -343,6 +434,7 @@ const QuestionStore = {
         q.status = 'pending';
       }
       this.save(qs);
+      void this.persistRemote(q);
     }
   }
 };
@@ -568,15 +660,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const needsRemoteSync = /admin\.html|mentor-review\.html|mentorapplication\.html|studentdashboard\.html|mentordashboard\.html|onboarding\.html|vault\.html/.test(window.location.pathname);
   if (needsRemoteSync) {
     UserStore.refreshFromRemote().then(() => {
-      if (typeof window.refreshMentoristState === 'function') {
-        window.refreshMentoristState();
-      }
-    });
-    setInterval(() => {
-      UserStore.refreshFromRemote().then(() => {
+      QuestionStore.refreshFromRemote().finally(() => {
         if (typeof window.refreshMentoristState === 'function') {
           window.refreshMentoristState();
         }
+      });
+    });
+    setInterval(() => {
+      UserStore.refreshFromRemote().then(() => {
+        QuestionStore.refreshFromRemote().finally(() => {
+          if (typeof window.refreshMentoristState === 'function') {
+            window.refreshMentoristState();
+          }
+        });
       });
     }, 5000);
   }
@@ -591,10 +687,21 @@ window.refreshMentoristState = function(email) {
     if (typeof window.render === 'function') window.render();
     if (typeof window.renderStats === 'function') window.renderStats();
     if (typeof window.renderAlerts === 'function') window.renderAlerts();
+    if (typeof window.renderQuestions === 'function') window.renderQuestions();
   }
 
   if (window.location.pathname.includes('mentor-review.html') && typeof window.renderQueue === 'function') {
     window.renderQueue();
+  }
+
+  if (window.location.pathname.includes('studentdashboard.html')) {
+    if (typeof window.refreshFeed === 'function') window.refreshFeed();
+    if (typeof window.renderAlerts === 'function') window.renderAlerts();
+  }
+
+  if (window.location.pathname.includes('mentordashboard.html')) {
+    if (typeof window.render === 'function') window.render();
+    if (typeof window.renderAlerts === 'function') window.renderAlerts();
   }
 
   if (window.location.pathname.includes('mentorapplication.html') && refreshed && refreshed.role === 'mentor' && refreshed.status === 'active') {

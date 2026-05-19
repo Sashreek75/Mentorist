@@ -325,7 +325,7 @@ body{background:var(--bg);}
     render();
   }
 
-  init();
+  Promise.all([UserStore.refreshFromRemote(), QuestionStore.refreshFromRemote()]).then(init);
 </script>
 </body>
 </html>

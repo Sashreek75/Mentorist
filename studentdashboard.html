@@ -375,6 +375,7 @@ body{background:var(--bg);}
     if(q && q.answers[aIdx]) {
       q.answers[aIdx].helpful = true;
       QuestionStore.save(qs);
+      void QuestionStore.persistRemote(q);
       btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2.5" style="width:14px; margin-right:4px;"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> Helpful`;
       btn.style.color = 'var(--green)';
       Utils.toast('Mentor notified of your appreciation.', 'success');
@@ -392,7 +393,7 @@ body{background:var(--bg);}
   const nav = document.getElementById('nav');
   window.addEventListener('scroll', ()=>nav.classList.toggle('scrolled', scrollY>60), {passive:true});
 
-  init();
+  Promise.all([UserStore.refreshFromRemote(), QuestionStore.refreshFromRemote()]).then(init);
 </script>
 </body>
 </html>

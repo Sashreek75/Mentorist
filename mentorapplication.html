@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Mentor Application — Mentorist</title>
+  <title>Mentor Application - Mentorist</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="stylesheet" href="shared.css">
   <style>
@@ -141,8 +141,7 @@
   <div class="app-layout">
     <div class="app-header reveal">
       <h1 class="app-title">Apply as a Mentor</h1>
-      <p class="app-sub">We review every mentor application manually to ensure all strategic guidance remains
-        high-quality and verified.</p>
+      <p class="app-sub">We review every mentor application manually to ensure all strategic guidance remains high-quality and verified.</p>
     </div>
 
     <main class="app-card stagger" id="applicationMain">
@@ -151,13 +150,11 @@
           <div class="pn-icon">🕒</div>
           <div class="pn-text">
             <h4>Review Policy</h4>
-            <p>After you submit the form below, our team will review your qualifications. You will receive an approval
-              notification within 48 hours. Once approved, you can access the Mentor Dashboard.</p>
+            <p>After you submit the form below, our team will review your qualifications. You will receive an approval notification within 48 hours. Once approved, you can access the Mentor Dashboard.</p>
           </div>
         </div>
       </div>
 
-      <!-- APPLICATION VISUAL & CALL TO ACTION -->
       <div class="form-visual-wrap">
         <img src="mentor_application_visual.png" alt="Mentorship Path">
       </div>
@@ -167,7 +164,7 @@
         <p style="color:var(--t3); font-size:15px; margin-bottom:32px;">
           Complete the official Mentorist Application. This ensures we have all the data needed for your review.
         </p>
-        
+
         <div id="appForm">
           <div class="form-group">
             <label class="form-label" for="appUniversity">University / College</label>
@@ -192,55 +189,80 @@
       </div>
 
       <div style="margin-top:40px; text-align:center;">
-        <p style="font-size:13px; color:var(--t4); margin-bottom:20px;">Already submitted? We're processing your
-          application now.</p>
+        <p style="font-size:13px; color:var(--t4); margin-bottom:20px;">Already submitted? We're processing your application now.</p>
         <button class="btn btn-secondary" onclick="checkStatus()">Check My Status</button>
       </div>
     </main>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="shared.js"></script>
+  <script src="shared.js"></script>
   <script>
-    const user = Auth.requireAuth();
-    if (!user || user.role !== 'mentor') { window.location.href = 'index.html'; }
-    if (user.status === 'active') { Auth.routeAfterLogin(user); }
+    let currentUser = Auth.requireAuth();
 
-    // Rejection handling
-    if (user.status === 'rejected') {
-      const rejectedAt = new Date(user.rejectedAt);
-      const now = new Date();
-      const diffHrs = (now - rejectedAt) / (1000 * 60 * 60);
+    function syncApplicationView() {
+      currentUser = Auth.syncCurrentUserFromStore(currentUser?.email) || Auth.getUser() || currentUser;
+      currentUser = Auth.normalizeUser(currentUser);
 
-      if (diffHrs < 24) {
-        document.getElementById('noticeContainer').innerHTML = `
-          <div class="rejected-notice">
-            <div class="pn-icon">🛑</div>
-            <div class="pn-text">
-              <h4>Application Rejected</h4>
-              <p>Your application was not approved at this time. To maintain quality standards, you cannot re-apply for 24 hours.</p>
+      if (!currentUser) {
+        window.location.href = 'auth.html';
+        return false;
+      }
+
+      if (currentUser.role !== 'mentor') {
+        window.location.href = 'index.html';
+        return false;
+      }
+
+      if (currentUser.status === 'active') {
+        Auth.routeAfterLogin(currentUser);
+        return false;
+      }
+
+      if (currentUser.status === 'rejected' && currentUser.rejectedAt) {
+        const rejectedAt = new Date(currentUser.rejectedAt);
+        const diffHrs = (new Date() - rejectedAt) / (1000 * 60 * 60);
+
+        if (diffHrs < 24) {
+          document.getElementById('noticeContainer').innerHTML = `
+            <div class="rejected-notice">
+              <div class="pn-icon">🚫</div>
+              <div class="pn-text">
+                <h4>Application Rejected</h4>
+                <p>Your application was not approved at this time. To maintain quality standards, you cannot re-apply for 24 hours.</p>
+              </div>
             </div>
-          </div>
-        `;
-        document.getElementById('ctaSection').innerHTML = `
-          <div style="padding:48px 24px; background:var(--bg-2); border-radius:var(--r-xl); border:1px solid var(--b1);">
-            <p style="color:var(--t4); font-size:14px; margin-bottom:12px; font-weight:600;">COOLDOWN IN EFFECT</p>
-            <p style="color:var(--t2); font-size:15px;">Please check back tomorrow to re-initiate your application.</p>
-          </div>
-        `;
-      } else {
-        // More than 24 hours? Let them try again?
-        // Actually, status is still rejected. We should probably reset it to pending if they try again.
-        // For now, just show the normal view but maybe with a note.
+          `;
+          document.getElementById('ctaSection').innerHTML = `
+            <div style="padding:48px 24px; background:var(--bg-2); border-radius:var(--r-xl); border:1px solid var(--b1);">
+              <p style="color:var(--t4); font-size:14px; margin-bottom:12px; font-weight:600;">COOLDOWN IN EFFECT</p>
+              <p style="color:var(--t2); font-size:15px;">Please check back tomorrow to re-initiate your application.</p>
+            </div>
+          `;
+          return false;
+        }
+
         Utils.toast('Your rejection cooldown has expired. You may re-apply.', 'info');
       }
+
+      if (currentUser.appliedAt || currentUser.status === 'pending') {
+        document.getElementById('appForm').style.display = 'none';
+        document.getElementById('appSuccess').style.display = 'block';
+      }
+
+      return true;
     }
 
     function checkStatus() {
-      if (user.status === 'rejected') {
+      const fresh = Auth.syncCurrentUserFromStore(currentUser?.email) || Auth.getUser() || currentUser;
+      if (fresh?.status === 'rejected') {
         Utils.toast('Your previous application was rejected. See the notice above.', 'error');
-      } else {
+      } else if (fresh?.status === 'pending') {
         Utils.toast('Your application is still under review. Check back soon!', 'info');
+      } else if (fresh?.status === 'active') {
+        Auth.routeAfterLogin(fresh);
+      } else {
+        Utils.toast('If you submitted an application, it will appear here once it is processed.', 'info');
       }
     }
 
@@ -248,35 +270,38 @@
       const uni = document.getElementById('appUniversity').value.trim();
       const major = document.getElementById('appMajor').value.trim();
       const exp = document.getElementById('appExperience').value.trim();
-      
-      if(!uni || !major || !exp) {
+
+      if (!uni || !major || !exp) {
         Utils.toast('Please fill out all fields.', 'error');
         return;
       }
-      
-      Auth.updateUser({ 
+
+      Auth.updateUser({
         role: 'mentor',
-        applicationData: { university: uni, major: major, experience: exp },
-        appliedAt: new Date().toISOString(),
         status: 'pending',
         onboarded: false,
-        rejectedAt: null
+        approvedAt: null,
+        rejectedAt: null,
+        appliedAt: new Date().toISOString(),
+        applicationData: {
+          university: uni,
+          major: major,
+          experience: exp
+        }
       });
+
+      currentUser = Auth.syncCurrentUserFromStore(currentUser?.email) || Auth.getUser() || currentUser;
       if (typeof window.refreshMentoristState === 'function') {
-        window.refreshMentoristState(user.email);
+        window.refreshMentoristState(currentUser?.email);
       }
-      
+
       document.getElementById('appForm').style.display = 'none';
       document.getElementById('appSuccess').style.display = 'block';
       Utils.toast('Application submitted successfully!', 'success');
+      syncApplicationView();
     }
 
-    if (user.appliedAt) {
-      const formEl = document.getElementById('appForm');
-      if (formEl) formEl.style.display = 'none';
-      const succEl = document.getElementById('appSuccess');
-      if (succEl) succEl.style.display = 'block';
-    }
+    Promise.resolve(UserStore.refreshFromRemote()).then(syncApplicationView);
   </script>
 </body>
 
