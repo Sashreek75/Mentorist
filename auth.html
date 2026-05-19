@@ -185,7 +185,9 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
   const p=new URLSearchParams(location.search);
   if(p.get('mode')==='login')showLogin();
   if(p.get('role')==='mentor')setTimeout(()=>document.querySelector('[data-role="mentor"]').click(),10);
-  if(Auth.isLoggedIn())Auth.routeAfterLogin(Auth.getUser());
+  Promise.resolve(UserStore.refreshFromRemote()).then(() => {
+    if (Auth.isLoggedIn()) Auth.routeAfterLogin(Auth.getUser());
+  });
 
   function showLogin(){document.getElementById('signupView').style.display='none';document.getElementById('loginView').style.display='block';}
   function showSignup(){document.getElementById('loginView').style.display='none';document.getElementById('signupView').style.display='block';}
@@ -230,9 +232,12 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
     Auth.setUser(appUser);
     UserStore.addOrUpdate(appUser);
     Utils.toast(message, 'success');
-    setTimeout(() => {
-      Auth.routeAfterLogin(appUser);
-    }, 300);
+    Promise.resolve(UserStore.refreshFromRemote()).then(() => {
+      const synced = Auth.syncCurrentUserFromStore(appUser.email) || appUser;
+      setTimeout(() => {
+        Auth.routeAfterLogin(synced);
+      }, 150);
+    });
   }
 
   async function handleEmailSignup(){

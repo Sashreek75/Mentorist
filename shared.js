@@ -657,7 +657,7 @@ const MobileNav = {
 document.addEventListener('DOMContentLoaded', () => {
   MobileNav.init();
   GlobalBroadcast.init();
-  const needsRemoteSync = /admin\.html|mentor-review\.html|mentorapplication\.html|studentdashboard\.html|mentordashboard\.html|onboarding\.html|vault\.html/.test(window.location.pathname);
+  const needsRemoteSync = /auth\.html|admin\.html|mentor-review\.html|mentorapplication\.html|studentdashboard\.html|mentordashboard\.html|onboarding\.html|vault\.html/.test(window.location.pathname);
   if (needsRemoteSync) {
     UserStore.refreshFromRemote().then(() => {
       QuestionStore.refreshFromRemote().finally(() => {
