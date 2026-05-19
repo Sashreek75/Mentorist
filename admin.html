@@ -433,6 +433,10 @@
       };
 
       const fields = { status: newStatus };
+      if (user.role === 'mentor') {
+        fields.onboarded = newStatus === 'active';
+        fields.approvedAt = newStatus === 'active' ? new Date().toISOString() : null;
+      }
       if (newStatus === 'rejected') {
         fields.rejectedAt = new Date().toISOString();
       } else {

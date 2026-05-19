@@ -297,6 +297,8 @@
     function handleReview(email, status, label) {
       UserStore.updateUserFields(email, { 
         status: status,
+        onboarded: status === 'active',
+        approvedAt: status === 'active' ? new Date().toISOString() : null,
         rejectedAt: status === 'rejected' ? new Date().toISOString() : null
       });
       Utils.toast(`Mentor ${label} successfully.`, 'success');

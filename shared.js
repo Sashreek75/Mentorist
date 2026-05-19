@@ -196,6 +196,9 @@ const UserStore = {
           Auth.routeAfterLogin(synced);
         }
       }
+      if (typeof window.refreshMentoristState === 'function') {
+        window.refreshMentoristState(email);
+      }
     }
   }
 };
@@ -462,18 +465,33 @@ document.addEventListener('DOMContentLoaded', () => {
   GlobalBroadcast.init();
 });
 
+window.refreshMentoristState = function(email) {
+  const current = Auth.getUser();
+  const targetEmail = email || current?.email;
+  const refreshed = targetEmail ? Auth.syncCurrentUserFromStore(targetEmail) : current;
+
+  if (window.location.pathname.includes('admin.html')) {
+    if (typeof window.render === 'function') window.render();
+    if (typeof window.renderStats === 'function') window.renderStats();
+    if (typeof window.renderAlerts === 'function') window.renderAlerts();
+  }
+
+  if (window.location.pathname.includes('mentor-review.html') && typeof window.renderQueue === 'function') {
+    window.renderQueue();
+  }
+
+  if (window.location.pathname.includes('mentorapplication.html') && refreshed && refreshed.role === 'mentor' && refreshed.status === 'active') {
+    Auth.routeAfterLogin(refreshed);
+  }
+
+  if (window.location.pathname.includes('auth.html') && refreshed) {
+    Auth.routeAfterLogin(refreshed);
+  }
+};
+
 window.addEventListener('storage', (event) => {
   if (event.key !== 'mn_all_users') return;
-  const current = Auth.getUser();
-  if (!current?.email) return;
-  const refreshed = Auth.syncCurrentUserFromStore(current.email);
-  if (!refreshed) return;
-  if (window.location.pathname.includes('mentorapplication.html') && refreshed.role === 'mentor' && refreshed.status === 'active') {
-    Auth.routeAfterLogin(refreshed);
-  }
-  if (window.location.pathname.includes('auth.html') && refreshed.status) {
-    Auth.routeAfterLogin(refreshed);
-  }
+  window.refreshMentoristState();
 });
 
 /* ===== GLOBAL BROADCAST SYSTEM ===== */
