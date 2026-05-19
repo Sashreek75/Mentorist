@@ -7,7 +7,10 @@ const CONFIG = {
   GOOGLE_CLIENT_ID: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
   MENTOR_FORM_URL:  "https://forms.gle/JzCzRqB4PmBnqvzA8",
   SUPABASE_URL: "https://vmuukfegnjotlgvdqfrx.supabase.co",
-  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtdXVrZmVnbmpvdGxndmRxZnJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTY2MzYsImV4cCI6MjA5NDUzMjYzNn0.FswR9i0EgMZ5UPs8NpE-es4i3HonKQXilqBPA0ulT3Q"
+  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtdXVrZmVnbmpvdGxndmRxZnJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTY2MzYsImV4cCI6MjA5NDUzMjYzNn0.FswR9i0EgMZ5UPs8NpE-es4i3HonKQXilqBPA0ulT3Q",
+  TABLES: {
+    users: "mentorist_profiles"
+  }
 };
 
 const supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
@@ -23,6 +26,64 @@ function isMentorApplicant(user) {
   return user.role === "mentor" || !!user.applicationData || !!user.appliedAt;
 }
 
+function cleanObject(obj) {
+  return Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined));
+}
+
+function toRemoteUser(user) {
+  if (!user?.email) return null;
+  const now = new Date().toISOString();
+  return cleanObject({
+    email: String(user.email).toLowerCase(),
+    name: user.name || null,
+    role: user.role || inferRoleFromEmail(user.email),
+    status: user.status || null,
+    onboarded: !!user.onboarded,
+    profile: user.profile || null,
+    application_data: user.applicationData || null,
+    applied_at: user.appliedAt || null,
+    approved_at: user.approvedAt || null,
+    rejected_at: user.rejectedAt || null,
+    last_seen_at: user.lastSeenAt || now,
+    updated_at: now
+  });
+}
+
+function fromRemoteUser(row) {
+  if (!row?.email) return null;
+  return {
+    email: String(row.email).toLowerCase(),
+    name: row.name || row.profile?.name || row.email.split("@")[0] || "User",
+    role: row.role || inferRoleFromEmail(row.email),
+    status: row.status || "active",
+    onboarded: row.onboarded ?? false,
+    profile: row.profile || null,
+    applicationData: row.application_data || row.applicationData || null,
+    appliedAt: row.applied_at || row.appliedAt || null,
+    approvedAt: row.approved_at || row.approvedAt || null,
+    rejectedAt: row.rejected_at || row.rejectedAt || null,
+    lastSeenAt: row.last_seen_at || row.lastSeenAt || null,
+    updatedAt: row.updated_at || row.updatedAt || null
+  };
+}
+
+function mergeUsersByEmail(users) {
+  const map = new Map();
+  for (const user of users.filter(Boolean)) {
+    const key = user.email?.toLowerCase();
+    if (!key) continue;
+    const curr = map.get(key);
+    if (!curr) {
+      map.set(key, user);
+      continue;
+    }
+    const currTime = new Date(curr.updatedAt || curr.lastSeenAt || 0).getTime();
+    const nextTime = new Date(user.updatedAt || user.lastSeenAt || 0).getTime();
+    map.set(key, nextTime >= currTime ? { ...curr, ...user } : { ...user, ...curr });
+  }
+  return [...map.values()];
+}
+
 // Handle Supabase Auth State globally
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session) {
@@ -30,6 +91,8 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     const metadata = user.user_metadata || {};
     let role = metadata.role;
     let pendingRole = localStorage.getItem('pendingRole');
+
+    await UserStore.refreshFromRemote();
     
     // First time login via signup (role not set in DB yet)
     if (!role && pendingRole) {
@@ -56,6 +119,7 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     
     Auth.setUser(appUser);
     UserStore.addOrUpdate(appUser); // Sync local store for UI purposes temporarily
+    void UserStore.persistRemote(appUser);
     
     // Auto-route only if we are currently on the auth page
     if (window.location.pathname.includes('auth.html')) {
@@ -118,7 +182,7 @@ const Auth = {
   setUser(u) { localStorage.setItem("mn_user", JSON.stringify(u)); },
   updateUser(patch) {
     const u = this.getUser(); if (!u) return;
-    const nu = { ...u, ...patch };
+    const nu = this.normalizeUser({ ...u, ...cleanObject(patch), updatedAt: new Date().toISOString() });
     this.setUser(nu);
     UserStore.addOrUpdate(nu);
   },
@@ -172,20 +236,50 @@ const UserStore = {
     try { const r = localStorage.getItem("mn_all_users"); return r ? JSON.parse(r) : []; }
     catch { return []; }
   },
+  save(users) { localStorage.setItem("mn_all_users", JSON.stringify(users)); },
+  async refreshFromRemote() {
+    try {
+      const { data, error } = await supabaseClient
+        .from(CONFIG.TABLES.users)
+        .select("*")
+        .order("updated_at", { ascending: false });
+      if (error) throw error;
+      const remoteUsers = (data || []).map(fromRemoteUser).filter(Boolean);
+      const merged = mergeUsersByEmail([...this.getAll(), ...remoteUsers]);
+      this.save(merged);
+      return merged;
+    } catch (err) {
+      console.warn("Mentorist remote sync unavailable, using local cache.", err?.message || err);
+      return this.getAll();
+    }
+  },
+  async persistRemote(user) {
+    const row = toRemoteUser(user);
+    if (!row) return;
+    try {
+      const { error } = await supabaseClient
+        .from(CONFIG.TABLES.users)
+        .upsert(row, { onConflict: "email" });
+      if (error) throw error;
+    } catch (err) {
+      console.warn("Unable to persist Mentorist user remotely.", err?.message || err);
+    }
+  },
   getByEmail(email) {
     if (!email) return null;
     return this.getAll().find(u => u.email === email) || null;
   },
-  save(users) { localStorage.setItem("mn_all_users", JSON.stringify(users)); },
   addOrUpdate(user) {
     const users = this.getAll();
+    const nu = { ...user, updatedAt: new Date().toISOString() };
     const idx = users.findIndex(u => u.email === user.email);
     if (idx > -1) {
-      users[idx] = { ...users[idx], ...user };
+      users[idx] = { ...users[idx], ...nu };
     } else {
-      users.push(user);
+      users.push(nu);
     }
-    this.save(users);
+    this.save(mergeUsersByEmail(users));
+    void this.persistRemote(nu);
   },
   updateStatus(email, status) {
     this.updateUserFields(email, { status });
@@ -194,8 +288,9 @@ const UserStore = {
     const users = this.getAll();
     const u = users.find(x => x.email === email);
     if (u) {
-      Object.assign(u, fields);
-      this.save(users);
+      Object.assign(u, cleanObject(fields), { updatedAt: new Date().toISOString() });
+      this.save(mergeUsersByEmail(users));
+      void this.persistRemote(u);
       const curr = Auth.getUser();
       if (curr && curr.email === email) {
         const synced = Auth.syncCurrentUserFromStore(email);
@@ -470,6 +565,21 @@ const MobileNav = {
 document.addEventListener('DOMContentLoaded', () => {
   MobileNav.init();
   GlobalBroadcast.init();
+  const needsRemoteSync = /admin\.html|mentor-review\.html|mentorapplication\.html|studentdashboard\.html|mentordashboard\.html|onboarding\.html|vault\.html/.test(window.location.pathname);
+  if (needsRemoteSync) {
+    UserStore.refreshFromRemote().then(() => {
+      if (typeof window.refreshMentoristState === 'function') {
+        window.refreshMentoristState();
+      }
+    });
+    setInterval(() => {
+      UserStore.refreshFromRemote().then(() => {
+        if (typeof window.refreshMentoristState === 'function') {
+          window.refreshMentoristState();
+        }
+      });
+    }, 5000);
+  }
 });
 
 window.refreshMentoristState = function(email) {

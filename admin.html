@@ -383,8 +383,10 @@
         const statusClass = `st-${u.status || 'pending'}`;
         const canApprove = u.status !== 'active';
         const canReject = u.status !== 'rejected';
+        const isOnline = u.lastSeenAt ? (Date.now() - new Date(u.lastSeenAt).getTime() < 15 * 60 * 1000) : false;
 
-        let details = `<span class="badge badge-gray">${u.role}</span>`;
+        let details = `<span class="badge badge-gray">${u.role}</span>
+          <div style="font-size:11px; color:var(--t4); margin-top:6px;">${isOnline ? 'Online' : 'Offline'}</div>`;
         if (u.role === 'mentor' && u.applicationData) {
           details += `<div style="font-size:12px; color:var(--t3); margin-top:6px; line-height:1.4;">
             <strong>${u.applicationData.university}</strong><br>
@@ -584,7 +586,7 @@
       const body = document.getElementById('alBody').value;
       if(!title || !body) return Utils.toast('Title and body required', 'error');
 
-      AlertStore.add({ title, tag: tag || 'Opportunity', body, author: user.name });
+      AlertStore.add({ title, tag: tag || 'Opportunity', body, author: user?.name || 'Founder' });
       Utils.toast('Strategy alert broadcasted!', 'success');
       
       document.getElementById('alTitle').value = '';
@@ -622,7 +624,7 @@
       renderAlerts();
     }
 
-    initAdmin();
+    Promise.resolve(UserStore.refreshFromRemote()).then(initAdmin);
   </script>
 </body>
 

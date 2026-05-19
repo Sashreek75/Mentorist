@@ -307,7 +307,7 @@
       renderQueue();
     }
 
-    renderQueue();
+    Promise.resolve(UserStore.refreshFromRemote()).then(renderQueue);
   </script>
 </body>
 </html>
