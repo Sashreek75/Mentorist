@@ -329,7 +329,7 @@
       const pendingGrid = document.getElementById('pendingMentorGrid');
       const pendingBadge = document.getElementById('pendingCountBadge');
 
-      const pendingMentors = users.filter(u => u.role === 'mentor' && u.status === 'pending');
+      const pendingMentors = users.filter(u => isMentorApplicant(u) && u.status === 'pending');
       
       // Update Review Center
       if (pendingMentors.length > 0 && isAdmin) {
@@ -531,10 +531,10 @@
       const qs = QuestionStore.getAll();
       
       const studentCount = users.filter(u => u.role === 'student').length;
-      const mentorCount = users.filter(u => u.role === 'mentor').length;
-      const activeMentors = users.filter(u => u.role === 'mentor' && u.status === 'active').length;
-      const pendingMentors = users.filter(u => u.role === 'mentor' && u.status === 'pending').length;
-      const rejectedMentors = users.filter(u => u.role === 'mentor' && u.status === 'rejected').length;
+      const mentorCount = users.filter(u => isMentorApplicant(u) || u.role === 'mentor').length;
+      const activeMentors = users.filter(u => (isMentorApplicant(u) || u.role === 'mentor') && u.status === 'active').length;
+      const pendingMentors = users.filter(u => isMentorApplicant(u) && u.status === 'pending').length;
+      const rejectedMentors = users.filter(u => isMentorApplicant(u) && u.status === 'rejected').length;
       const totalQuestions = qs.length;
       const answeredQuestions = qs.filter(q => q.answers && q.answers.length > 0).length;
       

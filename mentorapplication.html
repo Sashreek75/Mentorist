@@ -255,11 +255,16 @@
       }
       
       Auth.updateUser({ 
+        role: 'mentor',
         applicationData: { university: uni, major: major, experience: exp },
         appliedAt: new Date().toISOString(),
         status: 'pending',
+        onboarded: false,
         rejectedAt: null
       });
+      if (typeof window.refreshMentoristState === 'function') {
+        window.refreshMentoristState(user.email);
+      }
       
       document.getElementById('appForm').style.display = 'none';
       document.getElementById('appSuccess').style.display = 'block';

@@ -18,6 +18,11 @@ function inferRoleFromEmail(email = "") {
   return "student";
 }
 
+function isMentorApplicant(user) {
+  if (!user) return false;
+  return user.role === "mentor" || !!user.applicationData || !!user.appliedAt;
+}
+
 // Handle Supabase Auth State globally
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session) {
@@ -70,10 +75,12 @@ const Auth = {
     const metadata = user?.user_metadata || {};
     const role = metadata.role || inferRoleFromEmail(user?.email);
     const stored = UserStore.getByEmail(user?.email);
+    const storedRole = stored?.role || role;
+    const applicantRole = isMentorApplicant(stored) ? 'mentor' : storedRole;
     return {
       email: user?.email || "",
       name: stored?.name || metadata.full_name || metadata.name || user?.email?.split("@")[0] || "User",
-      role: stored?.role || role,
+      role: applicantRole,
       status: stored?.status || metadata.status || (role === "mentor" ? "pending" : "active"),
       onboarded: stored?.onboarded ?? metadata.onboarded ?? role === "admin",
       profile: stored?.profile ?? metadata.profile,
@@ -95,11 +102,11 @@ const Auth = {
   },
   normalizeUser(user) {
     if (!user) return null;
-    const role = user.role || inferRoleFromEmail(user.email);
+    const role = isMentorApplicant(user) ? 'mentor' : (user.role || inferRoleFromEmail(user.email));
     const merged = {
       ...user,
       role: user.email ? (user.email.endsWith('@mentorist.org') || user.email.startsWith('admin') ? 'admin' : role) : role,
-      status: user.status || (role === "mentor" ? "pending" : "active"),
+      status: user.status || (isMentorApplicant(user) || role === "mentor" ? "pending" : "active"),
       onboarded: user.onboarded ?? role === "admin"
     };
     return merged;

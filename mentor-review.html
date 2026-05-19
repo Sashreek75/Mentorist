@@ -250,7 +250,7 @@
     function renderQueue() {
       if (!isAdmin) return;
       const users = UserStore.getAll();
-      const pending = users.filter(u => u.role === 'mentor' && u.status === 'pending');
+      const pending = users.filter(u => isMentorApplicant(u) && u.status === 'pending');
       const grid = document.getElementById('mentorGrid');
       const count = document.getElementById('countVal');
       
@@ -295,12 +295,14 @@
     }
 
     function handleReview(email, status, label) {
-      UserStore.updateUserFields(email, { 
+      const fields = { 
         status: status,
         onboarded: status === 'active',
         approvedAt: status === 'active' ? new Date().toISOString() : null,
         rejectedAt: status === 'rejected' ? new Date().toISOString() : null
-      });
+      };
+      if (status === 'active') fields.role = 'mentor';
+      UserStore.updateUserFields(email, fields);
       Utils.toast(`Mentor ${label} successfully.`, 'success');
       renderQueue();
     }
