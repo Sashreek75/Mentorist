@@ -245,9 +245,12 @@
         Utils.toast('Your rejection cooldown has expired. You may re-apply.', 'info');
       }
 
-      if (currentUser.appliedAt || currentUser.status === 'pending') {
+      if (currentUser.appliedAt || currentUser.applicationData) {
         document.getElementById('appForm').style.display = 'none';
         document.getElementById('appSuccess').style.display = 'block';
+      } else {
+        document.getElementById('appForm').style.display = 'block';
+        document.getElementById('appSuccess').style.display = 'none';
       }
 
       return true;
@@ -257,7 +260,7 @@
       const fresh = Auth.syncCurrentUserFromStore(currentUser?.email) || Auth.getUser() || currentUser;
       if (fresh?.status === 'rejected') {
         Utils.toast('Your previous application was rejected. See the notice above.', 'error');
-      } else if (fresh?.status === 'pending') {
+      } else if (fresh?.appliedAt || fresh?.applicationData) {
         Utils.toast('Your application is still under review. Check back soon!', 'info');
       } else if (fresh?.status === 'active') {
         Auth.routeAfterLogin(fresh);
