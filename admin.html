@@ -319,6 +319,7 @@
     AdminAuth.require();
     const isAdmin = AdminAuth.check();
     const user = Auth.getUser();
+    const recentlyRejectedThisSession = new Set();
 
     let lastAction = null;
 
@@ -380,6 +381,9 @@
       });
 
       sortedUsers.forEach(u => {
+        if (u.status === 'rejected' && !recentlyRejectedThisSession.has(u.email)) {
+          return;
+        }
         const statusClass = `st-${u.status || 'pending'}`;
         const canApprove = u.status !== 'active';
         const canReject = u.status !== 'rejected';
@@ -406,11 +410,15 @@
           ${isAdmin ? `
           <td style="vertical-align:top;">
             <div class="action-btns">
-              ${user && u.email === user.email ? '<span style="color:var(--t4); font-style:italic; font-size:12px;">Current Session</span>' : `
-                ${canApprove ? `<button class="btn-action btn-approve" onclick="performAction('${u.email}', 'active', 'approved')">Approve</button>` : ''}
-                ${canReject ? `<button class="btn-action btn-reject" onclick="performAction('${u.email}', 'rejected', 'rejected')">Reject</button>` : ''}
-                ${!canApprove && !canReject ? '<span style="color:var(--t4);">—</span>' : ''}
-              `}
+              ${u.status === 'rejected'
+                ? '<span style="color:var(--t4); font-style:italic; font-size:12px;">Removed after refresh</span>'
+                : user && u.email === user.email
+                  ? '<span style="color:var(--t4); font-style:italic; font-size:12px;">Current Session</span>'
+                  : `
+                    ${canApprove ? `<button class="btn-action btn-approve" onclick="performAction('${u.email}', 'active', 'approved')">Approve</button>` : ''}
+                    ${canReject ? `<button class="btn-action btn-reject" onclick="performAction('${u.email}', 'rejected', 'rejected')">Reject</button>` : ''}
+                    ${!canApprove && !canReject ? '<span style="color:var(--t4);">—</span>' : ''}
+                  `}
             </div>
           </td>` : ''}
         </tr>`;
@@ -441,6 +449,7 @@
       }
       if (newStatus === 'rejected') {
         fields.rejectedAt = new Date().toISOString();
+        recentlyRejectedThisSession.add(email);
       } else {
         fields.rejectedAt = null;
       }

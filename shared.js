@@ -10,7 +10,8 @@ const CONFIG = {
   SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtdXVrZmVnbmpvdGxndmRxZnJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTY2MzYsImV4cCI6MjA5NDUzMjYzNn0.FswR9i0EgMZ5UPs8NpE-es4i3HonKQXilqBPA0ulT3Q",
   TABLES: {
     users: "mentorist_profiles",
-    questions: "mentorist_questions"
+    questions: "mentorist_questions",
+    alerts: "mentorist_alerts"
   }
 };
 
@@ -45,6 +46,7 @@ function toRemoteUser(user) {
     applied_at: user.appliedAt || null,
     approved_at: user.approvedAt || null,
     rejected_at: user.rejectedAt || null,
+    dismissed_alert_ids: user.dismissedAlertIds || [],
     last_seen_at: user.lastSeenAt || now,
     updated_at: now
   });
@@ -63,6 +65,7 @@ function fromRemoteUser(row) {
     appliedAt: row.applied_at || row.appliedAt || null,
     approvedAt: row.approved_at || row.approvedAt || null,
     rejectedAt: row.rejected_at || row.rejectedAt || null,
+    dismissedAlertIds: row.dismissed_alert_ids || row.dismissedAlertIds || [],
     lastSeenAt: row.last_seen_at || row.lastSeenAt || null,
     updatedAt: row.updated_at || row.updatedAt || null
   };
@@ -97,6 +100,32 @@ function fromRemoteQuestion(row) {
     context: row.context || null,
     answers: row.answers || [],
     status: row.status || "pending",
+    createdAt: row.created_at || row.createdAt || new Date().toISOString(),
+    updatedAt: row.updated_at || row.updatedAt || null
+  };
+}
+
+function toRemoteAlert(alert) {
+  if (!alert?.id) return null;
+  return cleanObject({
+    id: alert.id,
+    title: alert.title || "",
+    tag: alert.tag || "Alert",
+    body: alert.body || "",
+    author: alert.author || "Founder",
+    created_at: alert.createdAt || new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  });
+}
+
+function fromRemoteAlert(row) {
+  if (!row?.id) return null;
+  return {
+    id: row.id,
+    title: row.title || "",
+    tag: row.tag || "Alert",
+    body: row.body || "",
+    author: row.author || "Founder",
     createdAt: row.created_at || row.createdAt || new Date().toISOString(),
     updatedAt: row.updated_at || row.updatedAt || null
   };
@@ -446,16 +475,55 @@ const AlertStore = {
     catch { return []; }
   },
   save(als) { localStorage.setItem("mn_alerts", JSON.stringify(als)); },
+  async refreshFromRemote() {
+    try {
+      const { data, error } = await supabaseClient
+        .from(CONFIG.TABLES.alerts)
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      const remoteAlerts = (data || []).map(fromRemoteAlert).filter(Boolean);
+      const localAlerts = this.getAll();
+      const merged = [...remoteAlerts];
+      for (const alert of localAlerts) {
+        if (!merged.some(remote => remote.id === alert.id)) merged.push(alert);
+      }
+      this.save(merged);
+      for (const localAlert of localAlerts) {
+        if (localAlert?.id && !remoteAlerts.some(remote => remote.id === localAlert.id)) {
+          void this.persistRemote(localAlert);
+        }
+      }
+      return merged;
+    } catch (err) {
+      console.warn("Mentorist remote alert sync unavailable, using local cache.", err?.message || err);
+      return this.getAll();
+    }
+  },
+  async persistRemote(alert) {
+    const row = toRemoteAlert(alert);
+    if (!row) return;
+    try {
+      const { error } = await supabaseClient
+        .from(CONFIG.TABLES.alerts)
+        .upsert(row, { onConflict: "id" });
+      if (error) throw error;
+    } catch (err) {
+      console.warn("Unable to persist Mentorist alert remotely.", err?.message || err);
+    }
+  },
   add(al) {
     const als = this.getAll();
-    const nal = { id: "al_" + Date.now(), ...al, createdAt: new Date().toISOString() };
+    const nal = { id: `al_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, ...al, createdAt: new Date().toISOString() };
     als.unshift(nal);
     this.save(als);
+    void this.persistRemote(nal);
     return nal;
   },
   delete(id) {
     const als = this.getAll().filter(a => a.id !== id);
     this.save(als);
+    void supabaseClient.from(CONFIG.TABLES.alerts).delete().eq('id', id);
   }
 };
 
@@ -661,17 +729,21 @@ document.addEventListener('DOMContentLoaded', () => {
   if (needsRemoteSync) {
     UserStore.refreshFromRemote().then(() => {
       QuestionStore.refreshFromRemote().finally(() => {
-        if (typeof window.refreshMentoristState === 'function') {
-          window.refreshMentoristState();
-        }
+        AlertStore.refreshFromRemote().finally(() => {
+          if (typeof window.refreshMentoristState === 'function') {
+            window.refreshMentoristState();
+          }
+        });
       });
     });
     setInterval(() => {
       UserStore.refreshFromRemote().then(() => {
         QuestionStore.refreshFromRemote().finally(() => {
-          if (typeof window.refreshMentoristState === 'function') {
-            window.refreshMentoristState();
-          }
+          AlertStore.refreshFromRemote().finally(() => {
+            if (typeof window.refreshMentoristState === 'function') {
+              window.refreshMentoristState();
+            }
+          });
         });
       });
     }, 5000);
@@ -721,19 +793,7 @@ window.addEventListener('storage', (event) => {
 /* ===== GLOBAL BROADCAST SYSTEM ===== */
 const GlobalBroadcast = {
   init() {
-    const alerts = AlertStore.getAll();
-    if (!alerts.length) return;
-
-    const dismissed = JSON.parse(localStorage.getItem('mn_dismissed_alerts') || '[]');
-    const latest = alerts[0]; // Focus on the most recent broadcast
-
-    if (!dismissed.includes(latest.id)) {
-      // Check if we are on a dashboard or landing page
-      const isDashboard = window.location.pathname.includes('dashboard') || window.location.pathname.includes('admin.html');
-      if (isDashboard) {
-        setTimeout(() => this.show(latest), 1000);
-      }
-    }
+    return;
   },
 
   show(al) {
