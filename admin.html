@@ -323,8 +323,13 @@
 
     let lastAction = null;
 
-    function render() {
+    function getVisibleAdminUsers() {
       const users = UserStore.getAll();
+      return users.filter(u => u.status !== 'rejected' || recentlyRejectedThisSession.has(u.email));
+    }
+
+    function render() {
+      const users = getVisibleAdminUsers();
       const tableDiv = document.getElementById('userTable');
       const reviewCenter = document.getElementById('mentorReviewCenter');
       const pendingGrid = document.getElementById('pendingMentorGrid');
@@ -538,7 +543,7 @@
     }
 
     function renderStats() {
-      const users = UserStore.getAll();
+      const users = getVisibleAdminUsers();
       const qs = QuestionStore.getAll();
       
       const studentCount = users.filter(u => u.role === 'student').length;
