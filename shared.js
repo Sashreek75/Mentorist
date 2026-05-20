@@ -183,7 +183,8 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     
     Auth.setUser(appUser);
     UserStore.addOrUpdate(appUser); // Sync local store for UI purposes temporarily
-    void UserStore.persistRemote(appUser);
+    await UserStore.persistRemote(appUser);
+    await UserStore.refreshFromRemote();
     
     // Auto-route only if we are currently on the auth page
     if (window.location.pathname.includes('auth.html')) {

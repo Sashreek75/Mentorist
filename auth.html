@@ -228,16 +228,20 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
       onboarded
     };
   }
-  function finishLocalLogin(appUser, message = 'Logged in successfully!') {
+  async function finishLocalLogin(appUser, message = 'Logged in successfully!') {
     Auth.setUser(appUser);
     UserStore.addOrUpdate(appUser);
     Utils.toast(message, 'success');
-    Promise.resolve(UserStore.refreshFromRemote()).then(() => {
-      const synced = Auth.syncCurrentUserFromStore(appUser.email) || appUser;
-      setTimeout(() => {
-        Auth.routeAfterLogin(synced);
-      }, 150);
-    });
+    try {
+      await UserStore.persistRemote(appUser);
+      await UserStore.refreshFromRemote();
+    } catch (err) {
+      console.warn('Could not fully sync Mentorist user before routing.', err);
+    }
+    const synced = Auth.syncCurrentUserFromStore(appUser.email) || appUser;
+    setTimeout(() => {
+      Auth.routeAfterLogin(synced);
+    }, 150);
   }
 
   async function handleEmailSignup(){
