@@ -76,6 +76,27 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
   .auth-left{display:none;}
   .auth-right{padding:80px 24px;align-items:flex-start;}
 }
+
+@media(max-width:768px) {
+  .auth-right { padding: 60px 16px; }
+  .auth-box { max-width: 100%; }
+  .auth-title { font-size: 26px; }
+  .auth-sub { font-size: 14px; margin-bottom: 32px; }
+  .role-grid { gap: 10px; margin-bottom: 24px; }
+  .role-card { padding: 16px; }
+  .rc-icon { font-size: 20px; margin-bottom: 8px; }
+  .rc-name { font-size: 14px; }
+  .btn-google { font-size: 14px; }
+  .form-input { font-size: 16px; }
+}
+
+@media(max-width:500px) {
+  .auth-right { padding: 48px 12px; }
+  body { font-size: 14px; }
+  .auth-title { font-size: 22px; }
+  .btn-lg { height: 44px; font-size: 13px; }
+  .role-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>

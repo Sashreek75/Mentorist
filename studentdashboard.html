@@ -76,6 +76,33 @@ body{background:var(--bg);}
 .tip-icon{color:var(--green);font-weight:900;flex-shrink:0;}
 
 @media(min-width:1100px){.student-layout-grid{display:grid;grid-template-columns:1fr 300px;gap:40px;align-items:start;}}
+
+@media(max-width:1099px){
+  .student-layout-grid { display: block; }
+  .sidebar-tips-col { margin-top: 32px; }
+}
+
+@media(max-width:768px) {
+  .dash-header { flex-direction: column; align-items: flex-start; }
+  .dash-greeting-name { font-size: clamp(20px, 5vw, 28px); }
+  .ask-card-premium { padding: 24px; }
+  .ask-hd-title { font-size: 20px; }
+  .ask-hd-sub { font-size: 13px; }
+  .tag-group { gap: 6px; }
+  .tag-pill { font-size: 12px; padding: 6px 12px; }
+  .form-label { font-size: 12px; }
+  .form-textarea { min-height: 100px; }
+  .qcard-luxury { margin-bottom: 16px; }
+  .qcard-body { padding: 16px; }
+  .qquestion-text { font-size: 15px; }
+  .sidebar-card-tip { margin-top: 24px; }
+}
+
+@media(max-width:500px) {
+  .ask-card-premium { padding: 16px; }
+  .form-input, .form-textarea { font-size: 16px; }
+  .btn-lg { height: 44px; }
+}
 </style>
 </head>
 <body>

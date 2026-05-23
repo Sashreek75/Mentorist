@@ -107,6 +107,33 @@ footer{background:var(--bg);border-top:1px solid var(--b1);padding:48px 24px;col
   .hero-sub{margin-left:auto;margin-right:auto;}
   .steps-grid{grid-template-columns:1fr;}
 }
+
+@media(max-width:768px) {
+  .choice-grid.c2 { grid-template-columns: 1fr; }
+  .cta-box { padding: 48px 32px; }
+  .steps-grid { margin-top: 40px; }
+  .step-idx { font-size: 32px; right: 20px; top: 16px; }
+  .step-card { padding: 32px 24px; }
+  .step-card h4 { font-size: 18px; }
+  .footer-inner { justify-content: center; }
+}
+
+@media(max-width:640px) {
+  .hero { padding: 100px 16px 60px; min-height: auto; }
+  .hero-content { gap: 32px; }
+  .hero-eyebrow { font-size: 11px; padding: 6px 12px; }
+  .hero-visual { margin-top: 32px; }
+  .hero-img-wrap { aspect-ratio: 4/3; max-width: 100%; }
+  
+  .cta-box { padding: clamp(24px, 6vw, 48px); }
+  
+  .marquee-item { padding: 0 16px; font-size: 12px; }
+  
+  .section { padding: 80px clamp(12px, 4vw, 24px); }
+  .section-hd { margin-bottom: 40px; }
+  
+  .footer-inner { flex-direction: column; gap: 16px; }
+}
 </style>
 </head>
 <body>

@@ -117,6 +117,22 @@
       color: #f87171;
       margin-bottom: 4px;
     }
+
+    @media(max-width:768px) {
+      .app-layout { padding: 80px 16px 100px; }
+      .app-card { padding: clamp(16px, 5vw, 32px); }
+      .app-title { font-size: 28px; }
+      .app-sub { font-size: 14px; }
+      .form-visual-wrap { margin-top: 32px; aspect-ratio: auto; min-height: 250px; }
+      .form-input, .form-textarea { font-size: 16px; }
+      .pending-notice, .rejected-notice { padding: 16px; gap: 12px; }
+    }
+
+    @media(max-width:500px) {
+      .app-title { font-size: 24px; }
+      .btn-lg { height: 44px; }
+      .btn-secondary { width: 100%; }
+    }
   </style>
 </head>
 
