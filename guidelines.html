@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Guidelines - Mentorist</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    body {
+      background: var(--bg);
+      color: var(--t1);
+    }
+
+    .guide-shell {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 120px 24px 80px;
+    }
+
+    .guide-hero {
+      background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(0,232,122,0.04));
+      border: 1px solid var(--b1);
+      border-radius: var(--r-3xl);
+      padding: clamp(28px, 6vw, 48px);
+      margin-bottom: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .guide-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(0,232,122,0.14), transparent 35%);
+      pointer-events: none;
+    }
+
+    .guide-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--green-dim);
+      border: 1px solid rgba(0,232,122,0.2);
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .guide-title {
+      font-family: var(--font-h);
+      font-size: clamp(34px, 5vw, 60px);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      margin-bottom: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .guide-sub {
+      max-width: 760px;
+      color: var(--t3);
+      font-size: 16px;
+      line-height: 1.7;
+      position: relative;
+      z-index: 1;
+    }
+
+    .guide-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .guide-card {
+      background: var(--bg-1);
+      border: 1px solid var(--b1);
+      border-radius: var(--r-2xl);
+      padding: 24px;
+    }
+
+    .guide-card h3 {
+      font-family: var(--font-h);
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+
+    .guide-card p,
+    .guide-card li {
+      color: var(--t2);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .guide-card ul {
+      padding-left: 18px;
+      margin: 0;
+    }
+
+    .guide-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 28px;
+      padding-top: 28px;
+      border-top: 1px solid var(--b1);
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logomark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+          <path d="M2 17l10 5 10-5"></path>
+          <path d="M2 12l10 5 10-5"></path>
+        </svg>
+      </div>
+      <span class="nav-wordmark">Mentorist</span>
+    </a>
+    <div class="nav-actions">
+      <a href="auth.html?mode=login" class="btn btn-ghost btn-sm">Sign in</a>
+      <a href="auth.html?mode=signup" class="btn btn-primary btn-sm">Join Free</a>
+    </div>
+  </nav>
+
+  <main class="guide-shell">
+    <section class="guide-hero">
+      <div class="guide-kicker">Community Guidelines</div>
+      <h1 class="guide-title">A simple code for safe, strategic mentorship.</h1>
+      <p class="guide-sub">
+        Mentorist is built as a nonprofit network for students and mentors to share guidance, questions, and opportunities. These guidelines keep the space constructive, respectful, and useful for everyone.
+      </p>
+    </section>
+
+    <section class="guide-grid">
+      <article class="guide-card">
+        <h3>Be Respectful</h3>
+        <p>Keep messages constructive. No harassment, hate speech, threats, or personal attacks. We expect everyone to treat others with basic respect.</p>
+      </article>
+      <article class="guide-card">
+        <h3>Give Helpful Guidance</h3>
+        <p>Mentor advice should be honest, specific, and actionable. Students should ask focused questions so mentors can give meaningful help.</p>
+      </article>
+      <article class="guide-card">
+        <h3>Protect Privacy</h3>
+        <p>Do not share sensitive personal information publicly. Only share what is necessary to get and give academic guidance.</p>
+      </article>
+      <article class="guide-card">
+        <h3>No Spam or Abuse</h3>
+        <p>Broadcasts, questions, and replies should be relevant to the Mentorist community. Spam, scams, or deceptive content are not allowed.</p>
+      </article>
+      <article class="guide-card">
+        <h3>Mentor Standards</h3>
+        <ul>
+          <li>Mentors should only apply if they can provide genuine experience and support.</li>
+          <li>Answers should be thoughtful and not misleading.</li>
+          <li>Rejected mentors may reapply only after the app allows it.</li>
+        </ul>
+      </article>
+      <article class="guide-card">
+        <h3>Platform Integrity</h3>
+        <ul>
+          <li>Do not attempt to bypass account restrictions or admin decisions.</li>
+          <li>Do not impersonate another user.</li>
+          <li>Use the site for its intended educational purpose.</li>
+        </ul>
+      </article>
+    </section>
+
+    <div class="guide-card" style="margin-top:18px;">
+      <h3>Questions or concerns?</h3>
+      <p>If you need help, email <a href="mailto:hello@mentorist.org">hello@mentorist.org</a>. We review community issues with care and try to keep the platform safe for students and mentors.</p>
+      <div class="guide-footer">
+        <span style="color:var(--t4); font-size:13px;">Last updated May 2026</span>
+        <a href="auth.html?mode=signup" class="btn btn-primary">Get Started</a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

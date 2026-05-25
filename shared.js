@@ -277,11 +277,14 @@ const Auth = {
   async forceLogout(reason = 'You have been signed out.') {
     localStorage.setItem('mn_auth_notice', reason);
     localStorage.removeItem("mn_user");
+    if (reason) {
+      sessionStorage.removeItem("mn_admin_session");
+    }
     try {
-      await supabaseClient.auth.signOut();
+      void supabaseClient.auth.signOut();
     } catch {}
     if (!window.location.pathname.includes('auth.html')) {
-      window.location.href = 'auth.html';
+      window.location.href = 'auth.html?mode=login';
     }
   },
   async logout() {
@@ -706,19 +709,19 @@ const MobileNav = {
       items = [
         { label: 'Admin', icon: 'shield', link: 'admin.html' },
         { label: 'Vault', icon: 'archive', link: 'vault.html' },
-        { label: 'Logout', icon: 'log-out', link: '#', action: () => Auth.logout() }
+        { label: 'Logout', icon: 'log-out', link: '#', action: () => Auth.forceLogout('You have been signed out.') }
       ];
     } else if (user.role === 'mentor') {
       items = [
         { label: 'Home', icon: 'home', link: 'mentordashboard.html' },
         { label: 'Vault', icon: 'archive', link: 'vault.html' },
-        { label: 'Logout', icon: 'log-out', link: '#', action: () => Auth.logout() }
+        { label: 'Logout', icon: 'log-out', link: '#', action: () => Auth.forceLogout('You have been signed out.') }
       ];
     } else {
       items = [
         { label: 'Home', icon: 'home', link: 'studentdashboard.html' },
         { label: 'Vault', icon: 'archive', link: 'vault.html' },
-        { label: 'Logout', icon: 'log-out', link: '#', action: () => Auth.logout() }
+        { label: 'Logout', icon: 'log-out', link: '#', action: () => Auth.forceLogout('You have been signed out.') }
       ];
     }
 
