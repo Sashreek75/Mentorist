@@ -206,6 +206,11 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
   const p=new URLSearchParams(location.search);
   if(p.get('mode')==='login')showLogin();
   if(p.get('role')==='mentor')setTimeout(()=>document.querySelector('[data-role="mentor"]').click(),10);
+  const authNotice = localStorage.getItem('mn_auth_notice');
+  if (authNotice) {
+    Utils.toast(authNotice, 'error');
+    localStorage.removeItem('mn_auth_notice');
+  }
   Promise.resolve(UserStore.refreshFromRemote()).then(() => {
     if (Auth.isLoggedIn()) Auth.routeAfterLogin(Auth.getUser());
   });

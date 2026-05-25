@@ -284,6 +284,37 @@
       letter-spacing: 0.05em;
     }
 
+    .realtime-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 14px;
+      border-radius: var(--r-lg);
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid transparent;
+      background: rgba(59, 130, 246, 0.08);
+      color: #60a5fa;
+    }
+
+    .realtime-connected {
+      background: rgba(16, 185, 129, 0.12);
+      color: #10b981;
+      border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    .realtime-connecting {
+      background: rgba(251, 191, 36, 0.12);
+      color: #f59e0b;
+      border-color: rgba(251, 191, 36, 0.2);
+    }
+
+    .realtime-disconnected {
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
     @keyframes slideDown { 0%{opacity:0; transform:translateY(-10px);} 100%{opacity:1; transform:translateY(0);} }
   </style>
 </head>
@@ -309,10 +340,14 @@
   <div class="app-layout" style="max-width:1100px; margin:0 auto; padding-top:120px; padding-bottom:80px;">
     <div id="undoContainer"></div>
 
-    <h1 style="font-family:var(--font-h); font-size:42px; font-weight:800; color:var(--t1); letter-spacing:-0.04em; margin-bottom:40px;">Founder <span style="color:var(--green);">Impact</span> Dashboard</h1>
-
-    <div class="stats-grid" id="statsGrid">
-      <!-- Dynamic Stats -->
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:28px;">
+      <div>
+        <h1 style="font-family:var(--font-h); font-size:42px; font-weight:800; color:var(--t1); letter-spacing:-0.04em; margin-bottom:12px;">Founder <span style="color:var(--green);">Impact</span> Dashboard</h1>
+        <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+          <div id="refreshStatus" style="font-size:13px; color:var(--t4);">Last sync: waiting for data...</div>
+          <span id="realtimeStatusBadge" class="realtime-badge realtime-connecting">Realtime: connecting</span>
+        </div>
+      </div>
     </div>
 
     <div class="admin-card" id="mentorReviewCenter" style="display:none; border-color: var(--green); box-shadow: 0 0 40px rgba(0,232,122,0.1);">
@@ -668,11 +703,30 @@
       `;
     }
 
+    function refreshAdminUsers() {
+      const button = document.getElementById('refreshUsersBtn');
+      const status = document.getElementById('refreshStatus');
+      if (button) button.disabled = true;
+      if (status) status.textContent = 'Refreshing accounts...';
+      UserStore.refreshFromRemote().then(() => {
+        render();
+        renderStats();
+        renderAlerts();
+        if (status) status.textContent = `Last sync: ${new Date().toLocaleTimeString()}`;
+      }).catch(() => {
+        if (status) status.textContent = 'Unable to refresh users right now.';
+      }).finally(() => {
+        if (button) button.disabled = false;
+      });
+    }
+
     function initAdmin() {
       render();
       renderQuestions();
       renderStats();
       renderAlerts();
+      const status = document.getElementById('refreshStatus');
+      if (status) status.textContent = `Last sync: ${new Date().toLocaleTimeString()}`;
     }
 
     function createAlert() {

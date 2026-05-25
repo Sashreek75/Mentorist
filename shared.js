@@ -153,10 +153,12 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session) {
     let user = session.user;
     const metadata = user.user_metadata || {};
+    const email = String(user.email || "").toLowerCase();
     let role = metadata.role;
     let pendingRole = localStorage.getItem('pendingRole');
 
     await UserStore.refreshFromRemote();
+    const storedUser = UserStore.getByEmail(email);
     
     // First time login via signup (role not set in DB yet)
     if (!role && pendingRole) {
@@ -167,8 +169,23 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
       localStorage.removeItem('pendingRole');
     }
     
+    // Returning users should inherit their stored profile immediately.
+    if (!role && storedUser?.role) {
+      const { data } = await supabaseClient.auth.updateUser({
+        data: {
+          role: storedUser.role,
+          status: storedUser.status || (storedUser.role === 'mentor' ? 'pending' : 'active'),
+          onboarded: storedUser.onboarded ?? storedUser.role === 'admin',
+          profile: storedUser.profile || null,
+          applicationData: storedUser.applicationData || null,
+          dismissedAlertIds: storedUser.dismissedAlertIds || []
+        }
+      });
+      user = data.user;
+    }
+    
     // Admin override check
-    if (user.email.endsWith('@mentorist.org') || user.email.startsWith('admin')) {
+    if (email.endsWith('@mentorist.org') || email.startsWith('admin')) {
         const { data } = await supabaseClient.auth.updateUser({ data: { role: 'admin', onboarded: true, status: 'active' }});
         user = data.user;
     }
@@ -202,13 +219,14 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
 const Auth = {
   fromSupabaseUser(user) {
     const metadata = user?.user_metadata || {};
-    const role = metadata.role || inferRoleFromEmail(user?.email);
-    const stored = UserStore.getByEmail(user?.email);
+    const email = String(user?.email || "").toLowerCase();
+    const role = metadata.role || inferRoleFromEmail(email);
+    const stored = UserStore.getByEmail(email);
     const storedRole = stored?.role || role;
     const applicantRole = isMentorApplicant(stored) ? 'mentor' : storedRole;
     return {
-      email: user?.email || "",
-      name: stored?.name || metadata.full_name || metadata.name || user?.email?.split("@")[0] || "User",
+      email,
+      name: stored?.name || metadata.full_name || metadata.name || email.split("@")[0] || "User",
       role: applicantRole,
       status: stored?.status || metadata.status || (role === "mentor" ? "pending" : "active"),
       onboarded: stored?.onboarded ?? metadata.onboarded ?? role === "admin",
@@ -219,7 +237,7 @@ const Auth = {
   },
   syncCurrentUserFromStore(email) {
     const current = this.getUser();
-    const targetEmail = email || current?.email;
+    const targetEmail = String(email || current?.email || "").toLowerCase();
     if (!targetEmail) return null;
 
     const stored = UserStore.getByEmail(targetEmail);
@@ -244,7 +262,11 @@ const Auth = {
     try { const r = localStorage.getItem("mn_user"); return r ? JSON.parse(r) : null; }
     catch { return null; }
   },
-  setUser(u) { localStorage.setItem("mn_user", JSON.stringify(u)); },
+  setUser(u) {
+    if (!u) return;
+    const normalized = { ...u, email: String(u.email || "").toLowerCase() };
+    localStorage.setItem("mn_user", JSON.stringify(normalized));
+  },
   updateUser(patch) {
     const u = this.getUser(); if (!u) return;
     const nu = this.normalizeUser({ ...u, ...cleanObject(patch), updatedAt: new Date().toISOString() });
@@ -252,9 +274,19 @@ const Auth = {
     UserStore.addOrUpdate(nu);
   },
   isLoggedIn() { return !!this.getUser(); },
+  async forceLogout(reason = 'You have been signed out.') {
+    localStorage.setItem('mn_auth_notice', reason);
+    localStorage.removeItem("mn_user");
+    try {
+      await supabaseClient.auth.signOut();
+    } catch {}
+    if (!window.location.pathname.includes('auth.html')) {
+      window.location.href = 'auth.html';
+    }
+  },
   async logout() {
     if(!confirm("Are you sure you want to log out?")) return;
-    await supabaseClient.auth.signOut();
+    await this.forceLogout('You have been signed out.');
   },
   requireAuth() {
     const u = this.getUser();
@@ -338,12 +370,14 @@ const UserStore = {
   },
   getByEmail(email) {
     if (!email) return null;
-    return this.getAll().find(u => u.email === email) || null;
+    const normalizedEmail = String(email).toLowerCase();
+    return this.getAll().find(u => String(u.email).toLowerCase() === normalizedEmail) || null;
   },
   addOrUpdate(user) {
     const users = this.getAll();
-    const nu = { ...user, updatedAt: new Date().toISOString() };
-    const idx = users.findIndex(u => u.email === user.email);
+    const normalizedEmail = String(user?.email || "").toLowerCase();
+    const nu = { ...user, email: normalizedEmail, updatedAt: new Date().toISOString() };
+    const idx = users.findIndex(u => String(u.email).toLowerCase() === normalizedEmail);
     if (idx > -1) {
       users[idx] = { ...users[idx], ...nu };
     } else {
@@ -357,20 +391,25 @@ const UserStore = {
   },
   updateUserFields(email, fields) {
     const users = this.getAll();
-    const u = users.find(x => x.email === email);
+    const targetEmail = String(email || "").toLowerCase();
+    const u = users.find(x => String(x.email).toLowerCase() === targetEmail);
     if (u) {
       Object.assign(u, cleanObject(fields), { updatedAt: new Date().toISOString() });
       this.save(mergeUsersByEmail(users));
       void this.persistRemote(u);
       const curr = Auth.getUser();
-      if (curr && curr.email === email) {
-        const synced = Auth.syncCurrentUserFromStore(email);
+      if (curr && String(curr.email).toLowerCase() === targetEmail) {
+        const synced = Auth.syncCurrentUserFromStore(targetEmail);
+        if (synced?.status === 'rejected') {
+          Auth.forceLogout('Your account was rejected by the Mentorist admin team.');
+          return;
+        }
         if (synced && window.location.pathname.includes('mentorapplication.html') && synced.role === 'mentor' && synced.status === 'active') {
           Auth.routeAfterLogin(synced);
         }
       }
       if (typeof window.refreshMentoristState === 'function') {
-        window.refreshMentoristState(email);
+        window.refreshMentoristState(targetEmail);
       }
     }
   }
@@ -737,6 +776,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       });
     });
+    // Subscribe to real-time changes on the users table so admin views update instantly
+    try {
+      if (typeof window.setRealtimeStatus === 'function') window.setRealtimeStatus('connecting');
+      const channel = supabaseClient.channel('public:mentorist_profiles');
+      channel.on('postgres_changes', { event: '*', schema: 'public', table: CONFIG.TABLES.users }, (payload) => {
+        try {
+          const evt = payload.event || payload.eventType || payload.type || '';
+          if (evt === 'INSERT' || evt === 'UPDATE' || evt === 'UPDATE:') {
+            const newRow = payload.new || payload.record || payload.payload || null;
+            const u = fromRemoteUser(newRow);
+            if (u) {
+              UserStore.addOrUpdate(u);
+              if (typeof window.refreshMentoristState === 'function') window.refreshMentoristState(u.email);
+            }
+          } else if (evt === 'DELETE') {
+            const oldRow = payload.old || payload.record || null;
+            const email = oldRow?.email;
+            if (email) {
+              const users = UserStore.getAll().filter(x => x.email !== String(email).toLowerCase());
+              UserStore.save(users);
+              if (typeof window.refreshMentoristState === 'function') window.refreshMentoristState();
+            }
+          }
+        } catch (e) {
+          console.warn('Realtime user event handling error', e?.message || e);
+        }
+      }).subscribe();
+      if (typeof window.setRealtimeStatus === 'function') window.setRealtimeStatus('connected');
+    } catch (e) {
+      console.warn('Realtime subscription unavailable', e?.message || e);
+      if (typeof window.setRealtimeStatus === 'function') window.setRealtimeStatus('disconnected');
+    }
     setInterval(() => {
       UserStore.refreshFromRemote().then(() => {
         QuestionStore.refreshFromRemote().finally(() => {
@@ -748,13 +819,37 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       });
     }, 5000);
+
+    window.addEventListener('focus', () => {
+      UserStore.refreshFromRemote().then(() => {
+        QuestionStore.refreshFromRemote().finally(() => {
+          AlertStore.refreshFromRemote().finally(() => {
+            if (typeof window.refreshMentoristState === 'function') {
+              window.refreshMentoristState();
+            }
+          });
+        });
+      }).catch(() => {});
+    });
   }
 });
+
+window.setRealtimeStatus = function(status) {
+  const badge = document.getElementById('realtimeStatusBadge');
+  if (!badge) return;
+  badge.textContent = `Realtime: ${status}`;
+  badge.className = `realtime-badge realtime-${String(status).toLowerCase().replace(/\s+/g,'-')}`;
+};
 
 window.refreshMentoristState = function(email) {
   const current = Auth.getUser();
   const targetEmail = email || current?.email;
   const refreshed = targetEmail ? Auth.syncCurrentUserFromStore(targetEmail) : current;
+
+  if (refreshed?.status === 'rejected' && current && String(current.email || '').toLowerCase() === String(targetEmail || '').toLowerCase()) {
+    Auth.forceLogout('Your Mentorist account was rejected by the admin team.');
+    return;
+  }
 
   if (window.location.pathname.includes('admin.html')) {
     if (typeof window.render === 'function') window.render();
@@ -853,4 +948,3 @@ const GlobalBroadcast = {
     }
   }
 };
-
