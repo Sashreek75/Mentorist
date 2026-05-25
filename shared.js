@@ -642,7 +642,10 @@ const GoogleAuth = {
       await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + window.location.pathname
+          redirectTo: new URL('auth.html?mode=login', window.location.origin).href,
+          queryParams: {
+            prompt: 'select_account'
+          }
         }
       });
     });

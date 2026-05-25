@@ -282,12 +282,20 @@ footer{background:var(--bg);border-top:1px solid var(--b1);padding:48px 24px;col
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="shared.js"></script>
 <script>
-  if(typeof Auth!=='undefined' && Auth.isLoggedIn()){
-    const user = Auth.getUser();
+  Promise.resolve(UserStore.refreshFromRemote()).then(() => {
+    if (typeof Auth !== 'undefined' && Auth.isLoggedIn()) {
+      const user = Auth.syncCurrentUserFromStore(Auth.getUser()?.email) || Auth.getUser();
+      if (user) {
+        Auth.routeAfterLogin(user);
+        return;
+      }
+    }
+
+    const user = typeof Auth !== 'undefined' && Auth.getUser ? Auth.getUser() : null;
     const actions = document.getElementById('navActions');
     
-    // Update buttons to show Dashboard instead of Join Free
-    if(actions) {
+    // Update buttons to show Dashboard instead of Join Free when a session exists
+    if(actions && user) {
       actions.innerHTML = `
         <a href="#" onclick="Auth.logout()" class="nav-sign-in">Log out</a>
         <button onclick="Auth.routeAfterLogin(Auth.getUser())" class="nav-get-started" style="border:none; cursor:pointer;">${user.onboarded ? 'Go to Dashboard' : 'Continue Setup'}</button>
@@ -296,11 +304,11 @@ footer{background:var(--bg);border-top:1px solid var(--b1);padding:48px 24px;col
     
     // Also update the hero button
     const heroBtn = document.querySelector('.hero .btn-primary');
-    if(heroBtn) {
+    if(heroBtn && user) {
       heroBtn.innerHTML = `${user.onboarded ? 'Go to Dashboard' : 'Continue Setup'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>`;
       heroBtn.onclick = (e) => { e.preventDefault(); Auth.routeAfterLogin(user); };
     }
-  }
+  });
   
   // Nav scroll
   const nav=document.getElementById('nav');
