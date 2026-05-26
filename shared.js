@@ -204,12 +204,12 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     await UserStore.refreshFromRemote();
     
     // Auto-route only if we are currently on the auth page
-    if (window.location.pathname.includes('auth.html')) {
+    if (window.location.pathname.includes('/auth')) {
         Auth.routeAfterLogin(appUser);
     }
   } else if (event === 'SIGNED_OUT') {
     localStorage.removeItem("mn_user");
-    if (!window.location.pathname.includes('index.html') && !window.location.pathname.includes('auth.html') && !window.location.pathname.includes('admin.html')) {
+    if (!window.location.pathname.includes('/index') && window.location.pathname !== '/' && !window.location.pathname.includes('/auth') && !window.location.pathname.includes('/admin')) {
         window.location.href = "index.html";
     }
   }
@@ -283,7 +283,7 @@ const Auth = {
     try {
       void supabaseClient.auth.signOut();
     } catch {}
-    if (!window.location.pathname.includes('auth.html')) {
+    if (!window.location.pathname.includes('/auth')) {
       window.location.href = 'auth.html?mode=login';
     }
   },
@@ -409,11 +409,11 @@ const UserStore = {
       const curr = Auth.getUser();
       if (curr && String(curr.email).toLowerCase() === targetEmail) {
         const synced = Auth.syncCurrentUserFromStore(targetEmail);
-        if (synced?.status === 'rejected' && !window.location.pathname.includes('admin.html')) {
+        if (synced?.status === 'rejected' && !window.location.pathname.includes('/admin')) {
           Auth.forceLogout('Your account was rejected by the Mentorist admin team.');
           return;
         }
-        if (synced && window.location.pathname.includes('mentorapplication.html') && synced.role === 'mentor' && synced.status === 'active') {
+        if (synced && window.location.pathname.includes('/mentorapplication') && synced.role === 'mentor' && synced.status === 'active') {
           Auth.routeAfterLogin(synced);
         }
       }
@@ -786,7 +786,7 @@ const MobileNav = {
 document.addEventListener('DOMContentLoaded', () => {
   MobileNav.init();
   GlobalBroadcast.init();
-  const needsRemoteSync = /auth\.html|admin\.html|mentor-review\.html|mentorapplication\.html|studentdashboard\.html|mentordashboard\.html|onboarding\.html|vault\.html/.test(window.location.pathname);
+  const needsRemoteSync = /\/auth|\/admin|\/mentor-review|\/mentorapplication|\/studentdashboard|\/mentordashboard|\/onboarding|\/vault/.test(window.location.pathname);
   if (needsRemoteSync) {
     UserStore.refreshFromRemote().then(() => {
       QuestionStore.refreshFromRemote().finally(() => {
@@ -871,37 +871,37 @@ window.refreshMentoristState = function(email) {
   const targetEmail = email || current?.email;
   const refreshed = targetEmail ? Auth.syncCurrentUserFromStore(targetEmail) : current;
 
-  if (refreshed?.status === 'rejected' && current && String(current.email || '').toLowerCase() === String(targetEmail || '').toLowerCase() && !window.location.pathname.includes('admin.html')) {
+  if (refreshed?.status === 'rejected' && current && String(current.email || '').toLowerCase() === String(targetEmail || '').toLowerCase() && !window.location.pathname.includes('/admin')) {
     Auth.forceLogout('Your Mentorist account was rejected by the admin team.');
     return;
   }
 
-  if (window.location.pathname.includes('admin.html')) {
+  if (window.location.pathname.includes('/admin')) {
     if (typeof window.render === 'function') window.render();
     if (typeof window.renderStats === 'function') window.renderStats();
     if (typeof window.renderAlerts === 'function') window.renderAlerts();
     if (typeof window.renderQuestions === 'function') window.renderQuestions();
   }
 
-  if (window.location.pathname.includes('mentor-review.html') && typeof window.renderQueue === 'function') {
+  if (window.location.pathname.includes('/mentor-review') && typeof window.renderQueue === 'function') {
     window.renderQueue();
   }
 
-  if (window.location.pathname.includes('studentdashboard.html')) {
+  if (window.location.pathname.includes('/studentdashboard')) {
     if (typeof window.refreshFeed === 'function') window.refreshFeed();
     if (typeof window.renderAlerts === 'function') window.renderAlerts();
   }
 
-  if (window.location.pathname.includes('mentordashboard.html')) {
+  if (window.location.pathname.includes('/mentordashboard')) {
     if (typeof window.render === 'function') window.render();
     if (typeof window.renderAlerts === 'function') window.renderAlerts();
   }
 
-  if (window.location.pathname.includes('mentorapplication.html') && refreshed && refreshed.role === 'mentor' && refreshed.status === 'active') {
+  if (window.location.pathname.includes('/mentorapplication') && refreshed && refreshed.role === 'mentor' && refreshed.status === 'active') {
     Auth.routeAfterLogin(refreshed);
   }
 
-  if (window.location.pathname.includes('auth.html') && refreshed) {
+  if (window.location.pathname.includes('/auth') && refreshed) {
     Auth.routeAfterLogin(refreshed);
   }
 };
