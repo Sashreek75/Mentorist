@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Dashboard — Mentorist</title>
+<title>Dashboard - Mentorist</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="stylesheet" href="shared.css">
 <style>
@@ -190,7 +190,7 @@ body{background:var(--bg);}
 
             <div class="form-group">
               <label class="form-label" for="qMeta">Specific Context (Optional)</label>
-              <input type="text" class="form-input" id="qMeta" maxlength="200" placeholder="e.g. Current 3.8 GPA · Goal: SWE at Google · Strong backend background">
+              <input type="text" class="form-input" id="qMeta" maxlength="200" placeholder="e.g. Current 3.8 GPA | Goal: SWE at Google | Strong backend background">
             </div>
 
             <div class="alert alert-info" style="margin-bottom:32px;">
@@ -251,8 +251,8 @@ body{background:var(--bg);}
       document.getElementById('profileRow').style.display = 'inline-flex';
       const gm={'9':'9th','10':'10th','11':'11th','12':'12th','parent':'Parent','international':'Intl.'};
       const im={stem:'STEM',business:'Business',humanities:'Humanities',arts:'Arts',medicine:'Med',law:'Law',undecided:'Exploring'};
-      document.getElementById('pGrade').textContent = gm[p.grade]||p.grade||'—';
-      document.getElementById('pInterest').textContent = im[p.interest]||'—';
+      document.getElementById('pGrade').textContent = gm[p.grade]||p.grade||'-';
+      document.getElementById('pInterest').textContent = im[p.interest]||'-';
     }
   }
 
@@ -409,7 +409,7 @@ body{background:var(--bg);}
         ${isAns ? `<div class="answer-panel">${answersHtml}</div>` : ''}
         <div class="qstatus-bar ${isAns?'qstatus-answered':'qstatus-pending'}">
           <div class="dot-indicator" style="background:${isAns?'var(--green)':'var(--amber)'}"></div>
-          ${isAns ? `${q.answers.length} Mentor Feedback${q.answers.length>1?'s':''}` : 'Awaiting Peer Analysis — Expected within 48 hours'}
+          ${isAns ? `${q.answers.length} Mentor Feedback${q.answers.length>1?'s':''}` : 'Awaiting peer analysis - expected within 48 hours'}
         </div>
       </div>`;
     }).join('');

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Mentor Dashboard — Mentorist</title>
+<title>Mentor Dashboard - Mentorist</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="stylesheet" href="shared.css">
 <style>
@@ -367,7 +367,7 @@ body{background:var(--bg);}
     QuestionStore.addAnswer(id, {
       mentorEmail: user.email,
       mentorName: user.name,
-      mentorBio: user.applicationData ? `${user.applicationData.university} · ${user.applicationData.major}` : 'Verified Mentor',
+      mentorBio: user.applicationData ? `${user.applicationData.university} | ${user.applicationData.major}` : 'Verified Mentor',
       text: text
     });
     Utils.toast('Strategic guidance published to the Knowledge Vault!', 'success');
