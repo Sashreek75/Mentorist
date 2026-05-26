@@ -209,7 +209,7 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     }
   } else if (event === 'SIGNED_OUT') {
     localStorage.removeItem("mn_user");
-    if (!window.location.pathname.includes('index.html') && !window.location.pathname.includes('auth.html')) {
+    if (!window.location.pathname.includes('index.html') && !window.location.pathname.includes('auth.html') && !window.location.pathname.includes('admin.html')) {
         window.location.href = "index.html";
     }
   }
@@ -587,11 +587,11 @@ const AdminAuth = {
   },
   require() {
     if (!this.check()) {
-      if (this.authenticate()) {
-        window.location.reload();
-      } else {
+      if (!this.authenticate()) {
         window.location.href = "index.html";
       }
+      // If authenticate() succeeded, session is now active.
+      // No reload needed — the page script continues execution.
     }
   }
 };
@@ -852,7 +852,7 @@ window.refreshMentoristState = function(email) {
   const targetEmail = email || current?.email;
   const refreshed = targetEmail ? Auth.syncCurrentUserFromStore(targetEmail) : current;
 
-  if (refreshed?.status === 'rejected' && current && String(current.email || '').toLowerCase() === String(targetEmail || '').toLowerCase()) {
+  if (refreshed?.status === 'rejected' && current && String(current.email || '').toLowerCase() === String(targetEmail || '').toLowerCase() && !window.location.pathname.includes('admin.html')) {
     Auth.forceLogout('Your Mentorist account was rejected by the admin team.');
     return;
   }
