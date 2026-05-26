@@ -582,23 +582,62 @@ const AdminAuth = {
   check() {
     return sessionStorage.getItem("mn_admin_session") === "active";
   },
-  authenticate() {
-    const p = prompt("Enter Admin Password:");
-    if (p === this.PASS) {
-      sessionStorage.setItem("mn_admin_session", "active");
-      return true;
-    }
-    alert("Incorrect password.");
-    return false;
-  },
   require() {
-    if (!this.check()) {
-      if (!this.authenticate()) {
-        window.location.href = "index.html";
+    if (this.check()) return;
+
+    // Halt everything and show a custom password screen
+    document.body.innerHTML = `
+      <div style="position:fixed;inset:0;background:var(--bg);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+        <div style="max-width:400px;width:100%;background:var(--bg-1);border:1px solid var(--b1);border-radius:var(--r-2xl);padding:40px;text-align:center;box-shadow:0 30px 60px -12px rgba(0,0,0,0.5);">
+          <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;background:var(--green-dim);color:var(--green);border-radius:50%;margin-bottom:24px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          <h2 style="font-family:var(--font-h);font-size:28px;color:var(--t1);margin-bottom:12px;font-weight:800;">Restricted Access</h2>
+          <p style="color:var(--t3);font-size:15px;margin-bottom:32px;">Please enter the master password to unlock the admin dashboard.</p>
+          <input type="password" id="mnAdminPwd" placeholder="Password" style="width:100%;background:var(--bg-2);border:1px solid var(--b2);padding:14px 16px;border-radius:var(--r-lg);color:var(--t1);font-size:16px;margin-bottom:16px;outline:none;transition:border-color 0.2s;" />
+          <p id="mnAdminErr" style="color:var(--red);font-size:14px;font-weight:600;margin-bottom:16px;display:none;"></p>
+          <button id="mnAdminBtn" style="width:100%;background:var(--green);color:#000;border:none;padding:14px;border-radius:var(--r-pill);font-weight:800;font-size:16px;cursor:pointer;transition:transform 0.2s, background 0.2s;">Unlock Dashboard</button>
+        </div>
+      </div>
+    `;
+
+    let attempts = 3;
+    const btn = document.getElementById('mnAdminBtn');
+    const input = document.getElementById('mnAdminPwd');
+    const err = document.getElementById('mnAdminErr');
+
+    input.addEventListener('focus', () => input.style.borderColor = 'var(--green)');
+    input.addEventListener('blur', () => input.style.borderColor = 'var(--b2)');
+
+    const submit = () => {
+      const val = input.value;
+      if (val === this.PASS) {
+        sessionStorage.setItem("mn_admin_session", "active");
+        window.location.reload();
+      } else {
+        attempts--;
+        if (attempts > 0) {
+          err.textContent = `Incorrect password. ${attempts} attempt${attempts === 1 ? '' : 's'} remaining.`;
+          err.style.display = 'block';
+          input.value = '';
+          input.focus();
+          btn.style.transform = 'translateX(-5px)';
+          setTimeout(() => btn.style.transform = 'translateX(5px)', 100);
+          setTimeout(() => btn.style.transform = 'translateX(0)', 200);
+        } else {
+          window.location.href = "index.html";
+        }
       }
-      // If authenticate() succeeded, session is now active.
-      // No reload needed — the page script continues execution.
-    }
+    };
+
+    btn.onclick = submit;
+    input.onkeydown = (e) => { if (e.key === 'Enter') submit(); };
+    
+    // Slight delay to ensure DOM is ready before focusing
+    setTimeout(() => input.focus(), 100);
+
+    // Throw an error to completely halt the rest of the script execution in admin.html
+    throw new Error("Admin authentication required. Halting execution.");
   }
 };
 
@@ -788,6 +827,8 @@ document.addEventListener('DOMContentLoaded', () => {
   GlobalBroadcast.init();
   const needsRemoteSync = /\/auth|\/admin|\/mentor-review|\/mentorapplication|\/studentdashboard|\/mentordashboard|\/onboarding|\/vault/.test(window.location.pathname);
   if (needsRemoteSync) {
+    if (window.location.pathname.includes('/admin') && !AdminAuth.check()) return; // Don't sync if locked out
+
     UserStore.refreshFromRemote().then(() => {
       QuestionStore.refreshFromRemote().finally(() => {
         AlertStore.refreshFromRemote().finally(() => {
