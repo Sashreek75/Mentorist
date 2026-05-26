@@ -409,8 +409,12 @@ const UserStore = {
       const curr = Auth.getUser();
       if (curr && String(curr.email).toLowerCase() === targetEmail) {
         const synced = Auth.syncCurrentUserFromStore(targetEmail);
-        if (synced?.status === 'rejected' && !window.location.pathname.includes('/admin')) {
-          Auth.forceLogout('Your account was rejected by the Mentorist admin team.');
+        if ((synced?.status === 'rejected' || synced?.status === 'banned') && !window.location.pathname.includes('/admin')) {
+          Auth.forceLogout('Your account was permanently banned or rejected by the Mentorist admin team.');
+          return;
+        }
+        if (synced?.status === 'suspended' && !window.location.pathname.includes('/admin')) {
+          Auth.forceLogout('Your account has been temporarily suspended.');
           return;
         }
         if (synced && window.location.pathname.includes('/mentorapplication') && synced.role === 'mentor' && synced.status === 'active') {
@@ -912,8 +916,12 @@ window.refreshMentoristState = function(email) {
   const targetEmail = email || current?.email;
   const refreshed = targetEmail ? Auth.syncCurrentUserFromStore(targetEmail) : current;
 
-  if (refreshed?.status === 'rejected' && current && String(current.email || '').toLowerCase() === String(targetEmail || '').toLowerCase() && !window.location.pathname.includes('/admin')) {
-    Auth.forceLogout('Your Mentorist account was rejected by the admin team.');
+  if ((refreshed?.status === 'rejected' || refreshed?.status === 'banned') && current && String(current.email || '').toLowerCase() === String(targetEmail || '').toLowerCase() && !window.location.pathname.includes('/admin')) {
+    Auth.forceLogout('Your Mentorist account was permanently banned or rejected by the admin team.');
+    return;
+  }
+  if (refreshed?.status === 'suspended' && current && String(current.email || '').toLowerCase() === String(targetEmail || '').toLowerCase() && !window.location.pathname.includes('/admin')) {
+    Auth.forceLogout('Your Mentorist account has been temporarily suspended.');
     return;
   }
 

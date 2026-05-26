@@ -504,12 +504,13 @@
       });
 
       sortedUsers.forEach(u => {
-        if (u.status === 'rejected' && !recentlyRejectedThisSession.has(u.email)) {
+        if ((u.status === 'rejected' || u.status === 'banned') && !recentlyRejectedThisSession.has(u.email)) {
           return;
         }
         const statusClass = `st-${u.status || 'pending'}`;
         const canApprove = u.status !== 'active';
-        const canReject = u.status !== 'rejected';
+        const canSuspend = u.status !== 'suspended' && u.status !== 'banned' && u.status !== 'rejected';
+        const canBan = u.status !== 'banned' && u.status !== 'rejected';
         const isOnline = u.lastSeenAt ? (Date.now() - new Date(u.lastSeenAt).getTime() < 15 * 60 * 1000) : false;
 
         let details = `<span class="badge badge-gray">${u.role}</span>
@@ -533,14 +534,15 @@
           ${isAdmin ? `
           <td style="vertical-align:top;">
             <div class="action-btns">
-              ${u.status === 'rejected'
+              ${u.status === 'rejected' || u.status === 'banned'
                 ? '<span style="color:var(--t4); font-style:italic; font-size:12px;">Removed after refresh</span>'
                 : user && u.email === user.email
                   ? '<span style="color:var(--t4); font-style:italic; font-size:12px;">Current Session</span>'
                   : `
                     ${canApprove ? `<button class="btn-action btn-approve" onclick="performAction('${u.email}', 'active', 'approved')">Approve</button>` : ''}
-                    ${canReject ? `<button class="btn-action btn-reject" onclick="performAction('${u.email}', 'rejected', 'rejected')">Reject</button>` : ''}
-                    ${!canApprove && !canReject ? '<span style="color:var(--t4);">—</span>' : ''}
+                    ${canSuspend ? `<button class="btn-action btn-reject" onclick="performAction('${u.email}', 'suspended', 'suspended')">Suspend</button>` : ''}
+                    ${canBan ? `<button class="btn-action btn-reject" style="background:var(--red-dim);color:var(--red);border-color:rgba(255,59,48,0.2);" onclick="performAction('${u.email}', 'banned', 'banned')">Ban</button>` : ''}
+                    ${!canApprove && !canSuspend && !canBan ? '<span style="color:var(--t4);">—</span>' : ''}
                   `}
             </div>
           </td>` : ''}
@@ -572,7 +574,7 @@
         fields.onboarded = newStatus === 'active';
         fields.approvedAt = newStatus === 'active' ? new Date().toISOString() : null;
       }
-      if (newStatus === 'rejected') {
+      if (newStatus === 'rejected' || newStatus === 'banned') {
         fields.rejectedAt = new Date().toISOString();
         recentlyRejectedThisSession.add(email);
       } else {
