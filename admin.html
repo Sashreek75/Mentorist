@@ -516,16 +516,16 @@
           <div style="font-size:11px; color:var(--t4); margin-top:6px;">${isOnline ? 'Online' : 'Offline'}</div>`;
         if (u.role === 'mentor' && u.applicationData) {
           details += `<div style="font-size:12px; color:var(--t3); margin-top:6px; line-height:1.4;">
-            <strong>${u.applicationData.university}</strong><br>
-            ${u.applicationData.major}
+            <strong>${Utils.escapeHtml(u.applicationData.university)}</strong><br>
+            ${Utils.escapeHtml(u.applicationData.major)}
           </div>`;
         }
 
         html += `<tr>
           <td>
             <div class="user-info">
-              <span class="user-name">${u.name}</span>
-              <span class="user-email">${u.email}</span>
+              <span class="user-name">${Utils.escapeHtml(u.name)}</span>
+              <span class="user-email">${Utils.escapeHtml(u.email)}</span>
             </div>
           </td>
           <td style="max-width:250px; white-space:normal; vertical-align:top;">${details}</td>
@@ -554,19 +554,21 @@
 
     function performAction(email, newStatus, label) {
       const users = UserStore.getAll();
-      const user = users.find(u => u.email === email);
-      if (!user) return;
+      const targetUser = users.find(u => u.email === email);
+      if (!targetUser) return;
 
       lastAction = { 
         email, 
-        oldStatus: user.status, 
-        oldRejectedAt: user.rejectedAt || null,
+        oldStatus: targetUser.status, 
+        oldRejectedAt: targetUser.rejectedAt || null,
+        oldOnboarded: targetUser.onboarded,
+        oldApprovedAt: targetUser.approvedAt || null,
         newStatus,
         label 
       };
 
       const fields = { status: newStatus };
-      if (user.role === 'mentor') {
+      if (targetUser.role === 'mentor') {
         fields.onboarded = newStatus === 'active';
         fields.approvedAt = newStatus === 'active' ? new Date().toISOString() : null;
       }
@@ -586,7 +588,9 @@
       if (!lastAction) return;
       UserStore.updateUserFields(lastAction.email, { 
         status: lastAction.oldStatus,
-        rejectedAt: lastAction.oldRejectedAt
+        rejectedAt: lastAction.oldRejectedAt,
+        onboarded: lastAction.oldOnboarded,
+        approvedAt: lastAction.oldApprovedAt
       });
       lastAction = null;
       Utils.toast('Action undone.', 'info');
@@ -671,6 +675,7 @@
       const rejectedMentors = users.filter(u => isMentorApplicant(u) && u.status === 'rejected').length;
       const totalQuestions = qs.length;
       const answeredQuestions = qs.filter(q => q.answers && q.answers.length > 0).length;
+      const alertCount = AlertStore.getAll().length;
       
       const grid = document.getElementById('statsGrid');
       grid.innerHTML = `
@@ -701,6 +706,10 @@
         <div class="stat-card">
           <div class="stat-val">${answeredQuestions}</div>
           <div class="stat-label">Strategic Responses</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">${alertCount}</div>
+          <div class="stat-label">Total Broadcasts</div>
         </div>
       `;
     }
@@ -758,10 +767,10 @@
       als.forEach(a => {
         html += `<tr>
           <td>
-            <div style="font-weight:700; color:var(--t1);">${a.title}</div>
-            <div style="font-size:12px; color:var(--t4);">${a.tag}</div>
+            <div style="font-weight:700; color:var(--t1);">${Utils.escapeHtml(a.title)}</div>
+            <div style="font-size:12px; color:var(--t4);">${Utils.escapeHtml(a.tag)}</div>
           </td>
-          <td><span style="font-size:13px; color:var(--t3);">${a.author}</span></td>
+          <td><span style="font-size:13px; color:var(--t3);">${Utils.escapeHtml(a.author)}</span></td>
           <td><span style="font-size:12px; color:var(--t4);">${new Date(a.createdAt).toLocaleDateString()}</span></td>
           ${isAdmin ? `<td><button class="btn-action btn-reject" onclick="deleteAlert('${a.id}')">Delete</button></td>` : ''}
         </tr>`;
@@ -775,7 +784,10 @@
       renderAlerts();
     }
 
-    Promise.resolve(UserStore.refreshFromRemote()).then(initAdmin);
+    Promise.resolve(UserStore.refreshFromRemote())
+      .then(() => QuestionStore.refreshFromRemote())
+      .then(() => AlertStore.refreshFromRemote())
+      .then(initAdmin);
   </script>
 </body>
 

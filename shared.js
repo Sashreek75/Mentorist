@@ -293,7 +293,13 @@ const Auth = {
   },
   requireAuth() {
     const u = this.getUser();
-    if (!u) { window.location.href = "auth.html"; return null; }
+    if (!u) { 
+      if (localStorage.getItem("sb-vmuukfegnjotlgvdqfrx-auth-token")) {
+        return { email: 'loading@mentorist.org', role: 'student', name: 'Loading...', status: 'active', onboarded: true };
+      }
+      window.location.href = "auth.html"; 
+      return null; 
+    }
     return u;
   },
   routeAfterLogin(user) {
@@ -403,7 +409,7 @@ const UserStore = {
       const curr = Auth.getUser();
       if (curr && String(curr.email).toLowerCase() === targetEmail) {
         const synced = Auth.syncCurrentUserFromStore(targetEmail);
-        if (synced?.status === 'rejected') {
+        if (synced?.status === 'rejected' && !window.location.pathname.includes('admin.html')) {
           Auth.forceLogout('Your account was rejected by the Mentorist admin team.');
           return;
         }
@@ -598,6 +604,15 @@ const AdminAuth = {
 
 /* ===== UTILS ===== */
 const Utils = {
+  escapeHtml(unsafe) {
+    if (!unsafe) return "";
+    return String(unsafe)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  },
   initials(name) {
     if (!name) return "?";
     return name.trim().split(/\s+/).map(w => w[0]).join("").toUpperCase().slice(0, 2);
@@ -808,8 +823,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
           console.warn('Realtime user event handling error', e?.message || e);
         }
-      }).subscribe();
-      if (typeof window.setRealtimeStatus === 'function') window.setRealtimeStatus('connected');
+      }).subscribe((status) => {
+        if (typeof window.setRealtimeStatus === 'function') {
+          if (status === 'SUBSCRIBED') window.setRealtimeStatus('connected');
+          else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') window.setRealtimeStatus('disconnected');
+        }
+      });
     } catch (e) {
       console.warn('Realtime subscription unavailable', e?.message || e);
       if (typeof window.setRealtimeStatus === 'function') window.setRealtimeStatus('disconnected');
@@ -923,8 +942,8 @@ const GlobalBroadcast = {
         <span style="font-size:10px; font-weight:800; color:var(--green); background:var(--green-dim); padding:4px 12px; border-radius:var(--r-pill); text-transform:uppercase; letter-spacing:0.1em; border:1px solid rgba(0,232,122,0.2);">${al.tag || 'Global Update'}</span>
         <span style="font-size:12px; color:var(--t4); font-weight:600;">Broadcasted by Founder</span>
       </div>
-      <h2 style="font-family:var(--font-h); font-size:32px; font-weight:800; color:var(--t1); margin-bottom:16px; letter-spacing:-0.03em; line-height:1.2;">${al.title}</h2>
-      <p style="font-size:16px; color:var(--t2); line-height:1.7; margin-bottom:32px;">${al.body}</p>
+      <h2 style="font-family:var(--font-h); font-size:32px; font-weight:800; color:var(--t1); margin-bottom:16px; letter-spacing:-0.03em; line-height:1.2;">${Utils.escapeHtml(al.title)}</h2>
+      <p style="font-size:16px; color:var(--t2); line-height:1.7; margin-bottom:32px;">${Utils.escapeHtml(al.body)}</p>
       
       <div style="display:flex; gap:16px;">
         <button id="bcClose" class="btn btn-primary btn-lg btn-full" style="flex:1;">Got it, thanks!</button>
