@@ -231,6 +231,9 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
 <script src="shared.js"></script>
 <script>
   let selRole='student';
+  let isSignupInProgress = false;
+  let isLoginInProgress = false;
+  
   const p=new URLSearchParams(location.search);
   if(p.get('mode')==='login')showLogin();
   if(p.get('role')==='mentor')setTimeout(()=>document.querySelector('[data-role="mentor"]').click(),10);
@@ -267,36 +270,47 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
   GoogleAuth.init(document.getElementById('signupGoogleBtn'), true);
   GoogleAuth.init(document.getElementById('loginGoogleBtn'), false);
 
-  // Email signup and login handlers - removed local sandbox fallback
+  // Email signup and login handlers
   async function handleEmailSignup(){
-    const name = document.getElementById('signupName').value.trim();
-    const email = document.getElementById('signupEmail').value.trim().toLowerCase();
-    const pass = document.getElementById('signupPassword').value;
+    // Prevent double submissions
+    if (isSignupInProgress) return;
+    isSignupInProgress = true;
     
-    if(!name || !email || !pass) { 
-      Utils.toast('Please fill out all fields.', 'error'); 
-      return; 
+    const signupBtn = document.querySelector('[onclick="handleEmailSignup()"]');
+    const originalText = signupBtn?.textContent;
+    if (signupBtn) {
+      signupBtn.disabled = true;
+      signupBtn.textContent = 'Creating account...';
     }
-    
-    if (pass.length < 6) {
-      Utils.toast('Password must be at least 6 characters long.', 'error');
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Utils.toast('Please enter a valid email address.', 'error');
-      return;
-    }
-
-    let role = selRole;
-    if (email.endsWith('@mentorist.org') || email.startsWith('admin')) role = 'admin';
-    
-    // Store pending role before Supabase auth
-    localStorage.setItem('pendingRole', role);
 
     try {
+      const name = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim().toLowerCase();
+      const pass = document.getElementById('signupPassword').value;
+      
+      if(!name || !email || !pass) { 
+        Utils.toast('Please fill out all fields.', 'error'); 
+        return; 
+      }
+      
+      if (pass.length < 6) {
+        Utils.toast('Password must be at least 6 characters long.', 'error');
+        return;
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        Utils.toast('Please enter a valid email address.', 'error');
+        return;
+      }
+
+      let role = selRole;
+      if (email.endsWith('@mentorist.org') || email.startsWith('admin')) role = 'admin';
+      
+      // Store pending role before Supabase auth
+      localStorage.setItem('pendingRole', role);
+
       const { data, error } = await supabaseClient.auth.signUp({
         email,
         password: pass,
@@ -311,49 +325,88 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
       });
 
       if (error) {
-        if (error.message.includes('already registered')) {
+        localStorage.removeItem('pendingRole');
+        
+        // Better error message detection
+        const errorMsg = (error.message || '').toLowerCase();
+        
+        if (errorMsg.includes('already registered') || errorMsg.includes('user already') || errorMsg.includes('already exists')) {
           Utils.toast('This email is already registered. Please sign in instead.', 'error');
-        } else if (error.message.includes('password')) {
+          // Auto-switch to login view
+          setTimeout(() => showLogin(), 500);
+        } else if (errorMsg.includes('password') || errorMsg.includes('invalid password')) {
           Utils.toast('Password must be at least 6 characters.', 'error');
+        } else if (errorMsg.includes('email') || errorMsg.includes('invalid email')) {
+          Utils.toast('Please enter a valid email address.', 'error');
+        } else if (errorMsg.includes('rate limit') || errorMsg.includes('too many')) {
+          Utils.toast('Too many sign-up attempts. Please try again in a few minutes.', 'error');
         } else {
           Utils.toast(`Sign-up failed: ${error.message || 'Unknown error'}`, 'error');
         }
-        localStorage.removeItem('pendingRole');
         return;
       }
 
-      // Successful signup
+      // Successful signup - session will be established and onAuthStateChange will fire
       if (data?.user) {
         Utils.toast('Account created! Welcome to Mentorist.', 'success');
-        // The onAuthStateChange handler will take care of routing
+        // The onAuthStateChange handler will take care of routing after session is established
+      } else {
+        Utils.toast('Account created but no session established. Please try logging in.', 'info');
       }
     } catch (err) {
-      Utils.toast('An error occurred during sign-up. Please try again.', 'error');
       localStorage.removeItem('pendingRole');
-      console.error('Signup error:', err);
+      Utils.toast('An error occurred during sign-up. Please try again.', 'error');
+      console.error('Signup exception:', err);
+    } finally {
+      isSignupInProgress = false;
+      if (signupBtn) {
+        signupBtn.disabled = false;
+        signupBtn.textContent = originalText || 'Create Account';
+      }
     }
   }
 
   async function handleEmailLogin(){
-    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-    const pass = document.getElementById('loginPassword').value;
+    // Prevent double submissions
+    if (isLoginInProgress) return;
+    isLoginInProgress = true;
     
-    if(!email || !pass) { 
-      Utils.toast('Please enter both email and password.', 'error'); 
-      return; 
+    const loginBtn = document.querySelector('[onclick="handleEmailLogin()"]');
+    const originalText = loginBtn?.textContent;
+    if (loginBtn) {
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Signing in...';
     }
 
     try {
+      const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+      const pass = document.getElementById('loginPassword').value;
+      
+      if(!email || !pass) { 
+        Utils.toast('Please enter both email and password.', 'error'); 
+        return; 
+      }
+
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password: pass
       });
 
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
+        const errorMsg = (error.message || '').toLowerCase();
+        
+        if (errorMsg.includes('invalid') || errorMsg.includes('credentials')) {
           Utils.toast('Invalid email or password. Please try again.', 'error');
-        } else if (error.message.includes('Email not confirmed')) {
+        } else if (errorMsg.includes('email not confirmed') || errorMsg.includes('not verified')) {
           Utils.toast('Please check your email to verify your account.', 'error');
+        } else if (errorMsg.includes('user not found')) {
+          Utils.toast('No account found with this email. Please sign up first.', 'error');
+          // Auto-switch to signup view
+          setTimeout(() => showSignup(), 500);
+        } else if (errorMsg.includes('disabled') || errorMsg.includes('banned')) {
+          Utils.toast('This account has been disabled. Please contact support.', 'error');
+        } else if (errorMsg.includes('rate limit') || errorMsg.includes('too many')) {
+          Utils.toast('Too many login attempts. Please try again in a few minutes.', 'error');
         } else {
           Utils.toast(error.message || 'Login failed. Please try again.', 'error');
         }
@@ -362,11 +415,19 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
 
       if (data?.user) {
         Utils.toast('Welcome back to Mentorist!', 'success');
-        // The onAuthStateChange handler will take care of routing
+        // The onAuthStateChange handler will take care of routing after session is established
+      } else {
+        Utils.toast('Login processed but no session established. Please try again.', 'info');
       }
     } catch (err) {
       Utils.toast('An error occurred during login. Please try again.', 'error');
-      console.error('Login error:', err);
+      console.error('Login exception:', err);
+    } finally {
+      isLoginInProgress = false;
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.textContent = originalText || 'Sign in to Dashboard';
+      }
     }
   }
 </script>
