@@ -786,6 +786,15 @@
       renderAlerts();
     }
 
+    window.render = render;
+    window.renderQuestions = renderQuestions;
+    window.renderStats = renderStats;
+    window.renderAlerts = renderAlerts;
+    window.refreshAdminUsers = refreshAdminUsers;
+    window.initAdmin = initAdmin;
+
+    initAdmin();
+
     Promise.resolve(UserStore.refreshFromRemote())
       .then(() => QuestionStore.refreshFromRemote())
       .then(() => AlertStore.refreshFromRemote())
