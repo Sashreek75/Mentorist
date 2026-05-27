@@ -240,7 +240,16 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
     localStorage.removeItem('mn_auth_notice');
   }
   Promise.resolve(UserStore.refreshFromRemote()).then(() => {
-    if (Auth.isLoggedIn()) Auth.routeAfterLogin(Auth.getUser());
+    if (Auth.isLoggedIn()) {
+      const googleRoute = sessionStorage.getItem('mn_google_post_auth_route');
+      const currentUser = Auth.syncCurrentUserFromStore(Auth.getUser()?.email) || Auth.getUser();
+      if (googleRoute === 'mentor-review') {
+        sessionStorage.removeItem('mn_google_post_auth_route');
+        window.location.href = 'mentor-review.html';
+        return;
+      }
+      Auth.routeAfterLogin(currentUser);
+    }
   });
 
   function showLogin(){document.getElementById('signupView').style.display='none';document.getElementById('loginView').style.display='block';}

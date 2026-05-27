@@ -1,290 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Mentor Review Center — Mentorist</title>
-  <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="stylesheet" href="shared.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mentor Review | Mentorist</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="shared.js"></script>
   <style>
-    body { background: var(--bg); }
-    
-    .review-layout {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 120px 24px 80px;
-    }
-
-    .review-header {
-      margin-bottom: 48px;
+    body { background: var(--bg); color: var(--t1); }
+    .review-page { min-height: 100vh; padding: 32px 24px 64px; }
+    .review-top {
+      max-width: 1180px;
+      margin: 0 auto 28px;
       display: flex;
       justify-content: space-between;
-      align-items: flex-end;
+      gap: 20px;
+      align-items: flex-start;
+      flex-wrap: wrap;
     }
-
-    .rh-left h1 {
-      font-family: var(--font-h);
-      font-size: 42px;
-      font-weight: 800;
-      color: var(--t1);
-      letter-spacing: -0.04em;
-      margin-bottom: 12px;
-    }
-
-    .rh-left p {
-      font-size: 16px;
-      color: var(--t3);
-      max-width: 600px;
-    }
-
-    .queue-stats {
-      display: flex;
-      gap: 16px;
-    }
-
-    .q-stat {
-      background: var(--bg-1);
+    .review-panel {
+      max-width: 1180px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.03);
       border: 1px solid var(--b1);
-      padding: 16px 24px;
-      border-radius: var(--r-2xl);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: var(--shadow-soft);
+    }
+    .review-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .review-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--b1);
+      border-radius: 20px;
+      padding: 20px;
+    }
+    .review-card h3 { margin: 0 0 10px; font-family: var(--font-h); }
+    .review-meta { color: var(--t3); font-size: 14px; margin-bottom: 8px; }
+    .review-note { color: var(--t2); line-height: 1.7; margin: 14px 0 18px; }
+    .review-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .empty-state, .access-state {
+      min-height: 52vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .access-state {
+      max-width: 680px;
+      margin: 0 auto;
+      align-items: center;
       text-align: center;
     }
-
-    .q-stat-val {
-      font-size: 24px;
-      font-weight: 800;
-      color: var(--green);
-      font-family: var(--font-h);
-    }
-
-    .q-stat-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--t4);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .mentor-grid {
+    .kv {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-      gap: 24px;
-    }
-
-    .mentor-card {
-      background: var(--bg-1);
-      border: 1px solid var(--b1);
-      border-radius: var(--r-3xl);
-      padding: 32px;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      overflow: hidden;
-      transition: all 0.3s cubic-bezier(0.2, 1, 0.3, 1);
-    }
-
-    .mentor-card:hover {
-      transform: translateY(-4px);
-      border-color: var(--green);
-      box-shadow: 0 20px 40px rgba(0,232,122,0.1);
-    }
-
-    .mentor-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 4px;
-      height: 100%;
-      background: var(--green);
-      opacity: 0.3;
-    }
-
-    .mc-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 24px;
-    }
-
-    .mc-user {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .mc-name {
-      font-family: var(--font-h);
-      font-size: 20px;
-      font-weight: 800;
-      color: var(--t1);
-    }
-
-    .mc-email {
-      font-size: 13px;
-      color: var(--t4);
-    }
-
-    .mc-tag {
-      font-size: 10px;
-      font-weight: 800;
-      color: var(--green);
-      background: var(--green-dim);
-      padding: 4px 10px;
-      border-radius: 999px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      border: 1px solid rgba(0,232,122,0.2);
-    }
-
-    .mc-data {
-      background: var(--bg-2);
-      border: 1px solid var(--b1);
-      border-radius: var(--r-2xl);
-      padding: 20px;
-      margin-bottom: 24px;
-      flex: 1;
-    }
-
-    .mc-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--t4);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 8px;
-    }
-
-    .mc-val {
-      color: var(--t1);
-      font-weight: 700;
-      font-size: 15px;
-      margin-bottom: 16px;
-    }
-
-    .mc-bio {
+      grid-template-columns: 120px 1fr;
+      gap: 10px;
+      margin-top: 14px;
       color: var(--t2);
       font-size: 14px;
-      line-height: 1.6;
-      font-style: italic;
     }
-
-    .mc-actions {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr;
-      gap: 12px;
-    }
-
-    .empty-state {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 120px 40px;
-      background: var(--bg-1);
-      border: 2px dashed var(--b1);
-      border-radius: var(--r-3xl);
-    }
-
-    .empty-state h2 {
-      font-family: var(--font-h);
-      font-size: 24px;
-      color: var(--t1);
-      margin-bottom: 12px;
-    }
-
-    .empty-state p {
-      color: var(--t4);
-      font-size: 16px;
-    }
-
-    @media(max-width:768px) {
-      .review-layout { padding: 100px 20px 80px; }
-      .review-header { flex-direction: column; align-items: flex-start; gap: 24px; margin-bottom: 32px; }
-      .rh-left h1 { font-size: 32px; }
-      .rh-left p { font-size: 14px; }
-      .queue-stats { flex-direction: column; }
-      .q-stat { width: 100%; }
-      .mentor-grid { grid-template-columns: 1fr; gap: 16px; }
-      .mentor-card { padding: 24px; }
-      .mc-actions { grid-template-columns: 1fr; }
-    }
-
-    @media(max-width:640px) {
-      .review-layout { padding: 80px 16px 80px; }
-      .rh-left h1 { font-size: 26px; }
-      .rh-left p { font-size: 13px; }
-      .q-stat-val { font-size: 20px; }
-      .q-stat-label { font-size: 10px; }
-      .mentor-grid { gap: 12px; }
-      .mentor-card { padding: 16px; }
-      .mc-name { font-size: 18px; }
-      .mc-email { font-size: 12px; }
-      .mc-data { padding: 16px; margin-bottom: 16px; }
-      .mc-label { font-size: 10px; }
-      .mc-val { font-size: 14px; margin-bottom: 12px; }
-      .mc-bio { font-size: 13px; }
-      .btn { font-size: 12px; padding: 8px 14px; }
-      .empty-state { padding: 60px 24px; }
-      .empty-state h2 { font-size: 20px; }
-      .empty-state p { font-size: 14px; }
-    }
-
-    @media(max-width:500px) {
-      .review-layout { padding: 70px 12px 80px; }
-      body { font-size: 14px; }
-      .rh-left h1 { font-size: 22px; }
-      .mentor-card { padding: 12px; }
-      .mc-name { font-size: 16px; }
-      .btn-lg { height: 40px; font-size: 12px; }
+    .kv strong { color: var(--t1); }
+    @media (max-width: 720px) {
+      .review-page { padding: 18px 14px 48px; }
+      .review-panel { padding: 18px; }
+      .kv { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-
-  <nav class="navbar">
-    <a href="admin.html" class="nav-logo">
-      <div class="nav-logomark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
-      <span class="nav-wordmark">Review Center</span>
-    </a>
-    <div class="nav-actions">
-      <a href="admin.html" class="btn btn-ghost btn-sm">Dashboard</a>
-      <button class="btn btn-ghost btn-sm" onclick="Auth.logout()">Log out</button>
+  <header class="navbar">
+    <div class="nav-brand">
+      <a href="index.html" class="nav-logo">
+        <img src="logo.png" alt="Mentorist Logo" class="logo-img" />
+        <span>Mentorist</span>
+      </a>
     </div>
-  </nav>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="mentorapplication.html">Application</a>
+      <a href="auth.html">Account</a>
+    </nav>
+  </header>
 
-  <div class="review-layout">
-    <div class="review-header">
+  <main class="review-page">
+    <section class="review-top">
       <div class="rh-left">
-        <h1>Mentor <span style="color:var(--green);">Review</span> Queue</h1>
-        <p>Analyze and approve academic mentors to ensure high-quality strategic guidance for the Mentorist community.</p>
+        <p class="section-kicker">Mentor Workflow</p>
+        <h1>Mentor <span style="color:var(--green);">Review</span> Status</h1>
+        <p>Your mentor account will appear here after Google sign-up or when the admin team reviews the queue.</p>
       </div>
-      <div class="queue-stats">
-        <div class="q-stat">
+      <div class="review-stats">
+        <div class="q-stat" style="min-width: 180px;">
+          <div class="q-stat-label">Pending Applications</div>
           <div class="q-stat-val" id="countVal">0</div>
-          <div class="q-stat-label">Pending</div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div id="mentorGrid" class="mentor-grid">
-      <!-- Mentors injected here -->
-    </div>
-  </div>
+    <section class="review-panel">
+      <div id="mentorGrid" class="review-grid"></div>
+    </section>
+  </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="shared.js"></script>
   <script>
-    AdminAuth.require();
+    const safeText = (value) => String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    const baseUser = Auth.requireAuth();
+    let currentUser = baseUser ? (Auth.syncCurrentUserFromStore(baseUser.email) || baseUser) : null;
+    currentUser = Auth.normalizeUser(currentUser);
     const isAdmin = AdminAuth.check();
-    const user = Auth.getUser();
-    
-    if (!isAdmin) {
-      document.body.innerHTML = `
-        <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--bg); color:var(--t1); font-family:var(--font);">
-          <div style="font-size:64px; margin-bottom:24px;">🔒</div>
-          <h1 style="font-family:var(--font-h); font-size:32px; margin-bottom:16px;">Access Restricted</h1>
-          <p style="color:var(--t3); margin-bottom:32px; text-align:center; max-width:400px;">This area is reserved for the Mentorist Founder and Admin team. If you should have access, please sign in with an administrative email.</p>
-          <a href="index.html" class="btn btn-primary">Return Home</a>
-        </div>
+
+    if (!currentUser) {
+      window.location.href = 'auth.html';
+    } else if (currentUser.role === 'mentor' && currentUser.status === 'active') {
+      Auth.routeAfterLogin(currentUser);
+    }
+
+    function renderMentorApplicantView() {
+      const grid = document.getElementById('mentorGrid');
+      const count = document.getElementById('countVal');
+      const title = document.querySelector('.rh-left h1');
+      const summary = document.querySelector('.rh-left p:nth-of-type(2)');
+
+      if (count) count.textContent = '1';
+      if (title) title.innerHTML = 'Mentor <span style="color:var(--green);">Review</span> Status';
+      if (summary) summary.textContent = 'Your mentor account is waiting for review. Finish any missing details, then check back here for approval updates.';
+
+      const app = currentUser.applicationData || {};
+      const status = currentUser.status || 'pending';
+      const statusLabel = status === 'rejected' ? 'Rejected' : status === 'active' ? 'Approved' : 'Pending Review';
+      const statusTone = status === 'rejected' ? '#f87171' : 'var(--green)';
+
+      grid.innerHTML = `
+        <article class="review-card" style="grid-column:1 / -1;">
+          <h3>${safeText(currentUser.name || currentUser.email)}</h3>
+          <div class="review-meta">${safeText(currentUser.email)}</div>
+          <div class="review-note">Your mentor application is currently <strong style="color:${statusTone};">${safeText(statusLabel)}</strong>.</div>
+          <div class="kv"><strong>Status</strong><span>${safeText(statusLabel)}</span></div>
+          <div class="kv"><strong>University</strong><span>${safeText(app.university || 'Not provided yet')}</span></div>
+          <div class="kv"><strong>Major</strong><span>${safeText(app.major || 'Not provided yet')}</span></div>
+          <div class="kv"><strong>Experience</strong><span>${safeText(app.experience || 'No statement provided yet')}</span></div>
+          <div class="review-actions" style="margin-top:18px;">
+            <a href="mentorapplication.html" class="btn btn-primary btn-lg">Finish / Update Application</a>
+            <a href="index.html" class="btn btn-ghost btn-lg" style="border:1px solid var(--b1);">Return Home</a>
+          </div>
+        </article>
       `;
     }
 
@@ -294,13 +165,13 @@
       const pending = users.filter(u => isMentorApplicant(u) && u.status === 'pending');
       const grid = document.getElementById('mentorGrid');
       const count = document.getElementById('countVal');
-      
-      count.textContent = pending.length;
+
+      if (count) count.textContent = String(pending.length);
 
       if (pending.length === 0) {
         grid.innerHTML = `
-          <div class="empty-state">
-            <div style="font-size:48px; margin-bottom:24px;">✨</div>
+          <div class="empty-state" style="grid-column:1 / -1;">
+            <div style="font-size:48px; margin-bottom:8px;">OK</div>
             <h2>Queue is Clear</h2>
             <p>All mentor applications have been processed. Great work!</p>
           </div>
@@ -309,35 +180,25 @@
       }
 
       grid.innerHTML = pending.map(u => `
-        <div class="mentor-card">
-          <div class="mc-header">
-            <div class="mc-user">
-              <span class="mc-name">${u.name}</span>
-              <span class="mc-email">${u.email}</span>
-            </div>
-            <span class="mc-tag">Pending Review</span>
+        <article class="review-card">
+          <h3>${safeText(u.name || 'Unnamed applicant')}</h3>
+          <div class="review-meta">${safeText(u.email)}</div>
+          <div class="review-note">
+            ${safeText(u.applicationData?.experience || 'No statement provided.')}
           </div>
-
-          <div class="mc-data">
-            <div class="mc-label">Academic Background</div>
-            <div class="mc-val">${u.applicationData?.university || 'N/A'}</div>
-            <div class="mc-val" style="font-size:13px; color:var(--t3);">${u.applicationData?.major || 'No major specified'}</div>
-            
-            <div class="mc-label" style="margin-top:20px;">Why Mentor?</div>
-            <div class="mc-bio">"${u.applicationData?.experience || 'No statement provided.'}"</div>
+          <div class="kv"><strong>University</strong><span>${safeText(u.applicationData?.university || 'N/A')}</span></div>
+          <div class="kv"><strong>Major</strong><span>${safeText(u.applicationData?.major || 'Not provided')}</span></div>
+          <div class="review-actions" style="margin-top:18px;">
+            <button class="btn btn-primary btn-lg" onclick="handleReview('${safeText(u.email)}', 'active', 'approved')">Approve Account</button>
+            <button class="btn btn-ghost btn-lg" style="border:1px solid var(--b1);" onclick="handleReview('${safeText(u.email)}', 'rejected', 'rejected')">Reject</button>
           </div>
-
-          <div class="mc-actions">
-            <button class="btn btn-primary btn-lg" onclick="handleReview('${u.email}', 'active', 'approved')">Approve Account</button>
-            <button class="btn btn-ghost btn-lg" style="border:1px solid var(--b1);" onclick="handleReview('${u.email}', 'rejected', 'rejected')">Reject</button>
-          </div>
-        </div>
+        </article>
       `).join('');
     }
 
     function handleReview(email, status, label) {
-      const fields = { 
-        status: status,
+      const fields = {
+        status,
         onboarded: status === 'active',
         approvedAt: status === 'active' ? new Date().toISOString() : null,
         rejectedAt: status === 'rejected' ? new Date().toISOString() : null
@@ -348,8 +209,35 @@
       renderQueue();
     }
 
-    Promise.resolve(UserStore.refreshFromRemote()).then(renderQueue);
+    Promise.resolve(UserStore.refreshFromRemote()).then(() => {
+      currentUser = Auth.syncCurrentUserFromStore(currentUser?.email) || Auth.getUser() || currentUser;
+      currentUser = Auth.normalizeUser(currentUser);
+
+      if (!currentUser) return;
+
+      if (currentUser.role === 'admin') {
+        if (!isAdmin) {
+          AdminAuth.require();
+          return;
+        }
+        renderQueue();
+        return;
+      }
+
+      if (currentUser.role === 'mentor') {
+        renderMentorApplicantView();
+        return;
+      }
+
+      document.body.innerHTML = `
+        <div class="access-state">
+          <div style="font-size:64px;">LOCK</div>
+          <h1 style="font-family:var(--font-h); font-size:32px; margin-bottom:8px;">Access Restricted</h1>
+          <p style="color:var(--t3); max-width:480px; line-height:1.7;">This page is reserved for mentor applicants and the admin review queue. If you need mentor access, continue the application flow.</p>
+          <a href="index.html" class="btn btn-primary">Return Home</a>
+        </div>
+      `;
+    });
   </script>
 </body>
 </html>
-

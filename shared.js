@@ -205,10 +205,17 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     
     // Auto-route only if we are currently on the auth page
     if (window.location.pathname.includes('/auth')) {
+        const googleRoute = sessionStorage.getItem('mn_google_post_auth_route');
+        if (googleRoute === 'mentor-review') {
+          sessionStorage.removeItem('mn_google_post_auth_route');
+          window.location.href = 'mentor-review.html';
+          return;
+        }
         Auth.routeAfterLogin(appUser);
     }
   } else if (event === 'SIGNED_OUT') {
     localStorage.removeItem("mn_user");
+    sessionStorage.removeItem('mn_google_post_auth_route');
     if (!window.location.pathname.includes('/index') && window.location.pathname !== '/' && !window.location.pathname.includes('/auth') && !window.location.pathname.includes('/admin')) {
         window.location.href = "index.html";
     }
@@ -697,7 +704,14 @@ const GoogleAuth = {
       if (isSignup) {
         // Save selected role before redirecting out to Google
         const roleCard = document.querySelector('.role-card.selected');
-        if (roleCard) localStorage.setItem('pendingRole', roleCard.dataset.role);
+        if (roleCard) {
+          localStorage.setItem('pendingRole', roleCard.dataset.role);
+          if (roleCard.dataset.role === 'mentor') {
+            sessionStorage.setItem('mn_google_post_auth_route', 'mentor-review');
+          } else {
+            sessionStorage.removeItem('mn_google_post_auth_route');
+          }
+        }
       }
       
       await supabaseClient.auth.signInWithOAuth({
