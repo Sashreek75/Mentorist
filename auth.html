@@ -267,65 +267,34 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
   GoogleAuth.init(document.getElementById('signupGoogleBtn'), true);
   GoogleAuth.init(document.getElementById('loginGoogleBtn'), false);
 
-  function getLocalCredentials() {
-    try { return JSON.parse(localStorage.getItem('mn_local_credentials') || '[]'); }
-    catch { return []; }
-  }
-  function saveLocalCredentials(creds) {
-    localStorage.setItem('mn_local_credentials', JSON.stringify(creds));
-  }
-  function upsertLocalCredential(email, pass, name, role) {
-    const creds = getLocalCredentials();
-    const idx = creds.findIndex(c => c.email === email);
-    const record = { email, password: pass, name, role };
-    if (idx >= 0) creds[idx] = record;
-    else creds.push(record);
-    saveLocalCredentials(creds);
-  }
-  function makeAppUser(email, name, role, status, onboarded) {
-    return {
-      email,
-      name,
-      role,
-      status,
-      onboarded
-    };
-  }
-  async function finishLocalLogin(appUser, message = 'Logged in successfully!') {
-    Auth.setUser(appUser);
-    UserStore.addOrUpdate(appUser);
-    Utils.toast(message, 'success');
-    try {
-      await UserStore.persistRemote(appUser);
-      await UserStore.refreshFromRemote();
-    } catch (err) {
-      console.warn('Could not fully sync Mentorist user before routing.', err);
-    }
-    const synced = Auth.syncCurrentUserFromStore(appUser.email) || appUser;
-    setTimeout(() => {
-      Auth.routeAfterLogin(synced);
-    }, 150);
-  }
-
+  // Email signup and login handlers - removed local sandbox fallback
   async function handleEmailSignup(){
     const name = document.getElementById('signupName').value.trim();
     const email = document.getElementById('signupEmail').value.trim().toLowerCase();
     const pass = document.getElementById('signupPassword').value;
-    if(!name || !email || !pass) { Utils.toast('Please fill out all fields.', 'error'); return; }
     
+    if(!name || !email || !pass) { 
+      Utils.toast('Please fill out all fields.', 'error'); 
+      return; 
+    }
+    
+    if (pass.length < 6) {
+      Utils.toast('Password must be at least 6 characters long.', 'error');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Utils.toast('Please enter a valid email address.', 'error');
+      return;
+    }
+
     let role = selRole;
     if (email.endsWith('@mentorist.org') || email.startsWith('admin')) role = 'admin';
-    upsertLocalCredential(email, pass, name, role);
-
-    const appUser = makeAppUser(
-      email,
-      name,
-      role,
-      role === 'mentor' ? 'pending' : 'active',
-      role === 'admin'
-    );
-
-    finishLocalLogin(appUser, 'Account created. Taking you into Mentorist...');
+    
+    // Store pending role before Supabase auth
+    localStorage.setItem('pendingRole', role);
 
     try {
       const { data, error } = await supabaseClient.auth.signUp({
@@ -342,30 +311,36 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
       });
 
       if (error) {
-        if (error.message.includes('rate limit') || error.status === 429 || error.message.includes('Too many requests')) {
-          console.warn("Supabase signup rate limit hit. Falling back to local sandbox registration...");
+        if (error.message.includes('already registered')) {
+          Utils.toast('This email is already registered. Please sign in instead.', 'error');
+        } else if (error.message.includes('password')) {
+          Utils.toast('Password must be at least 6 characters.', 'error');
         } else {
-          console.warn("Supabase signup failed but local account is already active:", error);
+          Utils.toast(`Sign-up failed: ${error.message || 'Unknown error'}`, 'error');
         }
-      } else if (data && data.user && !data.session) {
-        console.info('Account created in Supabase without an active session; local session remains active.');
+        localStorage.removeItem('pendingRole');
+        return;
+      }
+
+      // Successful signup
+      if (data?.user) {
+        Utils.toast('Account created! Welcome to Mentorist.', 'success');
+        // The onAuthStateChange handler will take care of routing
       }
     } catch (err) {
-      console.warn("Supabase signup connection issue. Local account remains active.", err);
+      Utils.toast('An error occurred during sign-up. Please try again.', 'error');
+      localStorage.removeItem('pendingRole');
+      console.error('Signup error:', err);
     }
   }
 
   async function handleEmailLogin(){
     const email = document.getElementById('loginEmail').value.trim().toLowerCase();
     const pass = document.getElementById('loginPassword').value;
-    if(!email || !pass) { Utils.toast('Please enter both email and password.', 'error'); return; }
-
-    const creds = getLocalCredentials();
-    const found = creds.find(c => c.email === email && c.password === pass);
-    if (found) {
-      console.log("Matched local sandbox credentials. Logging in...");
-      loginLocally(found);
-      return;
+    
+    if(!email || !pass) { 
+      Utils.toast('Please enter both email and password.', 'error'); 
+      return; 
     }
 
     try {
@@ -375,32 +350,24 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
       });
 
       if (error) {
-        Utils.toast(error.message || 'Invalid login credentials.', 'error');
-      } else if (data?.user) {
-        const appUser = Auth.fromSupabaseUser(data.user);
-        finishLocalLogin(appUser, 'Welcome back to Mentorist...');
+        if (error.message.includes('Invalid login credentials')) {
+          Utils.toast('Invalid email or password. Please try again.', 'error');
+        } else if (error.message.includes('Email not confirmed')) {
+          Utils.toast('Please check your email to verify your account.', 'error');
+        } else {
+          Utils.toast(error.message || 'Login failed. Please try again.', 'error');
+        }
+        return;
+      }
+
+      if (data?.user) {
+        Utils.toast('Welcome back to Mentorist!', 'success');
+        // The onAuthStateChange handler will take care of routing
       }
     } catch (err) {
-      Utils.toast(err.message || 'An unexpected error occurred during login.', 'error');
+      Utils.toast('An error occurred during login. Please try again.', 'error');
+      console.error('Login error:', err);
     }
-  }
-
-  function loginLocally(localUser) {
-    const existing = UserStore.getByEmail(localUser.email);
-    let role = existing?.role || localUser.role || 'student';
-    if (localUser.email.endsWith('@mentorist.org') || localUser.email.startsWith('admin')) {
-      role = 'admin';
-    }
-
-    const appUser = makeAppUser(
-      localUser.email,
-      existing?.name || localUser.name || "Sandbox User",
-      role,
-      existing?.status || (role === 'mentor' ? 'pending' : 'active'),
-      existing?.onboarded ?? role === 'admin'
-    );
-
-    finishLocalLogin(appUser, 'Logged in successfully via Local Sandbox Mode!');
   }
 </script>
 </body>

@@ -157,21 +157,34 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     let role = metadata.role;
     let pendingRole = localStorage.getItem('pendingRole');
 
-    await UserStore.refreshFromRemote();
-    const storedUser = UserStore.getByEmail(email);
-    
-    // First time login via signup (role not set in DB yet)
-    if (!role && pendingRole) {
-      const { data } = await supabaseClient.auth.updateUser({
-        data: { role: pendingRole, status: pendingRole === 'mentor' ? 'pending' : 'active', onboarded: pendingRole === 'admin' }
-      });
-      user = data.user;
-      localStorage.removeItem('pendingRole');
+    try {
+      await UserStore.refreshFromRemote();
+    } catch (err) {
+      console.warn("Remote sync warning during auth state change:", err?.message);
     }
     
-    // Returning users should inherit their stored profile immediately.
-    if (!role && storedUser?.role) {
-      const { data } = await supabaseClient.auth.updateUser({
+    const storedUser = UserStore.getByEmail(email);
+    
+    // Admin override check (highest priority)
+    if (email.endsWith('@mentorist.org') || email.startsWith('admin')) {
+      const { data: adminData, error: adminErr } = await supabaseClient.auth.updateUser({ 
+        data: { role: 'admin', onboarded: true, status: 'active' }
+      });
+      if (!adminErr && adminData?.user) user = adminData.user;
+    }
+    // First time login via signup (role not set in DB yet)
+    else if (!role && pendingRole) {
+      const { data: signupData, error: signupErr } = await supabaseClient.auth.updateUser({
+        data: { role: pendingRole, status: pendingRole === 'mentor' ? 'pending' : 'active', onboarded: pendingRole === 'admin' }
+      });
+      if (!signupErr && signupData?.user) {
+        user = signupData.user;
+      }
+      localStorage.removeItem('pendingRole');
+    }
+    // Returning users should inherit their stored profile immediately
+    else if (!role && storedUser?.role) {
+      const { data: storedData, error: storedErr } = await supabaseClient.auth.updateUser({
         data: {
           role: storedUser.role,
           status: storedUser.status || (storedUser.role === 'mentor' ? 'pending' : 'active'),
@@ -181,43 +194,43 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
           dismissedAlertIds: storedUser.dismissedAlertIds || []
         }
       });
-      user = data.user;
+      if (!storedErr && storedData?.user) user = storedData.user;
     }
-    
-    // Admin override check
-    if (email.endsWith('@mentorist.org') || email.startsWith('admin')) {
-        const { data } = await supabaseClient.auth.updateUser({ data: { role: 'admin', onboarded: true, status: 'active' }});
-        user = data.user;
-    }
-
-    // Fallback
-    if (!user.user_metadata?.role) {
-       const { data } = await supabaseClient.auth.updateUser({ data: { role: 'student', status: 'active', onboarded: false }});
-       user = data.user;
+    // Fallback for new users
+    else if (!user.user_metadata?.role) {
+      const { data: fallbackData, error: fallbackErr } = await supabaseClient.auth.updateUser({ 
+        data: { role: 'student', status: 'active', onboarded: false }
+      });
+      if (!fallbackErr && fallbackData?.user) user = fallbackData.user;
     }
 
     const appUser = Auth.fromSupabaseUser(user);
     
     Auth.setUser(appUser);
-    UserStore.addOrUpdate(appUser); // Sync local store for UI purposes temporarily
-    await UserStore.persistRemote(appUser);
-    await UserStore.refreshFromRemote();
+    UserStore.addOrUpdate(appUser);
+    try {
+      await UserStore.persistRemote(appUser);
+      await UserStore.refreshFromRemote();
+    } catch (err) {
+      console.warn("Remote persistence warning:", err?.message);
+    }
     
     // Auto-route only if we are currently on the auth page
     if (window.location.pathname.includes('/auth')) {
-        const googleRoute = sessionStorage.getItem('mn_google_post_auth_route');
-        if (googleRoute === 'mentor-review') {
-          sessionStorage.removeItem('mn_google_post_auth_route');
-          window.location.href = 'mentor-review.html';
-          return;
-        }
-        Auth.routeAfterLogin(appUser);
+      const googleRoute = sessionStorage.getItem('mn_google_post_auth_route');
+      if (googleRoute === 'mentor-review') {
+        sessionStorage.removeItem('mn_google_post_auth_route');
+        window.location.href = 'mentor-review.html';
+        return;
+      }
+      Auth.routeAfterLogin(appUser);
     }
   } else if (event === 'SIGNED_OUT') {
     localStorage.removeItem("mn_user");
+    localStorage.removeItem('pendingRole');
     sessionStorage.removeItem('mn_google_post_auth_route');
     if (!window.location.pathname.includes('/index') && window.location.pathname !== '/' && !window.location.pathname.includes('/auth') && !window.location.pathname.includes('/admin')) {
-        window.location.href = "index.html";
+      window.location.href = "index.html";
     }
   }
 });
@@ -301,7 +314,9 @@ const Auth = {
   requireAuth() {
     const u = this.getUser();
     if (!u) { 
-      if (localStorage.getItem("sb-vmuukfegnjotlgvdqfrx-auth-token")) {
+      const sbToken = localStorage.getItem("sb-vmuukfegnjotlgvdqfrx-auth-token");
+      if (sbToken) {
+        // Session exists in Supabase, show loading state
         return { email: 'loading@mentorist.org', role: 'student', name: 'Loading...', status: 'active', onboarded: true };
       }
       window.location.href = "auth.html"; 
@@ -350,38 +365,60 @@ const UserStore = {
     catch { return []; }
   },
   save(users) { localStorage.setItem("mn_all_users", JSON.stringify(users)); },
-  async refreshFromRemote() {
-    try {
-      const { data, error } = await supabaseClient
-        .from(CONFIG.TABLES.users)
-        .select("*")
-        .order("updated_at", { ascending: false });
-      if (error) throw error;
-      const remoteUsers = (data || []).map(fromRemoteUser).filter(Boolean);
-      const localUsers = this.getAll();
-      const merged = mergeUsersByEmail([...localUsers, ...remoteUsers]);
-      this.save(merged);
-      for (const localUser of localUsers) {
-        if (localUser?.email && !remoteUsers.some(remote => remote.email === localUser.email)) {
-          void this.persistRemote(localUser);
+  async refreshFromRemote(retries = 3) {
+    let lastError = null;
+    
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const { data, error } = await supabaseClient
+          .from(CONFIG.TABLES.users)
+          .select("*")
+          .order("updated_at", { ascending: false });
+          
+        if (error) throw error;
+        
+        const remoteUsers = (data || []).map(fromRemoteUser).filter(Boolean);
+        const localUsers = this.getAll();
+        const merged = mergeUsersByEmail([...localUsers, ...remoteUsers]);
+        this.save(merged);
+        
+        // Persist any local users that don't exist remotely
+        for (const localUser of localUsers) {
+          if (localUser?.email && !remoteUsers.some(remote => remote.email === localUser.email)) {
+            void this.persistRemote(localUser);
+          }
+        }
+        return merged;
+      } catch (err) {
+        lastError = err;
+        if (attempt < retries - 1) {
+          // Wait before retrying with exponential backoff
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         }
       }
-      return merged;
-    } catch (err) {
-      console.warn("Mentorist remote sync unavailable, using local cache.", err?.message || err);
-      return this.getAll();
     }
+    
+    console.warn("Mentorist remote sync failed after retries. Using local cache.", lastError?.message || lastError);
+    return this.getAll();
   },
-  async persistRemote(user) {
+  async persistRemote(user, retries = 2) {
     const row = toRemoteUser(user);
     if (!row) return;
-    try {
-      const { error } = await supabaseClient
-        .from(CONFIG.TABLES.users)
-        .upsert(row, { onConflict: "email" });
-      if (error) throw error;
-    } catch (err) {
-      console.warn("Unable to persist Mentorist user remotely.", err?.message || err);
+    
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const { error } = await supabaseClient
+          .from(CONFIG.TABLES.users)
+          .upsert(row, { onConflict: "email" });
+        if (error) throw error;
+        return; // Success
+      } catch (err) {
+        if (attempt < retries - 1) {
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 500));
+        } else {
+          console.warn("Unable to persist Mentorist user remotely.", err?.message || err);
+        }
+      }
     }
   },
   getByEmail(email) {
@@ -442,41 +479,61 @@ const QuestionStore = {
     catch { return []; }
   },
   save(qs) { localStorage.setItem("mn_questions", JSON.stringify(qs)); },
-  async refreshFromRemote() {
-    try {
-      const { data, error } = await supabaseClient
-        .from(CONFIG.TABLES.questions)
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      const remoteQuestions = (data || []).map(fromRemoteQuestion).filter(Boolean);
-      const local = this.getAll();
-      const merged = [...remoteQuestions];
-      for (const q of local) {
-        if (!merged.some(r => r.id === q.id)) merged.push(q);
-      }
-      this.save(merged);
-      for (const localQuestion of local) {
-        if (localQuestion?.id && !remoteQuestions.some(remote => remote.id === localQuestion.id)) {
-          void this.persistRemote(localQuestion);
+  async refreshFromRemote(retries = 2) {
+    let lastError = null;
+    
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const { data, error } = await supabaseClient
+          .from(CONFIG.TABLES.questions)
+          .select("*")
+          .order("created_at", { ascending: false });
+          
+        if (error) throw error;
+        
+        const remoteQuestions = (data || []).map(fromRemoteQuestion).filter(Boolean);
+        const local = this.getAll();
+        const merged = [...remoteQuestions];
+        for (const q of local) {
+          if (!merged.some(r => r.id === q.id)) merged.push(q);
+        }
+        this.save(merged);
+        
+        for (const localQuestion of local) {
+          if (localQuestion?.id && !remoteQuestions.some(remote => remote.id === localQuestion.id)) {
+            void this.persistRemote(localQuestion);
+          }
+        }
+        return merged;
+      } catch (err) {
+        lastError = err;
+        if (attempt < retries - 1) {
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         }
       }
-      return merged;
-    } catch (err) {
-      console.warn("Mentorist remote question sync unavailable, using local cache.", err?.message || err);
-      return this.getAll();
     }
+    
+    console.warn("Mentorist remote question sync failed after retries. Using local cache.", lastError?.message || lastError);
+    return this.getAll();
   },
-  async persistRemote(question) {
+  async persistRemote(question, retries = 2) {
     const row = toRemoteQuestion(question);
     if (!row) return;
-    try {
-      const { error } = await supabaseClient
-        .from(CONFIG.TABLES.questions)
-        .upsert(row, { onConflict: "id" });
-      if (error) throw error;
-    } catch (err) {
-      console.warn("Unable to persist Mentorist question remotely.", err?.message || err);
+    
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const { error } = await supabaseClient
+          .from(CONFIG.TABLES.questions)
+          .upsert(row, { onConflict: "id" });
+        if (error) throw error;
+        return; // Success
+      } catch (err) {
+        if (attempt < retries - 1) {
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 500));
+        } else {
+          console.warn("Unable to persist Mentorist question remotely.", err?.message || err);
+        }
+      }
     }
   },
   add(q) {
@@ -535,41 +592,61 @@ const AlertStore = {
     catch { return []; }
   },
   save(als) { localStorage.setItem("mn_alerts", JSON.stringify(als)); },
-  async refreshFromRemote() {
-    try {
-      const { data, error } = await supabaseClient
-        .from(CONFIG.TABLES.alerts)
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      const remoteAlerts = (data || []).map(fromRemoteAlert).filter(Boolean);
-      const localAlerts = this.getAll();
-      const merged = [...remoteAlerts];
-      for (const alert of localAlerts) {
-        if (!merged.some(remote => remote.id === alert.id)) merged.push(alert);
-      }
-      this.save(merged);
-      for (const localAlert of localAlerts) {
-        if (localAlert?.id && !remoteAlerts.some(remote => remote.id === localAlert.id)) {
-          void this.persistRemote(localAlert);
+  async refreshFromRemote(retries = 2) {
+    let lastError = null;
+    
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const { data, error } = await supabaseClient
+          .from(CONFIG.TABLES.alerts)
+          .select("*")
+          .order("created_at", { ascending: false });
+          
+        if (error) throw error;
+        
+        const remoteAlerts = (data || []).map(fromRemoteAlert).filter(Boolean);
+        const localAlerts = this.getAll();
+        const merged = [...remoteAlerts];
+        for (const alert of localAlerts) {
+          if (!merged.some(remote => remote.id === alert.id)) merged.push(alert);
+        }
+        this.save(merged);
+        
+        for (const localAlert of localAlerts) {
+          if (localAlert?.id && !remoteAlerts.some(remote => remote.id === localAlert.id)) {
+            void this.persistRemote(localAlert);
+          }
+        }
+        return merged;
+      } catch (err) {
+        lastError = err;
+        if (attempt < retries - 1) {
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         }
       }
-      return merged;
-    } catch (err) {
-      console.warn("Mentorist remote alert sync unavailable, using local cache.", err?.message || err);
-      return this.getAll();
     }
+    
+    console.warn("Mentorist remote alert sync failed after retries. Using local cache.", lastError?.message || lastError);
+    return this.getAll();
   },
-  async persistRemote(alert) {
+  async persistRemote(alert, retries = 2) {
     const row = toRemoteAlert(alert);
     if (!row) return;
-    try {
-      const { error } = await supabaseClient
-        .from(CONFIG.TABLES.alerts)
-        .upsert(row, { onConflict: "id" });
-      if (error) throw error;
-    } catch (err) {
-      console.warn("Unable to persist Mentorist alert remotely.", err?.message || err);
+    
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const { error } = await supabaseClient
+          .from(CONFIG.TABLES.alerts)
+          .upsert(row, { onConflict: "id" });
+        if (error) throw error;
+        return; // Success
+      } catch (err) {
+        if (attempt < retries - 1) {
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 500));
+        } else {
+          console.warn("Unable to persist Mentorist alert remotely.", err?.message || err);
+        }
+      }
     }
   },
   add(al) {
@@ -701,28 +778,41 @@ const GoogleAuth = {
   init(btn, isSignup = false) {
     if (!btn) return;
     btn.addEventListener("click", async () => {
-      if (isSignup) {
-        // Save selected role before redirecting out to Google
-        const roleCard = document.querySelector('.role-card.selected');
-        if (roleCard) {
-          localStorage.setItem('pendingRole', roleCard.dataset.role);
-          if (roleCard.dataset.role === 'mentor') {
-            sessionStorage.setItem('mn_google_post_auth_route', 'mentor-review');
-          } else {
-            sessionStorage.removeItem('mn_google_post_auth_route');
+      try {
+        if (isSignup) {
+          // Save selected role before redirecting out to Google
+          const roleCard = document.querySelector('.role-card.selected');
+          if (roleCard) {
+            localStorage.setItem('pendingRole', roleCard.dataset.role);
+            if (roleCard.dataset.role === 'mentor') {
+              sessionStorage.setItem('mn_google_post_auth_route', 'mentor-review');
+            } else {
+              sessionStorage.removeItem('mn_google_post_auth_route');
+            }
           }
         }
+
+        // Build the proper redirect URL
+        const redirectUrl = new URL('auth.html', window.location.origin).href;
+        
+        const { error } = await supabaseClient.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUrl,
+            queryParams: {
+              prompt: 'select_account'
+            }
+          }
+        });
+
+        if (error) {
+          Utils.toast(`Google sign-in failed: ${error.message || 'Unknown error'}`, 'error');
+          console.error('Google OAuth error:', error);
+        }
+      } catch (err) {
+        Utils.toast('An error occurred during Google sign-in. Please try again.', 'error');
+        console.error('Google OAuth exception:', err);
       }
-      
-      await supabaseClient.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: new URL('auth.html?mode=login', window.location.origin).href,
-          queryParams: {
-            prompt: 'select_account'
-          }
-        }
-      });
     });
   }
 };
