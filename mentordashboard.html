@@ -246,10 +246,28 @@ body{background:var(--bg);}
   }
 
   function submitBroadcast() {
-    const title = document.getElementById('bcTitle').value;
-    const tag = document.getElementById('bcTag').value;
-    const body = document.getElementById('bcBody').value;
-    if(!title || !body) return Utils.toast('Please fill all fields', 'error');
+    const title = document.getElementById('bcTitle').value.trim();
+    const tag = document.getElementById('bcTag').value.trim();
+    const body = document.getElementById('bcBody').value.trim();
+    
+    if(!title || title.length < 5) {
+      Utils.toast('Please provide a broadcast title (at least 5 characters)', 'error');
+      return;
+    }
+    if(!body || body.length < 10) {
+      Utils.toast('Please provide broadcast details (at least 10 characters)', 'error');
+      return;
+    }
+
+    if (title.length > 200) {
+      Utils.toast('Title is too long (max 200 characters)', 'error');
+      return;
+    }
+
+    if (body.length > 2000) {
+      Utils.toast('Details are too long (max 2000 characters)', 'error');
+      return;
+    }
 
     AlertStore.add({ title, tag: tag||'Alert', body, author: user.name });
     Utils.toast('Strategic Alert sent to all students!', 'success');

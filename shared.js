@@ -552,14 +552,19 @@ const QuestionStore = {
     return nq;
   },
   getForStudent(email) {
-    const target = String(email || '').toLowerCase();
-    return this.getAll().filter(q => String(q.studentEmail || '').toLowerCase() === target);
+    if (!email) return [];
+    const target = String(email).toLowerCase();
+    return this.getAll().filter(q => {
+      const qEmail = String(q.studentEmail || '').toLowerCase();
+      return qEmail === target && qEmail.length > 0;
+    });
   },
   addAnswer(questionId, answer) {
+    if (!questionId || !answer) return;
     const qs = this.getAll();
     const q = qs.find(x => x.id === questionId);
     if (q) {
-      if (!q.answers) q.answers = [];
+      if (!Array.isArray(q.answers)) q.answers = [];
       q.answers.push({ ...answer, createdAt: new Date().toISOString() });
       q.status = 'answered';
       this.save(qs);
@@ -574,7 +579,7 @@ const QuestionStore = {
   deleteAnswer(questionId, aIdx) {
     const qs = this.getAll();
     const q = qs.find(x => x.id === questionId);
-    if (q && q.answers) {
+    if (q && Array.isArray(q.answers) && aIdx >= 0 && aIdx < q.answers.length) {
       q.answers.splice(aIdx, 1);
       if (q.answers.length === 0) {
         q.status = 'pending';
@@ -650,8 +655,17 @@ const AlertStore = {
     }
   },
   add(al) {
+    if (!al || !al.title || !al.body) return null;
     const als = this.getAll();
-    const nal = { id: `al_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, ...al, createdAt: new Date().toISOString() };
+    const nal = { 
+      id: `al_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, 
+      ...al, 
+      title: String(al.title).trim(),
+      body: String(al.body).trim(),
+      tag: String(al.tag || 'Update').trim(),
+      author: String(al.author || 'Founder').trim(),
+      createdAt: new Date().toISOString() 
+    };
     als.unshift(nal);
     this.save(als);
     void this.persistRemote(nal);
@@ -792,8 +806,14 @@ const GoogleAuth = {
           }
         }
 
-        // Build the proper redirect URL
-        const redirectUrl = new URL('auth.html', window.location.origin).href;
+        // Build the proper redirect URL - use absolute URL construction
+        let redirectUrl = '';
+        try {
+          redirectUrl = new URL('auth.html', window.location.href).href;
+        } catch (e) {
+          // Fallback for edge cases
+          redirectUrl = window.location.protocol + '//' + window.location.host + '/auth.html';
+        }
         
         const { error } = await supabaseClient.auth.signInWithOAuth({
           provider: 'google',
@@ -1092,8 +1112,8 @@ const GlobalBroadcast = {
     card.innerHTML = `
       <div style="position:absolute; top:0; left:0; width:100%; height:4px; background:linear-gradient(90deg, var(--green), #1aff8e);"></div>
       <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
-        <span style="font-size:10px; font-weight:800; color:var(--green); background:var(--green-dim); padding:4px 12px; border-radius:var(--r-pill); text-transform:uppercase; letter-spacing:0.1em; border:1px solid rgba(0,232,122,0.2);">${al.tag || 'Global Update'}</span>
-        <span style="font-size:12px; color:var(--t4); font-weight:600;">Broadcasted by Founder</span>
+        <span style="font-size:10px; font-weight:800; color:var(--green); background:var(--green-dim); padding:4px 12px; border-radius:var(--r-pill); text-transform:uppercase; letter-spacing:0.1em; border:1px solid rgba(0,232,122,0.2);">${Utils.escapeHtml(al.tag || 'Global Update')}</span>
+        <span style="font-size:12px; color:var(--t4); font-weight:600;">Broadcasted by ${Utils.escapeHtml(al.author || 'Founder')}</span>
       </div>
       <h2 style="font-family:var(--font-h); font-size:32px; font-weight:800; color:var(--t1); margin-bottom:16px; letter-spacing:-0.03em; line-height:1.2;">${Utils.escapeHtml(al.title)}</h2>
       <p style="font-size:16px; color:var(--t2); line-height:1.7; margin-bottom:32px;">${Utils.escapeHtml(al.body)}</p>

@@ -290,8 +290,24 @@
       const major = document.getElementById('appMajor').value.trim();
       const exp = document.getElementById('appExperience').value.trim();
 
-      if (!uni || !major || !exp) {
-        Utils.toast('Please fill out all fields.', 'error');
+      // Validation
+      if (!uni || uni.length < 3) {
+        Utils.toast('Please enter a valid university name (at least 3 characters).', 'error');
+        return;
+      }
+
+      if (!major || major.length < 2) {
+        Utils.toast('Please enter a valid field of study (at least 2 characters).', 'error');
+        return;
+      }
+
+      if (!exp || exp.length < 20) {
+        Utils.toast('Please provide more detail about why you want to mentor (at least 20 characters).', 'error');
+        return;
+      }
+
+      if (exp.length > 1000) {
+        Utils.toast('Your experience story is too long. Please keep it under 1000 characters.', 'error');
         return;
       }
 

@@ -280,7 +280,22 @@ body{background:var(--bg);}
 
   function sendQ() {
     const text = document.getElementById('qBody').value.trim();
-    if (!text||text.length<20) { Utils.toast('Please provide a bit more context.','error'); return; }
+    
+    // Validation
+    if (!text || text.length < 20) { 
+      Utils.toast('Please provide at least 20 characters for your question.','error'); 
+      return; 
+    }
+    
+    if (text.length > 1000) {
+      Utils.toast('Your question is too long. Please keep it under 1000 characters.','error'); 
+      return;
+    }
+
+    if (selTopics.length === 0) {
+      Utils.toast('Please select at least one topic before submitting.','error');
+      return;
+    }
     
     if(!confirm('Ready to submit your strategic inquiry? This will be sent to our peer mentor network.')) return;
 
@@ -418,17 +433,25 @@ body{background:var(--bg);}
   function toggleInq(id, hasAns) { if(hasAns) document.getElementById('inq-'+id).classList.toggle('open'); }
 
   function markHelpful(qId, aIdx, btn) {
-    if (btn.innerText.includes('Helpful') && !btn.innerText.includes('Mark')) return;
+    // Prevent toggling back to non-helpful
+    if (btn.innerText.includes('Helpful') && !btn.innerText.includes('Mark')) {
+      Utils.toast('You\'ve already marked this as helpful!', 'info');
+      return;
+    }
+    
     const qs = QuestionStore.getAll();
     const q = qs.find(x => x.id === qId);
-    if(q && q.answers[aIdx]) {
-      q.answers[aIdx].helpful = true;
-      QuestionStore.save(qs);
-      void QuestionStore.persistRemote(q);
-      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2.5" style="width:14px; margin-right:4px;"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> Helpful`;
-      btn.style.color = 'var(--green)';
-      Utils.toast('Mentor notified of your appreciation.', 'success');
+    if(!q || !q.answers || !q.answers[aIdx]) {
+      Utils.toast('Unable to update feedback status.', 'error');
+      return;
     }
+    
+    q.answers[aIdx].helpful = true;
+    QuestionStore.save(qs);
+    void QuestionStore.persistRemote(q);
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2.5" style="width:14px; margin-right:4px;"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> Helpful`;
+    btn.style.color = 'var(--green)';
+    Utils.toast('Mentor notified of your appreciation.', 'success');
   }
 
   function deleteQuestion(id) {

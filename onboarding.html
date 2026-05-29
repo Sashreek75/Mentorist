@@ -565,7 +565,19 @@
         }
 
         function advanceFromGoal() {
-            data.goal = document.getElementById('goal').value.trim();
+            const goalText = document.getElementById('goal').value.trim();
+            
+            if (!goalText || goalText.length < 10) {
+              Utils.toast('Please describe your primary goal (at least 10 characters).', 'error');
+              return;
+            }
+            
+            if (goalText.length > 500) {
+              Utils.toast('Your goal description is too long (max 500 characters).', 'error');
+              return;
+            }
+            
+            data.goal = goalText;
             advance();
         }
 
@@ -632,6 +644,18 @@
 
         /* ── Completion ── */
         function finish() {
+            // Validate all required fields are filled
+            if (!data.grade || !data.interest || !data.rigor || !data.goal) {
+              Utils.toast('Please complete all profile steps before finishing.', 'error');
+              curStep = 0;
+              updateMeta();
+              document.getElementById('step-complete').classList.remove('active');
+              document.getElementById('step-complete').style.display = 'none';
+              document.getElementById('step-0').style.display = 'block';
+              requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById('step-0').classList.add('active')));
+              return;
+            }
+            
             Auth.updateUser({ profile: data, onboarded: true });
             const updated = Auth.getUser();
             window.location.href = (updated.role === 'mentor')

@@ -743,10 +743,28 @@
     }
 
     function createAlert() {
-      const title = document.getElementById('alTitle').value;
-      const tag = document.getElementById('alTag').value;
-      const body = document.getElementById('alBody').value;
-      if(!title || !body) return Utils.toast('Title and body required', 'error');
+      const title = document.getElementById('alTitle').value.trim();
+      const tag = document.getElementById('alTag').value.trim();
+      const body = document.getElementById('alBody').value.trim();
+      
+      if(!title || title.length < 5) {
+        Utils.toast('Please provide a title (at least 5 characters)', 'error');
+        return;
+      }
+      if(!body || body.length < 10) {
+        Utils.toast('Please provide a message (at least 10 characters)', 'error');
+        return;
+      }
+
+      if (title.length > 200) {
+        Utils.toast('Title is too long (max 200 characters)', 'error');
+        return;
+      }
+
+      if (body.length > 2000) {
+        Utils.toast('Message is too long (max 2000 characters)', 'error');
+        return;
+      }
 
       AlertStore.add({ title, tag: tag || 'Opportunity', body, author: user?.name || 'Founder' });
       Utils.toast('Strategy alert broadcasted!', 'success');
