@@ -157,33 +157,51 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     let role = metadata.role;
     let pendingRole = localStorage.getItem('pendingRole');
 
+    console.log(`[AUTH] Sign-in event for ${email}, role=${role}, pendingRole=${pendingRole}`);
+
     try {
       await UserStore.refreshFromRemote();
     } catch (err) {
-      console.warn("Remote sync warning during auth state change:", err?.message);
+      console.warn("[AUTH] Remote sync warning during auth state change:", err?.message);
     }
     
     const storedUser = UserStore.getByEmail(email);
     
     // Admin override check (highest priority)
     if (email.endsWith('@mentorist.org') || email.startsWith('admin')) {
+      console.log(`[AUTH] Admin detected via email pattern: ${email}`);
       const { data: adminData, error: adminErr } = await supabaseClient.auth.updateUser({ 
         data: { role: 'admin', onboarded: true, status: 'active' }
       });
-      if (!adminErr && adminData?.user) user = adminData.user;
+      if (adminErr) {
+        console.error("[AUTH] Failed to set admin role:", adminErr.message);
+      } else if (adminData?.user) {
+        user = adminData.user;
+        console.log("[AUTH] Admin role successfully set");
+      }
     }
     // First time login via signup (role not set in DB yet)
     else if (!role && pendingRole) {
+      console.log(`[AUTH] First-time signup: setting role to ${pendingRole}`);
       const { data: signupData, error: signupErr } = await supabaseClient.auth.updateUser({
-        data: { role: pendingRole, status: pendingRole === 'mentor' ? 'pending' : 'active', onboarded: pendingRole === 'admin' }
+        data: { 
+          role: pendingRole, 
+          status: pendingRole === 'mentor' ? 'pending' : 'active', 
+          onboarded: pendingRole === 'admin',
+          full_name: metadata.full_name || email.split("@")[0]
+        }
       });
-      if (!signupErr && signupData?.user) {
+      if (signupErr) {
+        console.error("[AUTH] Failed to set signup role:", signupErr.message);
+      } else if (signupData?.user) {
         user = signupData.user;
+        console.log(`[AUTH] Signup role set to ${pendingRole}`);
       }
       localStorage.removeItem('pendingRole');
     }
     // Returning users should inherit their stored profile immediately
     else if (!role && storedUser?.role) {
+      console.log(`[AUTH] Returning user found in store: ${storedUser.role}`);
       const { data: storedData, error: storedErr } = await supabaseClient.auth.updateUser({
         data: {
           role: storedUser.role,
@@ -194,25 +212,47 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
           dismissedAlertIds: storedUser.dismissedAlertIds || []
         }
       });
-      if (!storedErr && storedData?.user) user = storedData.user;
+      if (storedErr) {
+        console.error("[AUTH] Failed to restore stored user data:", storedErr.message);
+      } else if (storedData?.user) {
+        user = storedData.user;
+        console.log("[AUTH] Stored user data restored");
+      }
     }
-    // Fallback for new users
+    // Fallback for new users (no role and no stored user)
     else if (!user.user_metadata?.role) {
+      console.log("[AUTH] New user detected, setting default role to student");
       const { data: fallbackData, error: fallbackErr } = await supabaseClient.auth.updateUser({ 
         data: { role: 'student', status: 'active', onboarded: false }
       });
-      if (!fallbackErr && fallbackData?.user) user = fallbackData.user;
+      if (fallbackErr) {
+        console.error("[AUTH] Failed to set default role:", fallbackErr.message);
+      } else if (fallbackData?.user) {
+        user = fallbackData.user;
+        console.log("[AUTH] Default role set to student");
+      }
     }
 
+    // Create/update the app user object
     const appUser = Auth.fromSupabaseUser(user);
+    console.log(`[AUTH] App user created:`, { email: appUser.email, role: appUser.role, onboarded: appUser.onboarded });
     
+    // Store in localStorage
     Auth.setUser(appUser);
+    
+    // Add/update in local store
     UserStore.addOrUpdate(appUser);
+    
+    // Persist to remote database
     try {
       await UserStore.persistRemote(appUser);
+      console.log(`[AUTH] User profile persisted to database`);
+      
+      // Refresh to get latest data
       await UserStore.refreshFromRemote();
+      console.log(`[AUTH] Remote data refreshed`);
     } catch (err) {
-      console.warn("Remote persistence warning:", err?.message);
+      console.warn("[AUTH] Remote persistence warning:", err?.message);
     }
     
     // Auto-route only if we are currently on the auth page
@@ -220,12 +260,17 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
       const googleRoute = sessionStorage.getItem('mn_google_post_auth_route');
       if (googleRoute === 'mentor-review') {
         sessionStorage.removeItem('mn_google_post_auth_route');
+        console.log("[AUTH] Routing to mentor-review page");
         window.location.href = 'mentor-review.html';
         return;
       }
+      console.log("[AUTH] Routing after login");
       Auth.routeAfterLogin(appUser);
+    } else {
+      console.log("[AUTH] Not on auth page, skipping auto-route");
     }
   } else if (event === 'SIGNED_OUT') {
+    console.log("[AUTH] Sign-out event");
     localStorage.removeItem("mn_user");
     localStorage.removeItem('pendingRole');
     sessionStorage.removeItem('mn_google_post_auth_route');
@@ -240,20 +285,28 @@ const Auth = {
   fromSupabaseUser(user) {
     const metadata = user?.user_metadata || {};
     const email = String(user?.email || "").toLowerCase();
-    const role = metadata.role || inferRoleFromEmail(email);
+    let role = metadata.role || inferRoleFromEmail(email);
+    
     const stored = UserStore.getByEmail(email);
     const storedRole = stored?.role || role;
-    const applicantRole = isMentorApplicant(stored) ? 'mentor' : storedRole;
-    return {
+    
+    // Determine if this is a mentor applicant (pending approval)
+    const isMentorPending = isMentorApplicant(stored);
+    const finalRole = isMentorPending ? 'mentor' : storedRole;
+    
+    const appUser = {
       email,
       name: stored?.name || metadata.full_name || metadata.name || email.split("@")[0] || "User",
-      role: applicantRole,
-      status: stored?.status || metadata.status || (role === "mentor" ? "pending" : "active"),
-      onboarded: stored?.onboarded ?? metadata.onboarded ?? role === "admin",
+      role: finalRole,
+      status: stored?.status || metadata.status || (finalRole === "mentor" ? "pending" : "active"),
+      onboarded: stored?.onboarded ?? metadata.onboarded ?? finalRole === "admin",
       profile: stored?.profile ?? metadata.profile,
       applicationData: stored?.applicationData ?? metadata.applicationData,
       rejectedAt: stored?.rejectedAt ?? metadata.rejectedAt ?? null
     };
+    
+    console.log(`[AUTH] fromSupabaseUser created:`, appUser);
+    return appUser;
   },
   syncCurrentUserFromStore(email) {
     const current = this.getUser();
@@ -325,36 +378,69 @@ const Auth = {
     return u;
   },
   routeAfterLogin(user) {
-    if (!user) { window.location.href = "auth.html"; return; }
+    if (!user) { 
+      console.log("[ROUTE] No user provided, redirecting to auth");
+      window.location.href = "auth.html"; 
+      return; 
+    }
+    
+    console.log("[ROUTE] Routing user:", { email: user.email, role: user.role, status: user.status, onboarded: user.onboarded });
     
     user = this.normalizeUser(this.syncCurrentUserFromStore(user.email) || user);
+    console.log("[ROUTE] After sync:", { role: user.role, status: user.status, onboarded: user.onboarded });
     
     // Ensure user is in UserStore
     UserStore.addOrUpdate(user);
     
+    // ADMIN routing (highest priority)
     if (user.role === "admin" || user.email.endsWith('@mentorist.org')) {
       if (user.role !== 'admin') {
         user.role = 'admin';
         this.setUser(user);
         UserStore.addOrUpdate(user);
+        console.log("[ROUTE] Set role to admin based on email");
       }
+      console.log("[ROUTE] Admin detected, routing to admin.html");
       window.location.href = "admin.html";
       return;
-    } else if (user.role === "mentor") {
-      if (user.status === "rejected") { window.location.href = "mentorapplication.html"; return; }
-      if (user.status !== "active") { window.location.href = "mentorapplication.html"; return; }
+    }
+    
+    // MENTOR routing
+    if (user.role === "mentor") {
+      if (user.status === "rejected") { 
+        console.log("[ROUTE] Mentor rejected, routing to mentorapplication");
+        window.location.href = "mentorapplication.html"; 
+        return; 
+      }
+      
+      if (user.status !== "active") { 
+        console.log("[ROUTE] Mentor not active (status=" + user.status + "), routing to mentorapplication");
+        window.location.href = "mentorapplication.html"; 
+        return; 
+      }
       
       // Auto-onboard mentors as they don't take the quiz
       if (!user.onboarded) {
         const onboardedUser = { ...user, onboarded: true };
         this.setUser(onboardedUser);
         UserStore.addOrUpdate(onboardedUser);
+        console.log("[ROUTE] Auto-onboarded mentor");
       }
+      
+      console.log("[ROUTE] Active mentor, routing to mentordashboard");
       window.location.href = "mentordashboard.html"; 
-    } else {
-      if (!user.onboarded) { window.location.href = "onboarding.html"; return; }
-      window.location.href = "studentdashboard.html";
+      return;
     }
+    
+    // STUDENT routing
+    if (!user.onboarded) { 
+      console.log("[ROUTE] Student not onboarded, routing to onboarding");
+      window.location.href = "onboarding.html"; 
+      return; 
+    }
+    
+    console.log("[ROUTE] Student onboarded, routing to studentdashboard");
+    window.location.href = "studentdashboard.html";
   }
 };
 
@@ -401,22 +487,35 @@ const UserStore = {
     console.warn("Mentorist remote sync failed after retries. Using local cache.", lastError?.message || lastError);
     return this.getAll();
   },
-  async persistRemote(user, retries = 2) {
+  async persistRemote(user, retries = 3) {
     const row = toRemoteUser(user);
-    if (!row) return;
+    if (!row) {
+      console.warn("Unable to create remote user row: invalid user object", user);
+      return;
+    }
     
     for (let attempt = 0; attempt < retries; attempt++) {
       try {
-        const { error } = await supabaseClient
+        const { data, error } = await supabaseClient
           .from(CONFIG.TABLES.users)
           .upsert(row, { onConflict: "email" });
-        if (error) throw error;
-        return; // Success
+        
+        if (error) {
+          throw new Error(`Upsert failed: ${error.message}`);
+        }
+        
+        // Successfully persisted
+        console.log(`✓ User profile persisted for ${row.email}`);
+        return;
       } catch (err) {
-        if (attempt < retries - 1) {
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 500));
+        const isLastAttempt = attempt === retries - 1;
+        const message = `Persist attempt ${attempt + 1}/${retries} failed: ${err?.message || err}`;
+        
+        if (isLastAttempt) {
+          console.error(`✗ Failed to persist user ${row.email} after ${retries} attempts:`, err?.message || err);
         } else {
-          console.warn("Unable to persist Mentorist user remotely.", err?.message || err);
+          console.warn(message);
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         }
       }
     }
@@ -793,27 +892,42 @@ const GoogleAuth = {
     if (!btn) return;
     btn.addEventListener("click", async () => {
       try {
+        console.log(`[GOOGLE] ${isSignup ? 'Signup' : 'Login'} initiated`);
+        
         if (isSignup) {
           // Save selected role before redirecting out to Google
           const roleCard = document.querySelector('.role-card.selected');
           if (roleCard) {
-            localStorage.setItem('pendingRole', roleCard.dataset.role);
-            if (roleCard.dataset.role === 'mentor') {
+            const selectedRole = roleCard.dataset.role;
+            console.log(`[GOOGLE] Saving pending role: ${selectedRole}`);
+            localStorage.setItem('pendingRole', selectedRole);
+            
+            if (selectedRole === 'mentor') {
               sessionStorage.setItem('mn_google_post_auth_route', 'mentor-review');
+              console.log(`[GOOGLE] Mentor signup - will route to mentor-review after auth`);
             } else {
               sessionStorage.removeItem('mn_google_post_auth_route');
+              console.log(`[GOOGLE] ${selectedRole} signup - will route to normal path`);
             }
+          } else {
+            console.warn("[GOOGLE] No role card selected!");
           }
         }
 
         // Build the proper redirect URL - use absolute URL construction
         let redirectUrl = '';
         try {
-          redirectUrl = new URL('auth.html', window.location.href).href;
+          // Try using URL constructor for absolute URL
+          const baseUrl = new URL(window.location.href);
+          redirectUrl = baseUrl.protocol + '//' + baseUrl.host + '/auth.html';
+          console.log(`[GOOGLE] Redirect URL (constructor): ${redirectUrl}`);
         } catch (e) {
-          // Fallback for edge cases
+          // Fallback: manual URL construction
           redirectUrl = window.location.protocol + '//' + window.location.host + '/auth.html';
+          console.log(`[GOOGLE] Redirect URL (fallback): ${redirectUrl}`);
         }
+        
+        console.log(`[GOOGLE] Starting OAuth flow with redirect: ${redirectUrl}`);
         
         const { error } = await supabaseClient.auth.signInWithOAuth({
           provider: 'google',
@@ -826,12 +940,18 @@ const GoogleAuth = {
         });
 
         if (error) {
+          localStorage.removeItem('pendingRole');
+          sessionStorage.removeItem('mn_google_post_auth_route');
           Utils.toast(`Google sign-in failed: ${error.message || 'Unknown error'}`, 'error');
-          console.error('Google OAuth error:', error);
+          console.error('[GOOGLE] OAuth error:', error);
+        } else {
+          console.log('[GOOGLE] OAuth flow initiated, redirecting to Google...');
         }
       } catch (err) {
+        localStorage.removeItem('pendingRole');
+        sessionStorage.removeItem('mn_google_post_auth_route');
         Utils.toast('An error occurred during Google sign-in. Please try again.', 'error');
-        console.error('Google OAuth exception:', err);
+        console.error('[GOOGLE] OAuth exception:', err);
       }
     });
   }

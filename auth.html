@@ -237,22 +237,34 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
   const p=new URLSearchParams(location.search);
   if(p.get('mode')==='login')showLogin();
   if(p.get('role')==='mentor')setTimeout(()=>document.querySelector('[data-role="mentor"]').click(),10);
+  
   const authNotice = localStorage.getItem('mn_auth_notice');
   if (authNotice) {
     Utils.toast(authNotice, 'error');
     localStorage.removeItem('mn_auth_notice');
   }
+  
+  // Check if already logged in
   Promise.resolve(UserStore.refreshFromRemote()).then(() => {
     if (Auth.isLoggedIn()) {
+      const user = Auth.getUser();
+      console.log("[AUTH-PAGE] Already logged in as:", user.email);
+      
       const googleRoute = sessionStorage.getItem('mn_google_post_auth_route');
-      const currentUser = Auth.syncCurrentUserFromStore(Auth.getUser()?.email) || Auth.getUser();
       if (googleRoute === 'mentor-review') {
+        console.log("[AUTH-PAGE] Routing to mentor-review per pending route");
         sessionStorage.removeItem('mn_google_post_auth_route');
         window.location.href = 'mentor-review.html';
         return;
       }
-      Auth.routeAfterLogin(currentUser);
+      
+      console.log("[AUTH-PAGE] Routing to appropriate dashboard");
+      Auth.routeAfterLogin(user);
+    } else {
+      console.log("[AUTH-PAGE] Not logged in, showing auth forms");
     }
+  }).catch(err => {
+    console.warn("[AUTH-PAGE] Error checking login status:", err);
   });
 
   function showLogin(){document.getElementById('signupView').style.display='none';document.getElementById('loginView').style.display='block';}
@@ -288,13 +300,27 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
       const email = document.getElementById('signupEmail').value.trim().toLowerCase();
       const pass = document.getElementById('signupPassword').value;
       
-      if(!name || !email || !pass) { 
-        Utils.toast('Please fill out all fields.', 'error'); 
+      // Validation
+      if(!name) { 
+        Utils.toast('Please enter your full name.', 'error'); 
+        return; 
+      }
+      if(!email) { 
+        Utils.toast('Please enter your email address.', 'error'); 
+        return; 
+      }
+      if(!pass) { 
+        Utils.toast('Please enter a password.', 'error'); 
         return; 
       }
       
-      if (pass.length < 6) {
-        Utils.toast('Password must be at least 6 characters long.', 'error');
+      if (name.length < 2) {
+        Utils.toast('Name must be at least 2 characters.', 'error');
+        return;
+      }
+      
+      if (pass.length < 8) {
+        Utils.toast('Password must be at least 8 characters long.', 'error');
         return;
       }
 
@@ -305,11 +331,25 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         return;
       }
 
+      // Check if email already exists in local store
+      const existingUser = JSON.parse(localStorage.getItem("mn_all_users") || "[]")
+        .find(u => String(u.email || "").toLowerCase() === email);
+      if (existingUser) {
+        Utils.toast('This email is already registered. Please sign in instead.', 'error');
+        setTimeout(() => showLogin(), 800);
+        return;
+      }
+
       let role = selRole;
-      if (email.endsWith('@mentorist.org') || email.startsWith('admin')) role = 'admin';
+      if (email.endsWith('@mentorist.org') || email.startsWith('admin')) {
+        role = 'admin';
+      }
+      
+      console.log(`[SIGNUP] Creating account: email=${email}, name=${name}, role=${role}`);
       
       // Store pending role before Supabase auth
       localStorage.setItem('pendingRole', role);
+      localStorage.setItem('pendingName', name);
 
       const { data, error } = await supabaseClient.auth.signUp({
         email,
@@ -326,16 +366,16 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
 
       if (error) {
         localStorage.removeItem('pendingRole');
+        localStorage.removeItem('pendingName');
         
         // Better error message detection
         const errorMsg = (error.message || '').toLowerCase();
         
         if (errorMsg.includes('already registered') || errorMsg.includes('user already') || errorMsg.includes('already exists')) {
           Utils.toast('This email is already registered. Please sign in instead.', 'error');
-          // Auto-switch to login view
-          setTimeout(() => showLogin(), 500);
+          setTimeout(() => showLogin(), 800);
         } else if (errorMsg.includes('password') || errorMsg.includes('invalid password')) {
-          Utils.toast('Password must be at least 6 characters.', 'error');
+          Utils.toast('Password must be at least 8 characters.', 'error');
         } else if (errorMsg.includes('email') || errorMsg.includes('invalid email')) {
           Utils.toast('Please enter a valid email address.', 'error');
         } else if (errorMsg.includes('rate limit') || errorMsg.includes('too many')) {
@@ -343,20 +383,28 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         } else {
           Utils.toast(`Sign-up failed: ${error.message || 'Unknown error'}`, 'error');
         }
+        console.error('[SIGNUP] Error:', error);
         return;
       }
 
-      // Successful signup - session will be established and onAuthStateChange will fire
+      console.log('[SIGNUP] Account created successfully, awaiting confirmation...');
+      
+      // Successful signup
       if (data?.user) {
-        Utils.toast('Account created! Welcome to Mentorist.', 'success');
-        // The onAuthStateChange handler will take care of routing after session is established
+        Utils.toast('Account created! Completing setup...', 'success');
+        console.log('[SIGNUP] User created, session will be established by onAuthStateChange');
+        
+        // Wait a moment for onAuthStateChange to fire
+        await new Promise(resolve => setTimeout(resolve, 1000));
       } else {
-        Utils.toast('Account created but no session established. Please try logging in.', 'info');
+        Utils.toast('Account created but no session yet. Please wait...', 'info');
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     } catch (err) {
       localStorage.removeItem('pendingRole');
+      localStorage.removeItem('pendingName');
       Utils.toast('An error occurred during sign-up. Please try again.', 'error');
-      console.error('Signup exception:', err);
+      console.error('[SIGNUP] Exception:', err);
     } finally {
       isSignupInProgress = false;
       if (signupBtn) {
@@ -382,10 +430,16 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
       const email = document.getElementById('loginEmail').value.trim().toLowerCase();
       const pass = document.getElementById('loginPassword').value;
       
-      if(!email || !pass) { 
-        Utils.toast('Please enter both email and password.', 'error'); 
+      if(!email) { 
+        Utils.toast('Please enter your email address.', 'error'); 
         return; 
       }
+      if(!pass) { 
+        Utils.toast('Please enter your password.', 'error'); 
+        return; 
+      }
+
+      console.log(`[LOGIN] Attempting login for: ${email}`);
 
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
@@ -401,8 +455,7 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
           Utils.toast('Please check your email to verify your account.', 'error');
         } else if (errorMsg.includes('user not found')) {
           Utils.toast('No account found with this email. Please sign up first.', 'error');
-          // Auto-switch to signup view
-          setTimeout(() => showSignup(), 500);
+          setTimeout(() => showSignup(), 800);
         } else if (errorMsg.includes('disabled') || errorMsg.includes('banned')) {
           Utils.toast('This account has been disabled. Please contact support.', 'error');
         } else if (errorMsg.includes('rate limit') || errorMsg.includes('too many')) {
@@ -410,18 +463,25 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         } else {
           Utils.toast(error.message || 'Login failed. Please try again.', 'error');
         }
+        console.error('[LOGIN] Error:', error);
         return;
       }
 
+      console.log('[LOGIN] Login successful, awaiting session...');
+      
       if (data?.user) {
         Utils.toast('Welcome back to Mentorist!', 'success');
-        // The onAuthStateChange handler will take care of routing after session is established
+        console.log('[LOGIN] Session established, routing will occur via onAuthStateChange');
+        
+        // Wait for onAuthStateChange to fire
+        await new Promise(resolve => setTimeout(resolve, 1000));
       } else {
-        Utils.toast('Login processed but no session established. Please try again.', 'info');
+        Utils.toast('Login processed but waiting for session...', 'info');
+        await new Promise(resolve => setTimeout(resolve, 1500));
       }
     } catch (err) {
       Utils.toast('An error occurred during login. Please try again.', 'error');
-      console.error('Login exception:', err);
+      console.error('[LOGIN] Exception:', err);
     } finally {
       isLoginInProgress = false;
       if (loginBtn) {
