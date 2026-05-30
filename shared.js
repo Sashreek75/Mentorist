@@ -348,6 +348,15 @@ const Auth = {
   },
   isLoggedIn() { return !!this.getUser(); },
   async forceLogout(reason = 'You have been signed out.') {
+    const currentUser = this.getUser();
+    
+    // If suspended, set cooldown timer
+    if (reason && reason.includes('suspended') && currentUser?.email) {
+      const suspensionKey = `mn_suspended_${currentUser.email}`;
+      localStorage.setItem(suspensionKey, Date.now().toString());
+      console.log(`[AUTH] Suspension cooldown set for ${currentUser.email}, expires in 5 minutes`);
+    }
+    
     localStorage.setItem('mn_auth_notice', reason);
     localStorage.removeItem("mn_user");
     if (reason) {
