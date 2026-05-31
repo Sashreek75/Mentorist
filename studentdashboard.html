@@ -345,19 +345,19 @@ body{background:var(--bg);}
         </div>
         <div style="flex:1; min-width:0;">
           <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-            <span style="font-size:10px; font-weight:800; color:var(--green); background:var(--green-dim); padding:3px 10px; border-radius:var(--r-pill); text-transform:uppercase; letter-spacing:0.05em;">${a.tag}</span>
-            <span style="font-size:16px; font-weight:700; color:var(--t1);">${a.title}</span>
+            <span style="font-size:10px; font-weight:800; color:var(--green); background:var(--green-dim); padding:3px 10px; border-radius:var(--r-pill); text-transform:uppercase; letter-spacing:0.05em;">${Utils.escapeHtml(a.tag)}</span>
+            <span style="font-size:16px; font-weight:700; color:var(--t1);">${Utils.escapeHtml(a.title)}</span>
           </div>
-          <p style="font-size:14px; color:var(--t3); line-height:1.5; margin:0;">${a.body}</p>
+          <p style="font-size:14px; color:var(--t3); line-height:1.5; margin:0;">${Utils.escapeHtml(a.body)}</p>
         </div>
         <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end; flex-shrink:0; border-left:1px solid var(--b1); padding-left:20px;">
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; font-weight:700; color:var(--t2); user-select:none;">
-            <input type="checkbox" onchange="acknowledgeAlert('${a.id}', this)" style="width:16px; height:16px; accent-color: var(--green);">
+            <input type="checkbox" onchange="acknowledgeAlert('${Utils.escapeHtml(a.id)}', this)" style="width:16px; height:16px; accent-color: var(--green);">
             I understand
           </label>
           <div style="text-align:right;">
             <div style="font-size:11px; color:var(--t4); font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">Strategy Lead</div>
-            <div style="font-size:13px; font-weight:700; color:var(--t2);">${a.author}</div>
+            <div style="font-size:13px; font-weight:700; color:var(--t2);">${Utils.escapeHtml(a.author)}</div>
           </div>
         </div>
       </div>
@@ -397,14 +397,14 @@ body{background:var(--bg);}
         <div class="mentor-profile-mini" style="justify-content: space-between; display:flex; width:100%;">
           <div style="display:flex; align-items:center; gap:14px;">
             <div class="avatar avatar-md">${Utils.initials(a.mentorName)}</div>
-            <div class="mentor-info"><h5>${a.mentorName}</h5><p>${a.mentorBio||'Lead Mentor'}</p></div>
+            <div class="mentor-info"><h5>${Utils.escapeHtml(a.mentorName)}</h5><p>${Utils.escapeHtml(a.mentorBio||'Lead Mentor')}</p></div>
           </div>
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); markHelpful('${q.id}', ${aIdx}, this)" style="color:${a.helpful?'var(--green)':'var(--t4)'}">
             <svg viewBox="0 0 24 24" fill="${a.helpful?'currentColor':'none'}" stroke="currentColor" stroke-width="2.5" style="width:14px; margin-right:4px;"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
             ${a.helpful ? 'Helpful' : 'Mark Helpful'}
           </button>
         </div>
-        <div class="answer-content">${a.text}</div>
+        <div class="answer-content">${Utils.escapeHtml(a.text)}</div>
       `).join('<div class="divider" style="margin:24px 0;"></div>') : '';
 
       const deleteBtnHtml = !isAns ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); deleteQuestion('${q.id}')" style="color:var(--red); padding:4px 8px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; margin-right:4px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Withdraw</button>` : '';
@@ -418,8 +418,8 @@ body{background:var(--bg);}
               <span class="qdate-simple">${Utils.relativeDate(q.createdAt)}</span>
             </div>
           </div>
-          <div class="qquestion-text">${q.question}</div>
-          ${q.context?`<div class="qctx-text">${q.context}</div>`:''}
+          <div class="qquestion-text">${Utils.escapeHtml(q.question)}</div>
+          ${q.context?`<div class="qctx-text">${Utils.escapeHtml(q.context)}</div>`:''}
         </div>
         ${isAns ? `<div class="answer-panel">${answersHtml}</div>` : ''}
         <div class="qstatus-bar ${isAns?'qstatus-answered':'qstatus-pending'}">

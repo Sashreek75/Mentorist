@@ -319,15 +319,15 @@ body{background:var(--bg);}
           <div class="mc-user">
             <div class="avatar avatar-md">${Utils.initials(q.studentName)}</div>
             <div>
-              <div class="mc-uname">${q.studentName}</div>
+              <div class="mc-uname">${Utils.escapeHtml(q.studentName)}</div>
               <div class="mc-tags" style="margin-top:4px;">
                 <span class="mc-ugrade">${gm[p.grade]||'Unknown'}</span>
                 <span class="badge badge-gray">${im[p.interest]||'Exploring'}</span>
               </div>
             </div>
           </div>
-          <div class="mc-question">${q.question}</div>
-          ${q.context?`<div class="mc-context">Context: ${q.context}</div>`:''}
+          <div class="mc-question">${Utils.escapeHtml(q.question)}</div>
+          ${q.context?`<div class="mc-context">Context: ${Utils.escapeHtml(q.context)}</div>`:''}
           <div class="mc-tags">${tags}</div>
         </div>
         <div class="mc-right">
@@ -350,11 +350,11 @@ body{background:var(--bg);}
                   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
                     <div style="display:flex; align-items:center; gap:8px;">
                       <div class="avatar" style="width:24px; height:24px; font-size:10px;">${Utils.initials(a.mentorName)}</div>
-                      <div style="font-size:13px; font-weight:700; color:var(--t1);">${a.mentorName} ${a.helpful ? '<span style="color:var(--green); margin-left:4px;">★ Helpful</span>' : ''}</div>
+                      <div style="font-size:13px; font-weight:700; color:var(--t1);">${Utils.escapeHtml(a.mentorName)} ${a.helpful ? '<span style="color:var(--green); margin-left:4px;">★ Helpful</span>' : ''}</div>
                     </div>
                     ${a.mentorEmail === user.email ? `<button class="btn btn-ghost btn-sm" onclick="deleteMyAnswer('${q.id}', ${aIdx})" style="color:var(--red); padding:2px 8px; font-size:11px;">Delete</button>` : ''}
                   </div>
-                  <div style="font-size:14px; color:var(--t2); padding-left:32px; white-space:pre-wrap;">${a.text}</div>
+                  <div style="font-size:14px; color:var(--t2); padding-left:32px; white-space:pre-wrap;">${Utils.escapeHtml(a.text)}</div>
                 </div>
               `).join('')}
             </div>

@@ -180,17 +180,17 @@
       }
 
       grid.innerHTML = pending.map(u => `
-        <article class="review-card">
+        <article class=\"review-card\">
           <h3>${safeText(u.name || 'Unnamed applicant')}</h3>
-          <div class="review-meta">${safeText(u.email)}</div>
-          <div class="review-note">
+          <div class=\"review-meta\">${safeText(u.email)}</div>
+          <div class=\"review-note\">
             ${safeText(u.applicationData?.experience || 'No statement provided.')}
           </div>
-          <div class="kv"><strong>University</strong><span>${safeText(u.applicationData?.university || 'N/A')}</span></div>
-          <div class="kv"><strong>Major</strong><span>${safeText(u.applicationData?.major || 'Not provided')}</span></div>
-          <div class="review-actions" style="margin-top:18px;">
-            <button class="btn btn-primary btn-lg" onclick="handleReview('${safeText(u.email)}', 'active', 'approved')">Approve Account</button>
-            <button class="btn btn-ghost btn-lg" style="border:1px solid var(--b1);" onclick="handleReview('${safeText(u.email)}', 'rejected', 'rejected')">Reject</button>
+          <div class=\"kv\"><strong>University</strong><span>${safeText(u.applicationData?.university || 'N/A')}</span></div>
+          <div class=\"kv\"><strong>Major</strong><span>${safeText(u.applicationData?.major || 'Not provided')}</span></div>
+          <div class=\"review-actions\" style=\"margin-top:18px;\">
+            <button class=\"btn btn-primary btn-lg\" onclick=\"handleReview(${JSON.stringify(u.email)}, 'active', 'approved')\">Approve Account</button>
+            <button class=\"btn btn-ghost btn-lg\" style=\"border:1px solid var(--b1);\" onclick=\"handleReview(${JSON.stringify(u.email)}, 'rejected', 'rejected')\">Reject</button>
           </div>
         </article>
       `).join('');

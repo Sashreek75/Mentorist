@@ -328,11 +328,11 @@ body{background:var(--bg);}
       return `
         <div class="v-card stagger" style="animation-delay: ${idx * 0.1}s" onclick="openQuestion('${q.id}')">
           <div class="v-head">
-            <span class="v-tag">${tag}</span>
+            <span class="v-tag">${Utils.escapeHtml(tag)}</span>
             <span class="v-date">${Utils.relativeDate(q.createdAt)}</span>
           </div>
-          <div class="v-question">${q.question}</div>
-          <div class="v-context">${q.context || 'Strategic inquiry regarding ' + tag.toLowerCase() + ' development.'}</div>
+          <div class="v-question">${Utils.escapeHtml(q.question)}</div>
+          <div class="v-context">${Utils.escapeHtml(q.context || 'Strategic inquiry regarding ' + tag.toLowerCase() + ' development.')}</div>
           <div class="v-footer">
             <div class="v-stats">
               <div class="v-mentor-avatars">${avs}</div>
@@ -365,13 +365,13 @@ body{background:var(--bg);}
     if(!q) return;
 
     const tagsEl = document.getElementById('modalTags');
-    tagsEl.innerHTML = (q.topics||[]).map(t => `<span class="v-tag">${t}</span>`).join('');
+    tagsEl.innerHTML = (q.topics||[]).map(t => `<span class="v-tag">${Utils.escapeHtml(t)}</span>`).join('');
 
     const body = document.getElementById('modalBody');
     body.innerHTML = `
       <div class="m-question-area">
-        <h2 class="m-q-text">${q.question}</h2>
-        ${q.context ? `<div class="m-q-context">${q.context}</div>` : ''}
+        <h2 class="m-q-text">${Utils.escapeHtml(q.question)}</h2>
+        ${q.context ? `<div class="m-q-context">${Utils.escapeHtml(q.context)}</div>` : ''}
       </div>
       
       <div class="ans-section-title">Mentor Intelligence</div>
@@ -381,11 +381,11 @@ body{background:var(--bg);}
           <div class="ans-mentor">
             <div class="avatar avatar-md">${Utils.initials(a.mentorName)}</div>
             <div class="ans-m-info">
-              <div class="ans-m-name">${a.mentorName}</div>
-              <div class="ans-m-bio">${a.mentorBio || 'Strategic Mentor'}</div>
+              <div class="ans-m-name">${Utils.escapeHtml(a.mentorName)}</div>
+              <div class="ans-m-bio">${Utils.escapeHtml(a.mentorBio || 'Strategic Mentor')}</div>
             </div>
           </div>
-          <div class="ans-content">${a.text}</div>
+          <div class="ans-content">${Utils.escapeHtml(a.text)}</div>
         </div>
       `).join('')}
     `;
