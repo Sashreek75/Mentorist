@@ -367,12 +367,14 @@
         </div>
 
         <div class="on-header">
-            <span class="on-eyebrow" id="stepIndicator">Step 1 of 6</span>
+            <span class="on-eyebrow" id="stepIndicator">Step 1 of 8</span>
             <h1 class="on-title" id="mainHeader">Welcome, Navigator.</h1>
         </div>
 
         <div class="on-progress-top" id="dotGrid">
             <div class="p-dot active"></div>
+            <div class="p-dot"></div>
+            <div class="p-dot"></div>
             <div class="p-dot"></div>
             <div class="p-dot"></div>
             <div class="p-dot"></div>
@@ -387,31 +389,61 @@
                 <h2 class="step-title">Current Standing</h2>
                 <p class="step-sub">Which stage of your current journey are you in?</p>
                 <div class="choices-flex">
-                    <div class="choice-card" onclick="setV('grade','highschool',this)">
+                    <div class="choice-card" onclick="setV('grade','highschool',this,true)">
                         <div class="rc-name">High School</div>
                         <div class="rc-desc">Currently in secondary ed</div>
                     </div>
-                    <div class="choice-card" onclick="setV('grade','college',this)">
+                    <div class="choice-card" onclick="setV('grade','college',this,true)">
                         <div class="rc-name">Undergrad</div>
                         <div class="rc-desc">Currently in College/Uni</div>
                     </div>
-                    <div class="choice-card" onclick="setV('grade','gap',this)">
+                    <div class="choice-card" onclick="setV('grade','gap',this,true)">
                         <div class="rc-name">Gap Year</div>
                         <div class="rc-desc">Exploring before next step</div>
                     </div>
-                    <div class="choice-card" onclick="setV('grade','grad',this)">
+                    <div class="choice-card" onclick="setV('grade','grad',this,true)">
                         <div class="rc-name">Early Career</div>
                         <div class="rc-desc">Post-grad or starting out</div>
                     </div>
-                    <div class="choice-card" onclick="setV('grade','parent',this)">
+                    <div class="choice-card" onclick="setV('grade','parent',this,true)">
                         <div class="rc-name">Parent</div>
                         <div class="rc-desc">Supporting a navigator</div>
                     </div>
-                    <div class="choice-card" onclick="setV('grade','international',this)">
+                    <div class="choice-card" onclick="setV('grade','international',this,true)">
                         <div class="rc-name">International</div>
                         <div class="rc-desc">Outside the US system</div>
                     </div>
                 </div>
+            </div>
+
+            <!-- STEP 2: SCHOOL PROFILE -->
+            <div class="step-content" id="step-school">
+                <h2 class="step-title">School Profile</h2>
+                <p class="step-sub">Tell us your school so we can search the right catalog and course pathway.</p>
+                <div class="form-group">
+                    <label class="form-label" for="schoolName">School Name</label>
+                    <input type="text" class="form-input" id="schoolName" maxlength="120" placeholder="e.g. Rouse High School">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="schoolLocation">School District / City, State</label>
+                    <input type="text" class="form-input" id="schoolLocation" maxlength="120" placeholder="e.g. Leander ISD | Leander, TX">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="schoolGrade">Current Grade / Year</label>
+                    <input type="text" class="form-input" id="schoolGrade" maxlength="40" placeholder="e.g. 10th grade, sophomore, college freshman">
+                    <small style="color: var(--t4); margin-top: 8px; display: block;">This helps us sequence courses correctly and avoid duplicate recommendations.</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="schoolCatalogUrl">Course Catalog URL (optional)</label>
+                    <input type="url" class="form-input" id="schoolCatalogUrl" maxlength="300" placeholder="https://your-school.edu/course-catalog">
+                    <small style="color: var(--t4); margin-top: 8px; display: block;">If you do not know it, we will search the web using your school name automatically.</small>
+                </div>
+                <button class="btn btn-primary btn-full btn-lg" onclick="advanceFromSchool()">
+                    Save School Profile
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                        <path d="M5 12h14m-7-7 7 7-7 7" />
+                    </svg>
+                </button>
             </div>
 
             <!-- STEP 2: INTEREST -->
@@ -419,27 +451,27 @@
                 <h2 class="step-title">Academic Interest</h2>
                 <p class="step-sub">We'll match you with mentors specializing in your future field.</p>
                 <div class="choices-flex">
-                    <div class="choice-card" onclick="setV('interest','stem',this)">
+                    <div class="choice-card" onclick="setV('interest','stem',this,true)">
                         <div class="rc-name">STEM Track</div>
                         <div class="rc-desc">Engineering, Tech, CS</div>
                     </div>
-                    <div class="choice-card" onclick="setV('interest','medicine',this)">
+                    <div class="choice-card" onclick="setV('interest','medicine',this,true)">
                         <div class="rc-name">Medicine</div>
                         <div class="rc-desc">Bio, Chem, Health</div>
                     </div>
-                    <div class="choice-card" onclick="setV('interest','business',this)">
+                    <div class="choice-card" onclick="setV('interest','business',this,true)">
                         <div class="rc-name">Business</div>
                         <div class="rc-desc">Finance, Economics</div>
                     </div>
-                    <div class="choice-card" onclick="setV('interest','humanities',this)">
+                    <div class="choice-card" onclick="setV('interest','humanities',this,true)">
                         <div class="rc-name">Humanities</div>
                         <div class="rc-desc">History, Politics, Law</div>
                     </div>
-                    <div class="choice-card" onclick="setV('interest','arts',this)">
+                    <div class="choice-card" onclick="setV('interest','arts',this,true)">
                         <div class="rc-name">Arts & Design</div>
                         <div class="rc-desc">Digital, Visual Arts</div>
                     </div>
-                    <div class="choice-card" onclick="setV('interest','undecided',this)">
+                    <div class="choice-card" onclick="setV('interest','undecided',this,true)">
                         <div class="rc-name">Exploring</div>
                         <div class="rc-desc">General strategy</div>
                     </div>
@@ -449,32 +481,65 @@
             <!-- STEP 3: RIGOR -->
             <div class="step-content" id="step-2">
                 <h2 class="step-title">Course Rigor</h2>
-                <p class="step-sub">How challenging is your current schedule compared to your school's best?</p>
-                <div class="choices-flex">
-                    <div class="choice-card" onclick="setV('rigor','standard',this)">
+                <p class="step-sub">How challenging is your current schedule, and how much load can you handle while still protecting the GPA?</p>
+                <div class="choices-flex" style="margin-bottom:18px;">
+                    <div class="choice-card" onclick="setV('rigor','standard',this,false)">
                         <div class="rc-name">Standard</div>
                         <div class="rc-desc">Standard college-prep classes</div>
                     </div>
-                    <div class="choice-card" onclick="setV('rigor','rigorous',this)">
+                    <div class="choice-card" onclick="setV('rigor','rigorous',this,false)">
                         <div class="rc-name">Rigorous</div>
                         <div class="rc-desc">A mix of Honors/AP/IB</div>
                     </div>
-                    <div class="choice-card" onclick="setV('rigor','extreme',this)">
+                    <div class="choice-card" onclick="setV('rigor','extreme',this,false)">
                         <div class="rc-name">Most Rigorous</div>
                         <div class="rc-desc">4+ AP/IB courses/year</div>
                     </div>
                 </div>
+                <div class="choices-flex" style="margin-bottom:28px;">
+                    <div class="choice-card" onclick="setV('workloadPreference','light',this,false)">
+                        <div class="rc-name">Light Load</div>
+                        <div class="rc-desc">I want to keep room for GPA protection and outside commitments.</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('workloadPreference','balanced',this,false)">
+                        <div class="rc-name">Balanced</div>
+                        <div class="rc-desc">I can handle a strong schedule if it stays sustainable.</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('workloadPreference','ambitious',this,false)">
+                        <div class="rc-name">Ambitious</div>
+                        <div class="rc-desc">I can take a serious load if the courses are worth it.</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('workloadPreference','extreme',this,false)">
+                        <div class="rc-name">Maximum Rigor</div>
+                        <div class="rc-desc">I can absorb a very demanding schedule.</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="currentCourses">Current Courses</label>
+                    <textarea class="form-textarea" id="currentCourses" placeholder="e.g. AP CSP, Honors Algebra II, Biology, English II, Spanish III"></textarea>
+                    <small style="color: var(--t4); margin-top: 8px; display: block;">This helps the engine avoid recommending classes you have already taken and find the next step in the sequence.</small>
+                </div>
+                <button class="btn btn-primary btn-full btn-lg" onclick="advanceFromRigor()">
+                    Save Course Load
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                        <path d="M5 12h14m-7-7 7 7-7 7" />
+                    </svg>
+                </button>
             </div>
 
             <!-- STEP 4: GOAL -->
             <div class="step-content" id="step-3">
                 <h2 class="step-title">The Big Objective</h2>
-                <p class="step-sub">What's the single most important thing you want to achieve?</p>
+                <p class="step-sub">What is the single most important thing you want to achieve, and which colleges or programs are you aiming toward?</p>
                 <div class="form-group">
                     <label class="form-label" for="goal">Primary Goal</label>
                     <textarea class="form-textarea"
                         placeholder="e.g. Navigating the STEM track to get into a top engineering school like Stanford while maintaining my GPA."
                         id="goal" oninput="upPB(this)"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="targetColleges">Target Colleges or Programs (optional)</label>
+                    <input type="text" class="form-input" id="targetColleges" maxlength="220" placeholder="e.g. Stanford, UT Austin Cockrell, Georgia Tech, local honors programs">
                 </div>
                 <button class="btn btn-primary btn-full btn-lg" onclick="advanceFromGoal()">
                     Review My Profile
@@ -487,7 +552,7 @@
             <!-- STEP 5: CAREER ASPIRATIONS -->
             <div class="step-content" id="step-4">
                 <h2 class="step-title">Career Aspirations</h2>
-                <p class="step-sub">Where do you see yourself in 10 years? What careers excite you?</p>
+                <p class="step-sub">Where do you see yourself in 10 years, and when do you want to start testing internships or selective programs?</p>
                 <div class="form-group">
                     <label class="form-label" for="careers">Dream Careers or Roles</label>
                     <textarea class="form-textarea"
@@ -501,6 +566,24 @@
                         placeholder="e.g. Python programming, Public speaking, Leadership"
                         id="skills"></textarea>
                 </div>
+                <div class="choices-flex" style="margin-bottom:28px;">
+                    <div class="choice-card" onclick="setV('internshipTimeline','this summer',this,false)">
+                        <div class="rc-name">This Summer</div>
+                        <div class="rc-desc">I want something immediately actionable.</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('internshipTimeline','6-12 months',this,false)">
+                        <div class="rc-name">6-12 Months</div>
+                        <div class="rc-desc">I am building toward a stronger application.</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('internshipTimeline','1 year+',this,false)">
+                        <div class="rc-name">1 Year+</div>
+                        <div class="rc-desc">I want a stretch path with long-term upside.</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('internshipTimeline','exploring',this,false)">
+                        <div class="rc-name">Exploring</div>
+                        <div class="rc-desc">I want ideas before I commit.</div>
+                    </div>
+                </div>
                 <button class="btn btn-primary btn-full btn-lg" onclick="advanceFromAspirations()">
                     Unlock My Personalized Recommendations
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
@@ -509,7 +592,49 @@
                 </button>
             </div>
 
-            <!-- STEP 6: SUMMARY -->
+            <!-- STEP 6: ACTIVITIES -->
+            <div class="step-content" id="step-5">
+                <h2 class="step-title">Activities and Proof of Work</h2>
+                <p class="step-sub">What are you already doing, and what kind of project cadence can you sustain?</p>
+                <div class="form-group">
+                    <label class="form-label" for="extracurriculars">Current Clubs, Sports, Volunteering, or Activities</label>
+                    <textarea class="form-textarea"
+                        placeholder="e.g. Robotics club, varsity soccer, church volunteer, coding club, band"
+                        id="extracurriculars"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="passionProjects">Passion Projects or Things You Have Built</label>
+                    <textarea class="form-textarea"
+                        placeholder="e.g. Personal website, tutoring app, research poster, design portfolio"
+                        id="passionProjects"></textarea>
+                </div>
+                <div class="choices-flex" style="margin-bottom:28px;">
+                    <div class="choice-card" onclick="setV('timeAvailability','2-3 hrs/wk',this,false)">
+                        <div class="rc-name">2-3 Hours / Week</div>
+                        <div class="rc-desc">I can stay consistent but need a lighter load.</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('timeAvailability','4-6 hrs/wk',this,false)">
+                        <div class="rc-name">4-6 Hours / Week</div>
+                        <div class="rc-desc">I can make steady progress on a real project.</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('timeAvailability','7-10 hrs/wk',this,false)">
+                        <div class="rc-name">7-10 Hours / Week</div>
+                        <div class="rc-desc">I can handle a more serious extracurricular or project.</div>
+                    </div>
+                    <div class="choice-card" onclick="setV('timeAvailability','10+ hrs/wk',this,false)">
+                        <div class="rc-name">10+ Hours / Week</div>
+                        <div class="rc-desc">I can commit to a deep, ambitious build.</div>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-full btn-lg" onclick="advanceFromActivities()">
+                    Build My Roadmap
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                        <path d="M5 12h14m-7-7 7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- STEP 7: SUMMARY -->
             <div class="step-content" id="step-complete">
                 <h2 class="step-title">Profile Built.</h2>
                 <p class="step-sub">Here's how mentors will see your background. High-quality context ensures precise
@@ -518,20 +643,28 @@
                 <div class="profile-summary-premium">
                     <div class="ps-item"><span class="ps-label">Education</span><span class="ps-val" id="sumEdu"></span>
                     </div>
+                    <div class="ps-item"><span class="ps-label">School</span><span class="ps-val" id="sumSchool"></span></div>
+                    <div class="ps-item"><span class="ps-label">Catalog Link</span><span class="ps-val" id="sumCatalog"></span></div>
                     <div class="ps-item"><span class="ps-label">Field Focus</span><span class="ps-val"
                             id="sumFocus"></span></div>
                     <div class="ps-item"><span class="ps-label">Course Rigor</span><span class="ps-val"
                             id="sumRigor"></span>
                     </div>
+                    <div class="ps-item"><span class="ps-label">Workload Comfort</span><span class="ps-val" id="sumWorkload"></span></div>
                     <div class="ps-item"><span class="ps-label">Long-term Strategy</span><span class="ps-val"
                             id="sumGoal"></span>
                     </div>
+                    <div class="ps-item"><span class="ps-label">Target Colleges</span><span class="ps-val" id="sumColleges"></span></div>
                     <div class="ps-item"><span class="ps-label">Career Aspirations</span><span class="ps-val"
                             id="sumCareers"></span>
                     </div>
                     <div class="ps-item"><span class="ps-label">Skills to Build</span><span class="ps-val"
                             id="sumSkills"></span>
                     </div>
+                    <div class="ps-item"><span class="ps-label">Current Courses</span><span class="ps-val" id="sumCourses"></span></div>
+                    <div class="ps-item"><span class="ps-label">Activities</span><span class="ps-val" id="sumActivities"></span></div>
+                    <div class="ps-item"><span class="ps-label">Projects</span><span class="ps-val" id="sumProjects"></span></div>
+                    <div class="ps-item"><span class="ps-label">Internship Timing</span><span class="ps-val" id="sumTimeline"></span></div>
                 </div>
                 <div class="alert alert-info" style="margin:40px 0;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -539,8 +672,7 @@
                         <circle cx="12" cy="12" r="10" />
                         <path d="M12 8v4m0 4h.01" />
                     </svg>
-                    <span>Accounts are nonprofit. Your profile is only used to match you with appropriate peer
-                        mentors.</span>
+                    <span>We use your school, grade, and workload to search the catalog, compare peer patterns, and generate recommendations while you wait for mentors.</span>
                 </div>
                 <button class="btn btn-primary btn-full btn-lg" onclick="finish()">
                     Complete Onboarding
@@ -555,6 +687,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="shared.js"></script>
+<script src="recommendation-core.js"></script>
     <script>
         /* ── Auth guard ── */
         const user = Auth.requireAuth();
@@ -575,29 +708,56 @@
         }
 
         /* ── State ── */
-        let data = {};
+        let data = { workloadPreference: 'balanced' };
         let curStep = 0;
-        const steps = ['step-0', 'step-1', 'step-2', 'step-3', 'step-4', 'step-complete'];
+        const steps = ['step-0', 'step-school', 'step-1', 'step-2', 'step-3', 'step-4', 'step-5', 'step-complete'];
 
         /* ── Card selection + auto-advance ── */
-        function setV(key, val, el) {
+        function setV(key, val, el, autoAdvance = false) {
             data[key] = val;
 
             // Highlight selected card
-            el.closest('.choices-flex').querySelectorAll('.choice-card')
-                .forEach(c => c.classList.remove('selected'));
+            const group = el.closest('.choices-flex');
+            if (group) {
+                group.querySelectorAll('.choice-card')
+                    .forEach(c => c.classList.remove('selected'));
+            }
             el.classList.add('selected');
 
             // Brief visual confirmation, then advance
-            setTimeout(advance, 200);
+            if (autoAdvance) setTimeout(advance, 200);
         }
 
         function upPB(el) {
             data.goal = el.value;
         }
 
+        function advanceFromSchool() {
+            const schoolName = document.getElementById('schoolName').value.trim();
+            const schoolGrade = document.getElementById('schoolGrade').value.trim();
+            const schoolLocation = document.getElementById('schoolLocation').value.trim();
+            const catalogUrl = document.getElementById('schoolCatalogUrl').value.trim();
+
+            if (!schoolName || schoolName.length < 3) {
+              Utils.toast('Please enter your school name.', 'error');
+              return;
+            }
+
+            if (!schoolGrade || schoolGrade.length < 2) {
+              Utils.toast('Please enter your current grade or year.', 'error');
+              return;
+            }
+
+            data.schoolName = schoolName;
+            data.schoolGrade = schoolGrade;
+            data.schoolLocation = schoolLocation;
+            data.schoolCatalogUrl = catalogUrl;
+            advance();
+        }
+
         function advanceFromGoal() {
             const goalText = document.getElementById('goal').value.trim();
+            const targetColleges = document.getElementById('targetColleges').value.trim();
             
             if (!goalText || goalText.length < 10) {
               Utils.toast('Please describe your primary goal (at least 10 characters).', 'error');
@@ -610,6 +770,7 @@
             }
             
             data.goal = goalText;
+            data.targetColleges = targetColleges;
             advance();
         }
 
@@ -639,6 +800,29 @@
             
             data.careers = careersText;
             data.skills = skillsText;
+            advance();
+        }
+
+        function advanceFromRigor() {
+            const currentCourses = document.getElementById('currentCourses').value.trim();
+            if (!data.rigor) {
+              Utils.toast('Please pick a course rigor level.', 'error');
+              return;
+            }
+            if (!data.workloadPreference) {
+              data.workloadPreference = 'balanced';
+            }
+            data.currentCourses = currentCourses;
+            advance();
+        }
+
+        function advanceFromActivities() {
+            const extracurriculars = document.getElementById('extracurriculars').value.trim();
+            const passionProjects = document.getElementById('passionProjects').value.trim();
+
+            data.extracurriculars = extracurriculars || 'None yet';
+            data.passionProjects = passionProjects || 'None yet';
+            if (!data.timeAvailability) data.timeAvailability = '4-6 hrs/wk';
             advance();
         }
 
@@ -729,6 +913,83 @@
         function completeMentor() {
             Auth.updateUser({ onboarded: true });
             window.location.href = 'mentordashboard.html';
+        }
+
+        function renderSummary() {
+            const gradeMap = {
+                highschool: 'High School Navigator',
+                college: 'Undergrad Navigator',
+                gap: 'Gap Year Explorer',
+                grad: 'Early Career Navigator',
+                parent: 'Parent Explorer',
+                international: 'International Applicant'
+            };
+            const interestMap = {
+                stem: 'STEM-focused Track',
+                medicine: 'Medical Track Focus',
+                business: 'Business Track',
+                humanities: 'Humanities Focus',
+                arts: 'Arts & Design Field',
+                undecided: 'Interdisciplinary Focus'
+            };
+            const rigorMap = {
+                standard: 'Standard College-Prep',
+                rigorous: 'Honors / AP / IB Mix',
+                extreme: 'Maximum Rigor (4+ APs)'
+            };
+            const workloadMap = {
+                light: 'Light',
+                balanced: 'Balanced',
+                ambitious: 'Ambitious',
+                extreme: 'Maximum'
+            };
+
+            const setText = (id, value) => {
+              const node = document.getElementById(id);
+              if (node) node.textContent = value;
+            };
+
+            setText('sumEdu', `${gradeMap[data.grade] || '—'} · ${data.schoolGrade || 'Grade not set'}`);
+            setText('sumSchool', data.schoolName || 'School not set');
+            setText('sumCatalog', data.schoolCatalogUrl || 'We will search automatically');
+            setText('sumFocus', interestMap[data.interest] || '—');
+            setText('sumRigor', rigorMap[data.rigor] || '—');
+            setText('sumWorkload', workloadMap[data.workloadPreference] || data.workloadPreference || '—');
+            setText('sumGoal', data.goal || 'Not yet defined');
+            setText('sumColleges', data.targetColleges || 'Not specified');
+            setText('sumCareers', data.careers || 'Not specified');
+            setText('sumSkills', data.skills || 'Not specified');
+            setText('sumCourses', data.currentCourses || 'Not shared');
+            setText('sumActivities', data.extracurriculars || 'Not shared');
+            setText('sumProjects', data.passionProjects || 'Not shared');
+            setText('sumTimeline', data.internshipTimeline || 'Exploring');
+        }
+
+        function finish() {
+            if (!data.grade || !data.schoolName || !data.schoolGrade || !data.interest || !data.rigor || !data.goal || !data.careers || !data.skills) {
+              Utils.toast('Please complete all profile steps before finishing.', 'error');
+              curStep = 0;
+              updateMeta();
+              document.getElementById('step-complete').classList.remove('active');
+              document.getElementById('step-complete').style.display = 'none';
+              document.getElementById('step-0').style.display = 'block';
+              requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById('step-0').classList.add('active')));
+              return;
+            }
+
+            data.workloadPreference = data.workloadPreference || 'balanced';
+            data.currentCourses = data.currentCourses || '';
+            data.extracurriculars = data.extracurriculars || 'None yet';
+            data.passionProjects = data.passionProjects || 'None yet';
+            data.targetColleges = data.targetColleges || '';
+            data.internshipTimeline = data.internshipTimeline || 'exploring';
+            data.timeAvailability = data.timeAvailability || '4-6 hrs/wk';
+
+            Auth.updateUser({ profile: data, onboarded: true });
+            const updated = Auth.getUser();
+            window.location.href = (updated.role === 'mentor')
+                ? 'mentordashboard.html'
+                : 'recommendations.html?new=true';
         }
     </script>
 </body>

@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "recommend:server": "node recommend-ai-server.js",
+    "test:recommend": "node test-recommend.js"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2"
   }

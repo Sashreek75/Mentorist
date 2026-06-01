@@ -289,6 +289,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="shared.js"></script>
+  <script src="recommendation-core.js"></script>
   <script src="recommendations.js"></script>
   <script>
     const user = Auth.requireAuth();
@@ -308,13 +309,28 @@
     av.style.color = 'var(--green)';
     av.textContent = Utils.initials(user.name);
 
-    // Get recommendations
-    const recommendations = RecommendationEngine.getRecommendations(user);
+    async function loadRecommendations() {
+      document.getElementById('recommendationsContent').innerHTML = `
+        <div class="rec-section" style="text-align:center;">
+          <div class="rec-item-title">Building your school-aware roadmap...</div>
+          <div class="rec-item-desc">We are pulling your profile, looking up your school catalog, and comparing your pattern with similar students.</div>
+        </div>
+      `;
 
-    if (recommendations) {
+      const recommendations = await RecommendationEngine.getRecommendations(user);
       const html = RecommendationEngine.formatRecommendations(recommendations);
       document.getElementById('recommendationsContent').innerHTML = html;
     }
+
+    loadRecommendations().catch((error) => {
+      console.error('[RECOMMENDATIONS] Failed to load:', error);
+      document.getElementById('recommendationsContent').innerHTML = `
+        <div class="rec-section">
+          <div class="rec-item-title">We could not load recommendations right now.</div>
+          <div class="rec-item-desc">The app will fall back automatically once the recommendation server is available again.</div>
+        </div>
+      `;
+    });
 
     // Scroll animations
     const nav = document.getElementById('nav');
