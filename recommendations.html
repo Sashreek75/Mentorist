@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Personalized Recommendations — Mentorist</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    body { background: var(--bg); }
+
+    .rec-header {
+      max-width: 1200px;
+      margin: 120px auto 60px;
+      padding: 0 24px;
+      text-align: center;
+    }
+
+    .rec-title {
+      font-family: var(--font-h);
+      font-size: clamp(36px, 6vw, 56px);
+      font-weight: 800;
+      color: var(--t1);
+      letter-spacing: -0.04em;
+      margin-bottom: 20px;
+    }
+
+    .rec-intro {
+      font-size: 18px;
+      color: var(--t3);
+      max-width: 700px;
+      margin: 0 auto 32px;
+      line-height: 1.8;
+    }
+
+    .rec-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px 120px;
+    }
+
+    .recommendations-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 60px;
+      margin-bottom: 80px;
+    }
+
+    .rec-section {
+      background: var(--bg-1);
+      border: 1px solid var(--b1);
+      border-radius: var(--r-3xl);
+      padding: 48px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .rec-section::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(0, 232, 122, 0.08), transparent 70%);
+      filter: blur(60px);
+      pointer-events: none;
+    }
+
+    .rec-section-title {
+      font-family: var(--font-h);
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--t1);
+      margin-bottom: 32px;
+      position: relative;
+      z-index: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .rec-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .rec-item {
+      background: var(--bg-2);
+      border: 1px solid var(--b1);
+      border-radius: var(--r-2xl);
+      padding: 24px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: default;
+    }
+
+    .rec-item:hover {
+      border-color: var(--green);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0, 232, 122, 0.1);
+    }
+
+    .rec-item-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--t1);
+      margin-bottom: 8px;
+      font-family: var(--font-h);
+    }
+
+    .rec-item-desc {
+      font-size: 14px;
+      color: var(--t3);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .rec-item-meta, .rec-item-skills, .rec-item-value, .rec-item-salary {
+      font-size: 12px;
+      color: var(--t4);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .rec-item-value, .rec-item-salary {
+      color: var(--green);
+      font-weight: 700;
+      margin-top: 12px;
+    }
+
+    .rec-tips {
+      background: var(--green-dim);
+      border: 1px solid rgba(0, 232, 122, 0.3);
+      border-radius: var(--r-3xl);
+      padding: 40px;
+      margin-bottom: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .rec-tips::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      left: -5%;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(0, 232, 122, 0.2), transparent 70%);
+      filter: blur(40px);
+      pointer-events: none;
+    }
+
+    .rec-tips h3 {
+      font-family: var(--font-h);
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--t1);
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .rec-tips ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .rec-tips li {
+      font-size: 15px;
+      color: var(--t2);
+      line-height: 1.7;
+      padding-left: 24px;
+      position: relative;
+    }
+
+    .rec-tips li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--green);
+      font-weight: 800;
+      font-size: 18px;
+    }
+
+    .rec-nav {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+
+    .rec-nav-btn {
+      padding: 12px 24px;
+      border-radius: var(--r-pill);
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 14px;
+    }
+
+    .rec-nav-btn.active {
+      background: var(--green);
+      color: #040404;
+    }
+
+    .rec-nav-btn:not(.active) {
+      background: var(--bg-2);
+      color: var(--t2);
+      border: 1px solid var(--b1);
+    }
+
+    .rec-nav-btn:hover {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .nav-actions-rec {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    @media(max-width: 768px) {
+      .rec-header {
+        margin-top: 100px;
+        margin-bottom: 40px;
+      }
+
+      .rec-section {
+        padding: 32px 20px;
+      }
+
+      .rec-items {
+        grid-template-columns: 1fr;
+      }
+
+      .recommendations-grid {
+        gap: 40px;
+      }
+
+      .rec-title {
+        font-size: 28px;
+      }
+
+      .rec-intro {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="navbar" id="nav">
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logomark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+      <span class="nav-wordmark">Mentorist</span>
+    </a>
+    <div class="nav-actions">
+      <span style="font-size:13px;color:var(--t4);font-weight:700;margin-right:8px;" id="navEmail"></span>
+      <div class="avatar avatar-sm" id="navAv"></div>
+      <button class="btn btn-ghost btn-sm" onclick="Auth.forceLogout('You have been signed out.')">Exit</button>
+    </div>
+  </nav>
+
+  <div class="rec-container">
+    <div class="nav-actions-rec">
+      <div>
+        <h1 style="font-family:var(--font-h);font-size:24px;font-weight:800;color:var(--t1);margin:0;">Your Personalized Recommendations</h1>
+        <p style="color:var(--t4);font-size:13px;margin-top:4px;font-weight:600;">Updated based on your profile</p>
+      </div>
+      <a href="studentdashboard.html" class="btn btn-primary btn-sm">Go to Dashboard</a>
+    </div>
+
+    <div id="recommendationsContent"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="shared.js"></script>
+  <script src="recommendations.js"></script>
+  <script>
+    const user = Auth.requireAuth();
+
+    if (!user) {
+      window.location.href = 'auth.html';
+    }
+
+    if (!user.onboarded) {
+      window.location.href = 'onboarding.html';
+    }
+
+    // Set up navigation
+    document.getElementById('navEmail').textContent = user.email;
+    const av = document.getElementById('navAv');
+    av.style.background = 'var(--green-dim)';
+    av.style.color = 'var(--green)';
+    av.textContent = Utils.initials(user.name);
+
+    // Get recommendations
+    const recommendations = RecommendationEngine.getRecommendations(user);
+
+    if (recommendations) {
+      const html = RecommendationEngine.formatRecommendations(recommendations);
+      document.getElementById('recommendationsContent').innerHTML = html;
+    }
+
+    // Scroll animations
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 60), { passive: true });
+  </script>
+
+</body>
+
+</html>

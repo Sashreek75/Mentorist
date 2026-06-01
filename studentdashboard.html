@@ -217,6 +217,23 @@ body{background:var(--bg);}
       </div>
     </div>
 
+    <!-- RECOMMENDATIONS SECTION -->
+    <div id="recommendationsPreview" style="display:none;margin-bottom:60px;" class="stagger">
+      <div style="margin-bottom:24px;">
+        <h2 style="font-family:var(--font-h);font-size:24px;font-weight:800;color:var(--t1);margin:0;">Your Personalized Recommendations</h2>
+        <p style="color:var(--t3);font-size:14px;margin-top:4px;margin-bottom:20px;">While you wait for mentor responses, explore courses, opportunities, and projects tailored to your profile.</p>
+      </div>
+
+      <div id="recPreviewContent"></div>
+
+      <div style="text-align:center;margin-top:32px;">
+        <a href="recommendations.html" class="btn btn-primary">
+          Explore Full Recommendations
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+
     <!-- HISTORY VIEW -->
     <div id="view-history" style="display:none;" class="stagger">
       <div class="feed-header">
@@ -230,6 +247,7 @@ body{background:var(--bg);}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="shared.js"></script>
+<script src="recommendations.js"></script>
 <script>
   const user = Auth.requireAuth();
   if (!user) { window.location.href = 'auth.html'; }
@@ -253,6 +271,36 @@ body{background:var(--bg);}
       const im={stem:'STEM',business:'Business',humanities:'Humanities',arts:'Arts',medicine:'Med',law:'Law',undecided:'Exploring'};
       document.getElementById('pGrade').textContent = gm[p.grade]||p.grade||'-';
       document.getElementById('pInterest').textContent = im[p.interest]||'-';
+      
+      // Load recommendations
+      const recs = RecommendationEngine.getRecommendations(user);
+      if (recs && recs.courses && recs.courses.length > 0) {
+        const recPreview = document.getElementById('recommendationsPreview');
+        const topCourses = recs.courses.slice(0, 3);
+        const topOpportunities = recs.opportunities.slice(0, 2);
+        
+        let html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-bottom:32px;">';
+        
+        topCourses.forEach(c => {
+          html += `<div style="background:var(--bg-2);border:1px solid var(--b1);border-radius:var(--r-2xl);padding:20px;transition:all 0.3s;">
+            <div style="font-weight:800;color:var(--t1);margin-bottom:8px;font-size:15px;">${Utils.escapeHtml(c.name)}</div>
+            <div style="font-size:13px;color:var(--t3);line-height:1.5;margin-bottom:12px;">${Utils.escapeHtml(c.description)}</div>
+            <div style="font-size:11px;color:var(--green);font-weight:700;">📚 Course Recommendation</div>
+          </div>`;
+        });
+        
+        topOpportunities.forEach(o => {
+          html += `<div style="background:var(--bg-2);border:1px solid var(--b1);border-radius:var(--r-2xl);padding:20px;transition:all 0.3s;">
+            <div style="font-weight:800;color:var(--t1);margin-bottom:8px;font-size:15px;">${Utils.escapeHtml(o.company)}</div>
+            <div style="font-size:13px;color:var(--t3);line-height:1.5;margin-bottom:12px;">${Utils.escapeHtml(o.title)}</div>
+            <div style="font-size:11px;color:var(--amber);font-weight:700;">💼 ${Utils.escapeHtml(o.readiness)}</div>
+          </div>`;
+        });
+        
+        html += '</div>';
+        document.getElementById('recPreviewContent').innerHTML = html;
+        recPreview.style.display = 'block';
+      }
     }
   }
 

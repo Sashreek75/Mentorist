@@ -367,12 +367,13 @@
         </div>
 
         <div class="on-header">
-            <span class="on-eyebrow" id="stepIndicator">Step 1 of 5</span>
+            <span class="on-eyebrow" id="stepIndicator">Step 1 of 6</span>
             <h1 class="on-title" id="mainHeader">Welcome, Navigator.</h1>
         </div>
 
         <div class="on-progress-top" id="dotGrid">
             <div class="p-dot active"></div>
+            <div class="p-dot"></div>
             <div class="p-dot"></div>
             <div class="p-dot"></div>
             <div class="p-dot"></div>
@@ -483,7 +484,32 @@
                 </button>
             </div>
 
-            <!-- STEP 5: SUMMARY -->
+            <!-- STEP 5: CAREER ASPIRATIONS -->
+            <div class="step-content" id="step-4">
+                <h2 class="step-title">Career Aspirations</h2>
+                <p class="step-sub">Where do you see yourself in 10 years? What careers excite you?</p>
+                <div class="form-group">
+                    <label class="form-label" for="careers">Dream Careers or Roles</label>
+                    <textarea class="form-textarea"
+                        placeholder="e.g. Software engineer at a startup, Neurosurgeon, Product manager at a tech company, Lawyer specializing in civil rights"
+                        id="careers"></textarea>
+                    <small style="color: var(--t4); margin-top: 8px; display: block;">Be specific - this helps us match you with mentors and provide targeted recommendations</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="skills">Top 3 Skills You Want to Build</label>
+                    <textarea class="form-textarea"
+                        placeholder="e.g. Python programming, Public speaking, Leadership"
+                        id="skills"></textarea>
+                </div>
+                <button class="btn btn-primary btn-full btn-lg" onclick="advanceFromAspirations()">
+                    Unlock My Personalized Recommendations
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                        <path d="M5 12h14m-7-7 7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- STEP 6: SUMMARY -->
             <div class="step-content" id="step-complete">
                 <h2 class="step-title">Profile Built.</h2>
                 <p class="step-sub">Here's how mentors will see your background. High-quality context ensures precise
@@ -499,6 +525,12 @@
                     </div>
                     <div class="ps-item"><span class="ps-label">Long-term Strategy</span><span class="ps-val"
                             id="sumGoal"></span>
+                    </div>
+                    <div class="ps-item"><span class="ps-label">Career Aspirations</span><span class="ps-val"
+                            id="sumCareers"></span>
+                    </div>
+                    <div class="ps-item"><span class="ps-label">Skills to Build</span><span class="ps-val"
+                            id="sumSkills"></span>
                     </div>
                 </div>
                 <div class="alert alert-info" style="margin:40px 0;">
@@ -545,7 +577,7 @@
         /* ── State ── */
         let data = {};
         let curStep = 0;
-        const steps = ['step-0', 'step-1', 'step-2', 'step-3', 'step-complete'];
+        const steps = ['step-0', 'step-1', 'step-2', 'step-3', 'step-4', 'step-complete'];
 
         /* ── Card selection + auto-advance ── */
         function setV(key, val, el) {
@@ -578,6 +610,35 @@
             }
             
             data.goal = goalText;
+            advance();
+        }
+
+        function advanceFromAspirations() {
+            const careersText = document.getElementById('careers').value.trim();
+            const skillsText = document.getElementById('skills').value.trim();
+            
+            if (!careersText || careersText.length < 5) {
+              Utils.toast('Please describe your career aspirations (at least 5 characters).', 'error');
+              return;
+            }
+            
+            if (!skillsText || skillsText.length < 5) {
+              Utils.toast('Please describe skills you want to build (at least 5 characters).', 'error');
+              return;
+            }
+            
+            if (careersText.length > 500) {
+              Utils.toast('Career aspirations description is too long (max 500 characters).', 'error');
+              return;
+            }
+            
+            if (skillsText.length > 300) {
+              Utils.toast('Skills description is too long (max 300 characters).', 'error');
+              return;
+            }
+            
+            data.careers = careersText;
+            data.skills = skillsText;
             advance();
         }
 
@@ -640,12 +701,14 @@
             document.getElementById('sumFocus').textContent = interestMap[data.interest] || '—';
             document.getElementById('sumRigor').textContent = rigorMap[data.rigor] || '—';
             document.getElementById('sumGoal').textContent = data.goal || 'Not yet defined';
+            document.getElementById('sumCareers').textContent = data.careers || 'Not specified';
+            document.getElementById('sumSkills').textContent = data.skills || 'Not specified';
         }
 
         /* ── Completion ── */
         function finish() {
             // Validate all required fields are filled
-            if (!data.grade || !data.interest || !data.rigor || !data.goal) {
+            if (!data.grade || !data.interest || !data.rigor || !data.goal || !data.careers || !data.skills) {
               Utils.toast('Please complete all profile steps before finishing.', 'error');
               curStep = 0;
               updateMeta();
@@ -660,7 +723,7 @@
             const updated = Auth.getUser();
             window.location.href = (updated.role === 'mentor')
                 ? 'mentordashboard.html'
-                : 'studentdashboard.html';
+                : 'recommendations.html?new=true';
         }
 
         function completeMentor() {
