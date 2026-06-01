@@ -150,59 +150,58 @@ function mergeUsersByEmail(users) {
 
 // Handle Supabase Auth State globally
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' && session) {
+  if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
     let user = session.user;
     const metadata = user.user_metadata || {};
     const email = String(user.email || "").toLowerCase();
-    let role = metadata.role;
-    let pendingRole = localStorage.getItem('pendingRole');
-
-    console.log(`[AUTH] Sign-in event for ${email}, role=${role}, pendingRole=${pendingRole}`);
-
-    try {
-      await UserStore.refreshFromRemote();
-    } catch (err) {
-      console.warn("[AUTH] Remote sync warning during auth state change:", err?.message);
-    }
-    
+    const pendingRole = localStorage.getItem('pendingRole');
     const storedUser = UserStore.getByEmail(email);
-    
-    // Admin override check (highest priority)
+    let nextMetadata = { ...metadata };
+
+    console.log(`[AUTH] ${event} event for ${email}, role=${metadata.role || 'unset'}, pendingRole=${pendingRole}`);
+
     if (email.endsWith('@mentorist.org') || email.startsWith('admin')) {
       console.log(`[AUTH] Admin detected via email pattern: ${email}`);
-      const { data: adminData, error: adminErr } = await supabaseClient.auth.updateUser({ 
+      nextMetadata = {
+        ...nextMetadata,
+        role: 'admin',
+        onboarded: true,
+        status: 'active'
+      };
+      localStorage.removeItem('pendingRole');
+      void supabaseClient.auth.updateUser({
         data: { role: 'admin', onboarded: true, status: 'active' }
-      });
-      if (adminErr) {
-        console.error("[AUTH] Failed to set admin role:", adminErr.message);
-      } else if (adminData?.user) {
-        user = adminData.user;
-        console.log("[AUTH] Admin role successfully set");
-      }
-    }
-    // First time login via signup (role not set in DB yet)
-    else if (!role && pendingRole) {
+      }).catch(err => console.warn("[AUTH] Failed to persist admin metadata:", err?.message));
+    } else if (!nextMetadata.role && pendingRole) {
       console.log(`[AUTH] First-time signup: setting role to ${pendingRole}`);
-      const { data: signupData, error: signupErr } = await supabaseClient.auth.updateUser({
-        data: { 
-          role: pendingRole, 
-          status: pendingRole === 'mentor' ? 'pending' : 'active', 
+      nextMetadata = {
+        ...nextMetadata,
+        role: pendingRole,
+        status: pendingRole === 'mentor' ? 'pending' : 'active',
+        onboarded: pendingRole === 'admin',
+        full_name: metadata.full_name || email.split("@")[0]
+      };
+      localStorage.removeItem('pendingRole');
+      void supabaseClient.auth.updateUser({
+        data: {
+          role: pendingRole,
+          status: pendingRole === 'mentor' ? 'pending' : 'active',
           onboarded: pendingRole === 'admin',
           full_name: metadata.full_name || email.split("@")[0]
         }
-      });
-      if (signupErr) {
-        console.error("[AUTH] Failed to set signup role:", signupErr.message);
-      } else if (signupData?.user) {
-        user = signupData.user;
-        console.log(`[AUTH] Signup role set to ${pendingRole}`);
-      }
-      localStorage.removeItem('pendingRole');
-    }
-    // Returning users should inherit their stored profile immediately
-    else if (!role && storedUser?.role) {
+      }).catch(err => console.warn("[AUTH] Failed to persist signup metadata:", err?.message));
+    } else if (!nextMetadata.role && storedUser?.role) {
       console.log(`[AUTH] Returning user found in store: ${storedUser.role}`);
-      const { data: storedData, error: storedErr } = await supabaseClient.auth.updateUser({
+      nextMetadata = {
+        ...nextMetadata,
+        role: storedUser.role,
+        status: storedUser.status || (storedUser.role === 'mentor' ? 'pending' : 'active'),
+        onboarded: storedUser.onboarded ?? storedUser.role === 'admin',
+        profile: storedUser.profile || null,
+        applicationData: storedUser.applicationData || null,
+        dismissedAlertIds: storedUser.dismissedAlertIds || []
+      };
+      void supabaseClient.auth.updateUser({
         data: {
           role: storedUser.role,
           status: storedUser.status || (storedUser.role === 'mentor' ? 'pending' : 'active'),
@@ -211,51 +210,31 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
           applicationData: storedUser.applicationData || null,
           dismissedAlertIds: storedUser.dismissedAlertIds || []
         }
-      });
-      if (storedErr) {
-        console.error("[AUTH] Failed to restore stored user data:", storedErr.message);
-      } else if (storedData?.user) {
-        user = storedData.user;
-        console.log("[AUTH] Stored user data restored");
-      }
-    }
-    // Fallback for new users (no role and no stored user)
-    else if (!user.user_metadata?.role) {
+      }).catch(err => console.warn("[AUTH] Failed to restore stored user data:", err?.message));
+    } else if (!nextMetadata.role) {
       console.log("[AUTH] New user detected, setting default role to student");
-      const { data: fallbackData, error: fallbackErr } = await supabaseClient.auth.updateUser({ 
+      nextMetadata = {
+        ...nextMetadata,
+        role: 'student',
+        status: 'active',
+        onboarded: false
+      };
+      void supabaseClient.auth.updateUser({
         data: { role: 'student', status: 'active', onboarded: false }
-      });
-      if (fallbackErr) {
-        console.error("[AUTH] Failed to set default role:", fallbackErr.message);
-      } else if (fallbackData?.user) {
-        user = fallbackData.user;
-        console.log("[AUTH] Default role set to student");
-      }
+      }).catch(err => console.warn("[AUTH] Failed to set default role:", err?.message));
     }
 
-    // Create/update the app user object
-    const appUser = Auth.fromSupabaseUser(user);
+    user = { ...user, user_metadata: nextMetadata };
+
+    // Create/update the app user object immediately so the UI can route without waiting on remote sync.
+    const appUser = Auth.finalizeAuthenticatedUser(user);
     console.log(`[AUTH] App user created:`, { email: appUser.email, role: appUser.role, onboarded: appUser.onboarded });
-    
-    // Store in localStorage
-    Auth.setUser(appUser);
-    
-    // Add/update in local store
-    UserStore.addOrUpdate(appUser);
-    
-    // Persist to remote database
-    try {
-      await UserStore.persistRemote(appUser);
-      console.log(`[AUTH] User profile persisted to database`);
-      
-      // Refresh to get latest data
-      await UserStore.refreshFromRemote();
-      console.log(`[AUTH] Remote data refreshed`);
-    } catch (err) {
-      console.warn("[AUTH] Remote persistence warning:", err?.message);
-    }
-    
-    // Auto-route only if we are currently on the auth page
+
+    // Refresh the local cache in the background so dashboards catch up quickly.
+    void UserStore.refreshFromRemote()
+      .then(() => console.log("[AUTH] Remote data refreshed"))
+      .catch(err => console.warn("[AUTH] Remote sync warning during auth state change:", err?.message));
+
     if (window.location.pathname.includes('/auth')) {
       const googleRoute = sessionStorage.getItem('mn_google_post_auth_route');
       if (googleRoute === 'mentor-review') {
@@ -282,10 +261,11 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
 
 /* ===== AUTH ===== */
 const Auth = {
-  fromSupabaseUser(user) {
+  fromSupabaseUser(user, options = {}) {
     const metadata = user?.user_metadata || {};
     const email = String(user?.email || "").toLowerCase();
-    let role = metadata.role || inferRoleFromEmail(email);
+    const pendingRole = options.pendingRole || null;
+    let role = metadata.role || pendingRole || inferRoleFromEmail(email);
     
     const stored = UserStore.getByEmail(email);
     const storedRole = stored?.role || role;
@@ -307,6 +287,25 @@ const Auth = {
     
     console.log(`[AUTH] fromSupabaseUser created:`, appUser);
     return appUser;
+  },
+  finalizeAuthenticatedUser(user, options = {}) {
+    if (!user) return null;
+    const appUser = this.normalizeUser(this.fromSupabaseUser(user, options));
+    this.setUser(appUser);
+    UserStore.addOrUpdate(appUser);
+    return appUser;
+  },
+  async bootstrapFromSession(options = {}) {
+    try {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) throw error;
+      const sessionUser = data?.session?.user;
+      if (!sessionUser) return null;
+      return this.finalizeAuthenticatedUser(sessionUser, options);
+    } catch (err) {
+      console.warn("[AUTH] Session bootstrap failed:", err?.message || err);
+      return null;
+    }
   },
   syncCurrentUserFromStore(email) {
     const current = this.getUser();
@@ -379,6 +378,7 @@ const Auth = {
       const sbToken = localStorage.getItem("sb-vmuukfegnjotlgvdqfrx-auth-token");
       if (sbToken) {
         // Session exists in Supabase, show loading state
+        void this.bootstrapFromSession({ route: false });
         return { email: 'loading@mentorist.org', role: 'student', name: 'Loading...', status: 'active', onboarded: true };
       }
       window.location.href = "auth.html"; 

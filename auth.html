@@ -244,28 +244,37 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
     localStorage.removeItem('mn_auth_notice');
   }
   
-  // Check if already logged in
-  Promise.resolve(UserStore.refreshFromRemote()).then(() => {
-    if (Auth.isLoggedIn()) {
-      const user = Auth.getUser();
-      console.log("[AUTH-PAGE] Already logged in as:", user.email);
-      
-      const googleRoute = sessionStorage.getItem('mn_google_post_auth_route');
-      if (googleRoute === 'mentor-review') {
-        console.log("[AUTH-PAGE] Routing to mentor-review per pending route");
-        sessionStorage.removeItem('mn_google_post_auth_route');
-        window.location.href = 'mentor-review.html';
-        return;
-      }
-      
-      console.log("[AUTH-PAGE] Routing to appropriate dashboard");
-      Auth.routeAfterLogin(user);
-    } else {
-      console.log("[AUTH-PAGE] Not logged in, showing auth forms");
+  function routeAuthenticatedUser(user) {
+    if (!user) return;
+    const googleRoute = sessionStorage.getItem('mn_google_post_auth_route');
+    if (googleRoute === 'mentor-review') {
+      console.log("[AUTH-PAGE] Routing to mentor-review per pending route");
+      sessionStorage.removeItem('mn_google_post_auth_route');
+      window.location.href = 'mentor-review.html';
+      return;
     }
-  }).catch(err => {
-    console.warn("[AUTH-PAGE] Error checking login status:", err);
-  });
+
+    console.log("[AUTH-PAGE] Routing to appropriate dashboard");
+    Auth.routeAfterLogin(user);
+  }
+
+  // Check if already logged in
+  (async () => {
+    try {
+      await UserStore.refreshFromRemote();
+      const bootstrappedUser = await Auth.bootstrapFromSession({ route: false });
+      const currentUser = bootstrappedUser || Auth.getUser();
+
+      if (currentUser) {
+        console.log("[AUTH-PAGE] Already logged in as:", currentUser.email);
+        routeAuthenticatedUser(currentUser);
+      } else {
+        console.log("[AUTH-PAGE] Not logged in, showing auth forms");
+      }
+    } catch (err) {
+      console.warn("[AUTH-PAGE] Error checking login status:", err);
+    }
+  })();
 
   function showLogin(){document.getElementById('signupView').style.display='none';document.getElementById('loginView').style.display='block';}
   function showSignup(){document.getElementById('loginView').style.display='none';document.getElementById('signupView').style.display='block';}
@@ -461,16 +470,27 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
       console.log('[SIGNUP] Account created successfully, awaiting confirmation...');
       
       // Successful signup
-      if (data?.user) {
+      const sessionUser = data?.session?.user || data?.user || null;
+      localStorage.removeItem('pendingRole');
+      localStorage.removeItem('pendingName');
+
+      if (sessionUser && data?.session) {
+        const appUser = Auth.finalizeAuthenticatedUser(sessionUser);
         Utils.toast('Account created! Completing setup...', 'success');
-        console.log('[SIGNUP] User created, session will be established by onAuthStateChange');
-        
-        // Wait a moment for onAuthStateChange to fire
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } else {
-        Utils.toast('Account created but no session yet. Please wait...', 'info');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log('[SIGNUP] Session established immediately, routing now');
+        routeAuthenticatedUser(appUser);
+        return;
       }
+
+      if (sessionUser) {
+        Utils.toast('Account created. Please verify your email, then sign in.', 'info');
+        console.log('[SIGNUP] No active session yet; user must verify email before logging in');
+        showLogin();
+        return;
+      }
+
+      Utils.toast('Account created. Please sign in to continue.', 'info');
+      showLogin();
     } catch (err) {
       localStorage.removeItem('pendingRole');
       localStorage.removeItem('pendingName');
@@ -569,18 +589,29 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         return;
       }
 
-      console.log('[LOGIN] Login successful, awaiting session...');
-      
-      if (data?.user) {
+      console.log('[LOGIN] Login successful, finalizing session...');
+      localStorage.removeItem('pendingRole');
+      localStorage.removeItem('pendingName');
+
+      const sessionUser = data?.session?.user || data?.user || null;
+      if (sessionUser) {
+        const appUser = Auth.finalizeAuthenticatedUser(sessionUser);
         Utils.toast('Welcome back to Mentorist!', 'success');
-        console.log('[LOGIN] Session established, routing will occur via onAuthStateChange');
-        
-        // Wait for onAuthStateChange to fire
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } else {
-        Utils.toast('Login processed but waiting for session...', 'info');
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        console.log('[LOGIN] Session established, routing now');
+        routeAuthenticatedUser(appUser);
+        return;
       }
+
+      const bootstrappedUser = await Auth.bootstrapFromSession({ route: false });
+      if (bootstrappedUser) {
+        Utils.toast('Welcome back to Mentorist!', 'success');
+        console.log('[LOGIN] Session bootstrapped, routing now');
+        routeAuthenticatedUser(bootstrappedUser);
+        return;
+      }
+
+      Utils.toast('Login processed but waiting for session...', 'info');
+      await new Promise(resolve => setTimeout(resolve, 1500));
     } catch (err) {
       Utils.toast('An error occurred during login. Please try again.', 'error');
       console.error('[LOGIN] Exception:', err);
