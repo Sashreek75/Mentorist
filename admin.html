@@ -670,8 +670,11 @@
       const users = getVisibleAdminUsers();
       const qs = QuestionStore.getAll();
       
-      const studentCount = users.filter(u => u.role === 'student').length;
-      const mentorCount = users.filter(u => isMentorApplicant(u) || u.role === 'mentor').length;
+      // Only count ACTIVE students/mentors (exclude suspended, banned, rejected)
+      const activeStatuses = new Set(['active', 'pending', 'onboarded']);
+      
+      const studentCount = users.filter(u => u.role === 'student' && activeStatuses.has(u.status)).length;
+      const mentorCount = users.filter(u => (isMentorApplicant(u) || u.role === 'mentor') && activeStatuses.has(u.status)).length;
       const activeMentors = users.filter(u => (isMentorApplicant(u) || u.role === 'mentor') && u.status === 'active').length;
       const pendingMentors = users.filter(u => isMentorApplicant(u) && u.status === 'pending').length;
       const rejectedMentors = users.filter(u => isMentorApplicant(u) && u.status === 'rejected').length;

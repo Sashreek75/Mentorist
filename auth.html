@@ -296,31 +296,67 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
     }
 
     try {
+      // Validate role was selected first
+      if (!selRole) {
+        Utils.toast('Please select a role (Student or Mentor).', 'error');
+        if (signupBtn) {
+          signupBtn.disabled = false;
+          signupBtn.textContent = originalText || 'Create Account';
+        }
+        isSignupInProgress = false;
+        return;
+      }
+      
       const name = document.getElementById('signupName').value.trim();
       const email = document.getElementById('signupEmail').value.trim().toLowerCase();
       const pass = document.getElementById('signupPassword').value;
       
       // Validation
       if(!name) { 
-        Utils.toast('Please enter your full name.', 'error'); 
+        Utils.toast('Please enter your full name.', 'error');
+        if (signupBtn) {
+          signupBtn.disabled = false;
+          signupBtn.textContent = originalText || 'Create Account';
+        }
+        isSignupInProgress = false;
         return; 
       }
       if(!email) { 
-        Utils.toast('Please enter your email address.', 'error'); 
+        Utils.toast('Please enter your email address.', 'error');
+        if (signupBtn) {
+          signupBtn.disabled = false;
+          signupBtn.textContent = originalText || 'Create Account';
+        }
+        isSignupInProgress = false;
         return; 
       }
       if(!pass) { 
-        Utils.toast('Please enter a password.', 'error'); 
+        Utils.toast('Please enter a password.', 'error');
+        if (signupBtn) {
+          signupBtn.disabled = false;
+          signupBtn.textContent = originalText || 'Create Account';
+        }
+        isSignupInProgress = false;
         return; 
       }
       
       if (name.length < 2) {
         Utils.toast('Name must be at least 2 characters.', 'error');
+        if (signupBtn) {
+          signupBtn.disabled = false;
+          signupBtn.textContent = originalText || 'Create Account';
+        }
+        isSignupInProgress = false;
         return;
       }
       
       if (pass.length < 8) {
         Utils.toast('Password must be at least 8 characters long.', 'error');
+        if (signupBtn) {
+          signupBtn.disabled = false;
+          signupBtn.textContent = originalText || 'Create Account';
+        }
+        isSignupInProgress = false;
         return;
       }
 
@@ -328,6 +364,11 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         Utils.toast('Please enter a valid email address.', 'error');
+        if (signupBtn) {
+          signupBtn.disabled = false;
+          signupBtn.textContent = originalText || 'Create Account';
+        }
+        isSignupInProgress = false;
         return;
       }
 
@@ -336,6 +377,11 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         .find(u => String(u.email || "").toLowerCase() === email);
       if (existingUser) {
         Utils.toast('This email is already registered. Please sign in instead.', 'error');
+        if (signupBtn) {
+          signupBtn.disabled = false;
+          signupBtn.textContent = originalText || 'Create Account';
+        }
+        isSignupInProgress = false;
         setTimeout(() => showLogin(), 800);
         return;
       }
@@ -373,15 +419,40 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         
         if (errorMsg.includes('already registered') || errorMsg.includes('user already') || errorMsg.includes('already exists')) {
           Utils.toast('This email is already registered. Please sign in instead.', 'error');
+          if (signupBtn) {
+            signupBtn.disabled = false;
+            signupBtn.textContent = originalText || 'Create Account';
+          }
+          isSignupInProgress = false;
           setTimeout(() => showLogin(), 800);
         } else if (errorMsg.includes('password') || errorMsg.includes('invalid password')) {
           Utils.toast('Password must be at least 8 characters.', 'error');
+          if (signupBtn) {
+            signupBtn.disabled = false;
+            signupBtn.textContent = originalText || 'Create Account';
+          }
+          isSignupInProgress = false;
         } else if (errorMsg.includes('email') || errorMsg.includes('invalid email')) {
           Utils.toast('Please enter a valid email address.', 'error');
+          if (signupBtn) {
+            signupBtn.disabled = false;
+            signupBtn.textContent = originalText || 'Create Account';
+          }
+          isSignupInProgress = false;
         } else if (errorMsg.includes('rate limit') || errorMsg.includes('too many')) {
           Utils.toast('Too many sign-up attempts. Please try again in a few minutes.', 'error');
+          if (signupBtn) {
+            signupBtn.disabled = false;
+            signupBtn.textContent = originalText || 'Create Account';
+          }
+          isSignupInProgress = false;
         } else {
           Utils.toast(`Sign-up failed: ${error.message || 'Unknown error'}`, 'error');
+          if (signupBtn) {
+            signupBtn.disabled = false;
+            signupBtn.textContent = originalText || 'Create Account';
+          }
+          isSignupInProgress = false;
         }
         console.error('[SIGNUP] Error:', error);
         return;
@@ -431,11 +502,21 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
       const pass = document.getElementById('loginPassword').value;
       
       if(!email) { 
-        Utils.toast('Please enter your email address.', 'error'); 
+        Utils.toast('Please enter your email address.', 'error');
+        if (loginBtn) {
+          loginBtn.disabled = false;
+          loginBtn.textContent = originalText || 'Sign in to Dashboard';
+        }
+        isLoginInProgress = false;
         return; 
       }
       if(!pass) { 
-        Utils.toast('Please enter your password.', 'error'); 
+        Utils.toast('Please enter your password.', 'error');
+        if (loginBtn) {
+          loginBtn.disabled = false;
+          loginBtn.textContent = originalText || 'Sign in to Dashboard';
+        }
+        isLoginInProgress = false;
         return; 
       }
 
