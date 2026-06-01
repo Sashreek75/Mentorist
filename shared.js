@@ -148,6 +148,89 @@ function mergeUsersByEmail(users) {
   return [...map.values()];
 }
 
+const GOOGLE_POST_AUTH_ROUTE_KEY = 'mn_google_post_auth_route';
+const GOOGLE_OAUTH_PENDING_KEY = 'mn_google_oauth_pending';
+const GOOGLE_OAUTH_PENDING_TTL_MS = 10 * 60 * 1000;
+
+function setGooglePostAuthRoute(route) {
+  if (!route) {
+    clearGooglePostAuthRoute();
+    return;
+  }
+  try { sessionStorage.setItem(GOOGLE_POST_AUTH_ROUTE_KEY, route); } catch {}
+  try { localStorage.setItem(GOOGLE_POST_AUTH_ROUTE_KEY, route); } catch {}
+}
+
+function clearGooglePostAuthRoute() {
+  try { sessionStorage.removeItem(GOOGLE_POST_AUTH_ROUTE_KEY); } catch {}
+  try { localStorage.removeItem(GOOGLE_POST_AUTH_ROUTE_KEY); } catch {}
+}
+
+function consumeGooglePostAuthRoute() {
+  let route = null;
+  try { route = sessionStorage.getItem(GOOGLE_POST_AUTH_ROUTE_KEY); } catch {}
+  if (!route) {
+    try { route = localStorage.getItem(GOOGLE_POST_AUTH_ROUTE_KEY); } catch {}
+  }
+  clearGooglePostAuthRoute();
+  return route;
+}
+
+function markGoogleOAuthPending() {
+  try { localStorage.setItem(GOOGLE_OAUTH_PENDING_KEY, String(Date.now())); } catch {}
+}
+
+function clearGoogleOAuthPending() {
+  try { localStorage.removeItem(GOOGLE_OAUTH_PENDING_KEY); } catch {}
+}
+
+function hasRecentGoogleOAuthPending() {
+  try {
+    const raw = localStorage.getItem(GOOGLE_OAUTH_PENDING_KEY);
+    if (!raw) return false;
+    const startedAt = parseInt(raw, 10);
+    if (!Number.isFinite(startedAt)) {
+      localStorage.removeItem(GOOGLE_OAUTH_PENDING_KEY);
+      return false;
+    }
+    const fresh = (Date.now() - startedAt) < GOOGLE_OAUTH_PENDING_TTL_MS;
+    if (!fresh) localStorage.removeItem(GOOGLE_OAUTH_PENDING_KEY);
+    return fresh;
+  } catch {
+    return false;
+  }
+}
+
+function isOAuthCallbackRequest() {
+  try {
+    const query = new URLSearchParams(window.location.search || '');
+    const hash = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
+    return query.has('code') ||
+      query.has('error') ||
+      query.has('error_description') ||
+      query.has('provider_token') ||
+      query.has('access_token') ||
+      hash.has('access_token') ||
+      hash.has('refresh_token') ||
+      hash.has('error');
+  } catch {
+    return false;
+  }
+}
+
+function isAuthPagePath(pathname = window.location.pathname) {
+  const normalized = String(pathname || '').toLowerCase();
+  return normalized.endsWith('/auth.html') || normalized.endsWith('/auth') || normalized === '/auth.html' || normalized === '/auth';
+}
+
+function buildAuthRedirectUrl() {
+  const current = new URL(window.location.href);
+  const authUrl = new URL('auth.html', current);
+  authUrl.search = '';
+  authUrl.hash = '';
+  return authUrl.toString();
+}
+
 // Handle Supabase Auth State globally
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
   if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
@@ -234,11 +317,11 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     void UserStore.refreshFromRemote()
       .then(() => console.log("[AUTH] Remote data refreshed"))
       .catch(err => console.warn("[AUTH] Remote sync warning during auth state change:", err?.message));
-
-    if (window.location.pathname.includes('/auth')) {
-      const googleRoute = sessionStorage.getItem('mn_google_post_auth_route');
+    const shouldAutoRoute = isAuthPagePath() || isOAuthCallbackRequest() || hasRecentGoogleOAuthPending();
+    if (shouldAutoRoute) {
+      clearGoogleOAuthPending();
+      const googleRoute = consumeGooglePostAuthRoute();
       if (googleRoute === 'mentor-review') {
-        sessionStorage.removeItem('mn_google_post_auth_route');
         console.log("[AUTH] Routing to mentor-review page");
         window.location.href = 'mentor-review.html';
         return;
@@ -252,7 +335,8 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     console.log("[AUTH] Sign-out event");
     localStorage.removeItem("mn_user");
     localStorage.removeItem('pendingRole');
-    sessionStorage.removeItem('mn_google_post_auth_route');
+    clearGooglePostAuthRoute();
+    clearGoogleOAuthPending();
     if (!window.location.pathname.includes('/index') && window.location.pathname !== '/' && !window.location.pathname.includes('/auth') && !window.location.pathname.includes('/admin')) {
       window.location.href = "index.html";
     }
@@ -912,23 +996,23 @@ const GoogleAuth = {
             localStorage.setItem('pendingRole', selectedRole);
             
             if (selectedRole === 'mentor') {
-              sessionStorage.setItem('mn_google_post_auth_route', 'mentor-review');
+              setGooglePostAuthRoute('mentor-review');
               console.log(`[GOOGLE] Mentor signup - will route to mentor-review after auth`);
             } else {
-              sessionStorage.removeItem('mn_google_post_auth_route');
+              clearGooglePostAuthRoute();
               console.log(`[GOOGLE] ${selectedRole} signup - will route to normal path`);
             }
           } else {
             console.warn("[GOOGLE] No role card selected!");
           }
+        } else {
+          clearGooglePostAuthRoute();
         }
 
         // Build the proper redirect URL - use absolute URL construction
         let redirectUrl = '';
         try {
-          // Try using URL constructor for absolute URL
-          const baseUrl = new URL(window.location.href);
-          redirectUrl = baseUrl.protocol + '//' + baseUrl.host + '/auth.html';
+          redirectUrl = buildAuthRedirectUrl();
           console.log(`[GOOGLE] Redirect URL (constructor): ${redirectUrl}`);
         } catch (e) {
           // Fallback: manual URL construction
@@ -937,6 +1021,7 @@ const GoogleAuth = {
         }
         
         console.log(`[GOOGLE] Starting OAuth flow with redirect: ${redirectUrl}`);
+        markGoogleOAuthPending();
         
         const { error } = await supabaseClient.auth.signInWithOAuth({
           provider: 'google',
@@ -950,7 +1035,8 @@ const GoogleAuth = {
 
         if (error) {
           localStorage.removeItem('pendingRole');
-          sessionStorage.removeItem('mn_google_post_auth_route');
+          clearGooglePostAuthRoute();
+          clearGoogleOAuthPending();
           Utils.toast(`Google sign-in failed: ${error.message || 'Unknown error'}`, 'error');
           console.error('[GOOGLE] OAuth error:', error);
         } else {
@@ -958,7 +1044,8 @@ const GoogleAuth = {
         }
       } catch (err) {
         localStorage.removeItem('pendingRole');
-        sessionStorage.removeItem('mn_google_post_auth_route');
+        clearGooglePostAuthRoute();
+        clearGoogleOAuthPending();
         Utils.toast('An error occurred during Google sign-in. Please try again.', 'error');
         console.error('[GOOGLE] OAuth exception:', err);
       }

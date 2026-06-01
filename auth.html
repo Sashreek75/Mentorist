@@ -246,10 +246,9 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
   
   function routeAuthenticatedUser(user) {
     if (!user) return;
-    const googleRoute = sessionStorage.getItem('mn_google_post_auth_route');
+    const googleRoute = consumeGooglePostAuthRoute();
     if (googleRoute === 'mentor-review') {
       console.log("[AUTH-PAGE] Routing to mentor-review per pending route");
-      sessionStorage.removeItem('mn_google_post_auth_route');
       window.location.href = 'mentor-review.html';
       return;
     }
@@ -381,24 +380,23 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         return;
       }
 
-      // Check if email already exists in local store
-      const existingUser = JSON.parse(localStorage.getItem("mn_all_users") || "[]")
-        .find(u => String(u.email || "").toLowerCase() === email);
-      if (existingUser) {
-        Utils.toast('This email is already registered. Please sign in instead.', 'error');
+      const existingProfile = UserStore.getByEmail(email);
+      if (existingProfile && (existingProfile.status === 'banned' || existingProfile.status === 'rejected')) {
+        Utils.toast('This account has been disabled. Please contact support.', 'error');
         if (signupBtn) {
           signupBtn.disabled = false;
           signupBtn.textContent = originalText || 'Create Account';
         }
         isSignupInProgress = false;
-        setTimeout(() => showLogin(), 800);
         return;
       }
 
-      let role = selRole;
+      let role = existingProfile?.role || selRole;
       if (email.endsWith('@mentorist.org') || email.startsWith('admin')) {
         role = 'admin';
       }
+      const status = existingProfile?.status || (role === 'mentor' ? 'pending' : 'active');
+      const onboarded = existingProfile?.onboarded ?? role === 'admin';
       
       console.log(`[SIGNUP] Creating account: email=${email}, name=${name}, role=${role}`);
       
@@ -413,8 +411,8 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
           data: {
             full_name: name,
             role: role,
-            status: role === 'mentor' ? 'pending' : 'active',
-            onboarded: role === 'admin'
+            status: status,
+            onboarded: onboarded
           }
         }
       });
@@ -505,6 +503,53 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
     }
   }
 
+  async function tryRecoverProfileOnlyAccount(email, pass) {
+    const profileUser = UserStore.getByEmail(email);
+    if (!profileUser) return { attempted: false };
+
+    if (profileUser.status === 'banned' || profileUser.status === 'rejected') {
+      return { attempted: true, blocked: true };
+    }
+
+    const role = profileUser.role || inferRoleFromEmail(email);
+    const status = profileUser.status || (role === 'mentor' ? 'pending' : 'active');
+    const onboarded = profileUser.onboarded ?? role === 'admin';
+    const fullName = profileUser.name || email.split('@')[0] || 'User';
+
+    localStorage.setItem('pendingRole', role);
+    localStorage.setItem('pendingName', fullName);
+
+    const { data, error } = await supabaseClient.auth.signUp({
+      email,
+      password: pass,
+      options: {
+        data: {
+          full_name: fullName,
+          role,
+          status,
+          onboarded
+        }
+      }
+    });
+
+    if (error) {
+      localStorage.removeItem('pendingRole');
+      localStorage.removeItem('pendingName');
+      return { attempted: true, error };
+    }
+
+    const sessionUser = data?.session?.user || data?.user || null;
+    localStorage.removeItem('pendingRole');
+    localStorage.removeItem('pendingName');
+
+    if (sessionUser && data?.session) {
+      const appUser = Auth.finalizeAuthenticatedUser(sessionUser);
+      return { attempted: true, recoveredUser: appUser };
+    }
+
+    return { attempted: true, verificationRequired: !!sessionUser };
+  }
+
   async function handleEmailLogin(){
     // Prevent double submissions
     if (isLoginInProgress) return;
@@ -558,6 +603,10 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
           // Cooldown expired, remove the suspension marker
           localStorage.removeItem(suspensionKey);
           console.log(`[LOGIN] Suspension cooldown expired for ${email}`);
+          const storedUser = UserStore.getByEmail(email);
+          if (storedUser && storedUser.status === 'suspended') {
+            UserStore.updateStatus(email, storedUser.role === 'mentor' && !storedUser.onboarded ? 'pending' : 'active');
+          }
         }
       }
 
@@ -572,6 +621,28 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         const errorMsg = (error.message || '').toLowerCase();
         
         if (errorMsg.includes('invalid') || errorMsg.includes('credentials')) {
+          const recovery = await tryRecoverProfileOnlyAccount(email, pass);
+          if (recovery?.blocked) {
+            Utils.toast('This account has been disabled. Please contact support.', 'error');
+            return;
+          }
+          if (recovery?.recoveredUser) {
+            Utils.toast('Account recovered successfully. Welcome back!', 'success');
+            console.log('[LOGIN] Recovered profile-only account, routing now');
+            routeAuthenticatedUser(recovery.recoveredUser);
+            return;
+          }
+          if (recovery?.verificationRequired) {
+            Utils.toast('Account recovered. Please verify your email, then sign in again.', 'info');
+            showLogin();
+            return;
+          }
+          if (recovery?.attempted) {
+            const recoveryMsg = (recovery.error?.message || '').toLowerCase();
+            if (!recoveryMsg.includes('already registered') && !recoveryMsg.includes('user already') && !recoveryMsg.includes('already exists')) {
+              console.warn('[LOGIN] Profile recovery attempt failed:', recovery.error);
+            }
+          }
           Utils.toast('Invalid email or password. Please try again.', 'error');
         } else if (errorMsg.includes('email not confirmed') || errorMsg.includes('not verified')) {
           Utils.toast('Please check your email to verify your account.', 'error');
