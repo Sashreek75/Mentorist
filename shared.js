@@ -326,6 +326,17 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
         window.location.href = 'mentor-review.html';
         return;
       }
+      // For new signups via Google, route based on role
+      if (!appUser.onboarded && appUser.role === 'mentor') {
+        console.log("[AUTH] New mentor signup, routing to mentor-review");
+        window.location.href = 'mentor-review.html';
+        return;
+      }
+      if (!appUser.onboarded && appUser.role === 'student') {
+        console.log("[AUTH] New student signup, routing to onboarding");
+        window.location.href = 'onboarding.html';
+        return;
+      }
       console.log("[AUTH] Routing after login");
       Auth.routeAfterLogin(appUser);
     } else {
@@ -497,18 +508,17 @@ const Auth = {
         return; 
       }
       
+      // New mentors (not onboarded) go to mentor-review for application
+      if (!user.onboarded) {
+        console.log("[ROUTE] New mentor, routing to mentor-review");
+        window.location.href = "mentor-review.html";
+        return;
+      }
+      
       if (user.status !== "active") { 
         console.log("[ROUTE] Mentor not active (status=" + user.status + "), routing to mentorapplication");
         window.location.href = "mentorapplication.html"; 
         return; 
-      }
-      
-      // Auto-onboard mentors as they don't take the quiz
-      if (!user.onboarded) {
-        const onboardedUser = { ...user, onboarded: true };
-        this.setUser(onboardedUser);
-        UserStore.addOrUpdate(onboardedUser);
-        console.log("[ROUTE] Auto-onboarded mentor");
       }
       
       console.log("[ROUTE] Active mentor, routing to mentordashboard");
@@ -1019,7 +1029,8 @@ const GoogleAuth = {
           options: {
             redirectTo: redirectUrl,
             queryParams: {
-              prompt: 'select_account'
+              prompt: 'select_account',
+              skipBrowserRedirect: false
             }
           }
         });

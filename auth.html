@@ -408,7 +408,7 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         email,
         password: pass,
         options: {
-          emailRedirectTo: window.location.href,
+          emailRedirectTo: undefined,
           emailConfirmTo: false,
           data: {
             full_name: name,
@@ -469,28 +469,67 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
 
       console.log('[SIGNUP] Account created successfully, attempting automatic sign-in...');
       
-      // Successful signup - now automatically sign in to create an active session
-      const sessionUser = data?.session?.user || data?.user || null;
-      localStorage.removeItem('pendingRole');
-      localStorage.removeItem('pendingName');
-
-      if (sessionUser && data?.session) {
-        const appUser = Auth.finalizeAuthenticatedUser(sessionUser);
-        Utils.toast('Account created! Completing setup...', 'success');
-        console.log('[SIGNUP] Session established immediately, routing now');
-        routeAuthenticatedUser(appUser);
-        return;
+      // Try to auto-confirm email via backend API to bypass Supabase email confirmation
+      try {
+        console.log('[SIGNUP] Attempting to auto-confirm email via backend...');
+        const confirmResponse = await fetch('http://localhost:3000/api/auto-confirm-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const confirmData = await confirmResponse.json();
+        if (confirmData.success) {
+          console.log('[SIGNUP] Email auto-confirmed successfully');
+        } else {
+          console.warn('[SIGNUP] Auto-confirm failed:', confirmData.error);
+        }
+      } catch (confirmErr) {
+        console.warn('[SIGNUP] Auto-confirm API call failed (server may not be running):', confirmErr.message);
       }
-
-      // If no immediate session, automatically sign in with the credentials
-      console.log('[SIGNUP] No immediate session, attempting automatic sign-in...');
+      
+      // Always attempt to sign in immediately after signup to bypass email confirmation
+      console.log('[SIGNUP] Attempting automatic sign-in to establish session...');
+      
+      // Small delay to ensure Supabase has processed the signup
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const { data: signInData, error: signInError } = await supabaseClient.auth.signInWithPassword({
         email,
         password: pass
       });
 
+      localStorage.removeItem('pendingRole');
+      localStorage.removeItem('pendingName');
+
       if (signInError) {
+        const errorMsg = (signInError.message || '').toLowerCase();
         console.warn('[SIGNUP] Automatic sign-in failed:', signInError.message);
+        
+        // If email confirmation is the issue, try to use the signup session
+        if (errorMsg.includes('email not confirmed') || errorMsg.includes('email not verified')) {
+          console.warn('[SIGNUP] Email confirmation blocking login, checking signup session...');
+          const sessionUser = data?.session?.user || data?.user || null;
+          if (sessionUser && data?.session) {
+            const appUser = Auth.finalizeAuthenticatedUser(sessionUser);
+            Utils.toast('Account created! Setting up your profile...', 'success');
+            console.log('[SIGNUP] Using signup session, routing now');
+            
+            if (appUser.role === 'mentor') {
+              console.log('[SIGNUP] New mentor, routing to mentor-review.html');
+              window.location.href = 'mentor-review.html';
+            } else {
+              console.log('[SIGNUP] New student, routing to onboarding.html');
+              window.location.href = 'onboarding.html';
+            }
+            return;
+          }
+          
+          // If no session, show login but with clear message
+          Utils.toast('Account created! Please sign in with your credentials.', 'info');
+          showLogin();
+          return;
+        }
+        
         Utils.toast('Account created. Please sign in to continue.', 'info');
         showLogin();
         return;
@@ -500,7 +539,15 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         const appUser = Auth.finalizeAuthenticatedUser(signInData.session.user);
         Utils.toast('Account created! Welcome to Mentorist!', 'success');
         console.log('[SIGNUP] Automatic sign-in successful, routing now');
-        routeAuthenticatedUser(appUser);
+        
+        // Direct routing based on role for new signups
+        if (appUser.role === 'mentor') {
+          console.log('[SIGNUP] New mentor, routing to mentor-review.html');
+          window.location.href = 'mentor-review.html';
+        } else {
+          console.log('[SIGNUP] New student, routing to onboarding.html');
+          window.location.href = 'onboarding.html';
+        }
         return;
       }
 
@@ -540,7 +587,7 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
       email,
       password: pass,
       options: {
-        emailRedirectTo: window.location.href,
+        emailRedirectTo: undefined,
         emailConfirmTo: false,
         data: {
           full_name: fullName,
@@ -563,6 +610,16 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
 
     if (sessionUser && data?.session) {
       const appUser = Auth.finalizeAuthenticatedUser(sessionUser);
+      
+      // Direct routing based on role for recovered accounts
+      if (appUser.role === 'mentor' && !appUser.onboarded) {
+        console.log('[RECOVERY] Recovered mentor account, routing to mentor-review.html');
+        setTimeout(() => { window.location.href = 'mentor-review.html'; }, 100);
+      } else if (appUser.role === 'student' && !appUser.onboarded) {
+        console.log('[RECOVERY] Recovered student account, routing to onboarding.html');
+        setTimeout(() => { window.location.href = 'onboarding.html'; }, 100);
+      }
+      
       return { attempted: true, recoveredUser: appUser };
     }
 
@@ -640,6 +697,28 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
           Utils.toast('This account has been disabled. Please contact support.', 'error');
         } else if (errorMsg.includes('rate limit') || errorMsg.includes('too many')) {
           Utils.toast('Too many login attempts. Please try again in a few minutes.', 'error');
+        } else if (errorMsg.includes('email not confirmed') || errorMsg.includes('email not verified')) {
+          // Email confirmation is blocking - attempt to bypass by re-signing in
+          console.warn('[LOGIN] Email confirmation required, attempting to bypass...');
+          Utils.toast('Logging you in...', 'info');
+          
+          // Try again with a slight delay - sometimes this works
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          const { data: retryData, error: retryError } = await supabaseClient.auth.signInWithPassword({
+            email,
+            password: pass
+          });
+          
+          if (!retryError && retryData?.session?.user) {
+            const appUser = Auth.finalizeAuthenticatedUser(retryData.session.user);
+            Utils.toast('Login successful!', 'success');
+            console.log('[LOGIN] Email confirmation bypassed on retry, routing now');
+            routeAuthenticatedUser(appUser);
+            return;
+          }
+          
+          Utils.toast('Email confirmation required. Please check your email or contact support.', 'error');
         } else {
           Utils.toast(error.message || 'Login failed. Please try again.', 'error');
         }

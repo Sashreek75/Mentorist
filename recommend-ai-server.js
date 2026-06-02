@@ -555,13 +555,45 @@ async function handleRequest(req, res) {
     }
   }
 
+  if (parsedUrl.pathname === '/api/auto-confirm-email' && req.method === 'POST') {
+    try {
+      const body = await readBody(req);
+      const { email } = JSON.parse(body || '{}');
+      
+      if (!email) {
+        return json(res, 400, { success: false, error: 'Email is required' }, origin);
+      }
+
+      // Use admin API to update user's email_confirmed status
+      const { data: users, error: listError } = await supabase.auth.admin.listUsers();
+      if (listError) throw listError;
+
+      const user = users.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      if (!user) {
+        return json(res, 404, { success: false, error: 'User not found' }, origin);
+      }
+
+      const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {
+        email_confirm: true
+      });
+
+      if (updateError) throw updateError;
+
+      return json(res, 200, { success: true, message: 'Email auto-confirmed' }, origin);
+    } catch (error) {
+      console.error('[AUTO-CONFIRM] Error:', error);
+      return json(res, 500, { success: false, error: error.message || 'Auto-confirmation failed' }, origin);
+    }
+  }
+
   return json(res, 404, {
     error: 'Not found',
     available: [
       'GET /health',
       'POST /api/recommend',
       'GET /api/recommend?school=Rouse%20High%20School&interest=stem',
-      'GET /api/school-catalog?school=Rouse%20High%20School'
+      'GET /api/school-catalog?school=Rouse%20High%20School',
+      'POST /api/auto-confirm-email'
     ]
   }, origin);
 }
