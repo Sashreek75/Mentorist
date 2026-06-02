@@ -465,9 +465,9 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         return;
       }
 
-      console.log('[SIGNUP] Account created successfully, awaiting confirmation...');
+      console.log('[SIGNUP] Account created successfully, attempting automatic sign-in...');
       
-      // Successful signup
+      // Successful signup - now automatically sign in to create an active session
       const sessionUser = data?.session?.user || data?.user || null;
       localStorage.removeItem('pendingRole');
       localStorage.removeItem('pendingName');
@@ -480,10 +480,30 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         return;
       }
 
-      if (sessionUser) {
-        Utils.toast('Account created. Please verify your email, then sign in.', 'info');
-        console.log('[SIGNUP] No active session yet; user must verify email before logging in');
+      // If no immediate session, automatically sign in with the credentials
+      console.log('[SIGNUP] No immediate session, attempting automatic sign-in...');
+      const { data: signInData, error: signInError } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password: pass
+      });
+
+      if (signInError) {
+        console.warn('[SIGNUP] Automatic sign-in failed:', signInError.message);
+        if (sessionUser) {
+          Utils.toast('Account created. Please verify your email, then sign in.', 'info');
+          console.log('[SIGNUP] User exists but sign-in failed, likely needs email verification');
+        } else {
+          Utils.toast('Account created. Please sign in to continue.', 'info');
+        }
         showLogin();
+        return;
+      }
+
+      if (signInData?.session?.user) {
+        const appUser = Auth.finalizeAuthenticatedUser(signInData.session.user);
+        Utils.toast('Account created! Welcome to Mentorist!', 'success');
+        console.log('[SIGNUP] Automatic sign-in successful, routing now');
+        routeAuthenticatedUser(appUser);
         return;
       }
 
