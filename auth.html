@@ -408,6 +408,8 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         email,
         password: pass,
         options: {
+          emailRedirectTo: window.location.href,
+          emailConfirmTo: false,
           data: {
             full_name: name,
             role: role,
@@ -489,12 +491,7 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
 
       if (signInError) {
         console.warn('[SIGNUP] Automatic sign-in failed:', signInError.message);
-        if (sessionUser) {
-          Utils.toast('Account created. Please verify your email, then sign in.', 'info');
-          console.log('[SIGNUP] User exists but sign-in failed, likely needs email verification');
-        } else {
-          Utils.toast('Account created. Please sign in to continue.', 'info');
-        }
+        Utils.toast('Account created. Please sign in to continue.', 'info');
         showLogin();
         return;
       }
@@ -543,6 +540,8 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
       email,
       password: pass,
       options: {
+        emailRedirectTo: window.location.href,
+        emailConfirmTo: false,
         data: {
           full_name: fullName,
           role,
@@ -567,7 +566,7 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
       return { attempted: true, recoveredUser: appUser };
     }
 
-    return { attempted: true, verificationRequired: !!sessionUser };
+    return { attempted: true };
   }
 
   async function handleEmailLogin(){
@@ -627,11 +626,6 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
             routeAuthenticatedUser(recovery.recoveredUser);
             return;
           }
-          if (recovery?.verificationRequired) {
-            Utils.toast('Account recovered. Please verify your email, then sign in again.', 'info');
-            showLogin();
-            return;
-          }
           if (recovery?.attempted) {
             const recoveryMsg = (recovery.error?.message || '').toLowerCase();
             if (!recoveryMsg.includes('already registered') && !recoveryMsg.includes('user already') && !recoveryMsg.includes('already exists')) {
@@ -639,8 +633,6 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
             }
           }
           Utils.toast('Invalid email or password. Please try again.', 'error');
-        } else if (errorMsg.includes('email not confirmed') || errorMsg.includes('not verified')) {
-          Utils.toast('Please check your email to verify your account.', 'error');
         } else if (errorMsg.includes('user not found')) {
           Utils.toast('No account found with this email. Please sign up first.', 'error');
           setTimeout(() => showSignup(), 800);
