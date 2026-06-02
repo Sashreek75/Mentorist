@@ -585,31 +585,6 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         return; 
       }
 
-      // Check suspension cooldown
-      const suspensionKey = `mn_suspended_${email}`;
-      const suspensionTime = localStorage.getItem(suspensionKey);
-      if (suspensionTime) {
-        const suspendedAt = parseInt(suspensionTime);
-        const now = Date.now();
-        const cooldownMs = 5 * 60 * 1000; // 5 minutes
-        const timeElapsed = now - suspendedAt;
-        
-        if (timeElapsed < cooldownMs) {
-          const minutesRemaining = Math.ceil((cooldownMs - timeElapsed) / 1000 / 60);
-          Utils.toast(`Your account was suspended. Please try again in ${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}.`, 'error');
-          console.log(`[LOGIN] Account suspended. Cooldown ${cooldownMs - timeElapsed}ms remaining`);
-          return;
-        } else {
-          // Cooldown expired, remove the suspension marker
-          localStorage.removeItem(suspensionKey);
-          console.log(`[LOGIN] Suspension cooldown expired for ${email}`);
-          const storedUser = UserStore.getByEmail(email);
-          if (storedUser && storedUser.status === 'suspended') {
-            UserStore.updateStatus(email, storedUser.role === 'mentor' && !storedUser.onboarded ? 'pending' : 'active');
-          }
-        }
-      }
-
       console.log(`[LOGIN] Attempting login for: ${email}`);
 
       const { data, error } = await supabaseClient.auth.signInWithPassword({

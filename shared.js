@@ -430,24 +430,19 @@ const Auth = {
     UserStore.addOrUpdate(nu);
   },
   isLoggedIn() { return !!this.getUser(); },
-  async forceLogout(reason = 'You have been signed out.') {
-    const currentUser = this.getUser();
-    
-    // If suspended, set cooldown timer
-    if (reason && reason.includes('suspended') && currentUser?.email) {
-      const suspensionKey = `mn_suspended_${currentUser.email}`;
-      localStorage.setItem(suspensionKey, Date.now().toString());
-      console.log(`[AUTH] Suspension cooldown set for ${currentUser.email}, expires in 5 minutes`);
-    }
-    
-    localStorage.setItem('mn_auth_notice', reason);
+  async forceLogout(reason = null) {
+    localStorage.setItem('mn_auth_notice', reason || 'You have been signed out.');
     localStorage.removeItem("mn_user");
     if (reason) {
       sessionStorage.removeItem("mn_admin_session");
     }
     try {
-      void supabaseClient.auth.signOut();
-    } catch {}
+      if (supabaseClient && supabaseClient.auth) {
+        await supabaseClient.auth.signOut();
+      }
+    } catch (e) {
+      console.warn("Failed to sign out from Supabase:", e);
+    }
     if (!window.location.pathname.includes('/auth')) {
       window.location.href = 'auth.html?mode=login';
     }
@@ -471,18 +466,14 @@ const Auth = {
     return u;
   },
   routeAfterLogin(user) {
-    if (!user) { 
-      console.log("[ROUTE] No user provided, redirecting to auth");
-      window.location.href = "auth.html"; 
-      return; 
-    }
-    
-    console.log("[ROUTE] Routing user:", { email: user.email, role: user.role, status: user.status, onboarded: user.onboarded });
-    
+    if (!user) return;
     user = this.normalizeUser(this.syncCurrentUserFromStore(user.email) || user);
-    console.log("[ROUTE] After sync:", { role: user.role, status: user.status, onboarded: user.onboarded });
     
-    // Ensure user is in UserStore
+    if (user.status === 'banned' || user.status === 'suspended' || user.status === 'rejected') {
+      Auth.forceLogout(`Your account is ${user.status}.`);
+      return;
+    }
+
     UserStore.addOrUpdate(user);
     
     // ADMIN routing (highest priority)

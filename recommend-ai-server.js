@@ -8,6 +8,17 @@
 const http = require('http');
 const { createClient } = require('@supabase/supabase-js');
 const Core = require('./recommendation-core.js');
+const { GoogleGenAI } = require('@google/genai');
+
+let ai = null;
+try {
+  if (process.env.GEMINI_API_KEY) {
+    ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    console.log("Gemini AI initialized for recommendation engine.");
+  }
+} catch (e) {
+  console.warn("Gemini AI failed to initialize:", e);
+}
 
 const PORT = Number(process.env.PORT || 3000);
 const DEFAULT_SUPABASE_URL = 'https://vmuukfegnjotlgvdqfrx.supabase.co';
@@ -312,7 +323,8 @@ async function discoverSchoolCatalog(profile) {
       sourceType: readable.contentType,
       courseCount: courses.length,
       score,
-      courses
+      courses,
+      rawText: readable.text
     };
 
     discovered.push(catalogEntry);
@@ -331,7 +343,8 @@ async function discoverSchoolCatalog(profile) {
         searchQueries: search.queries,
         candidateUrls: search.urls,
         titles: search.titles,
-        fetchedFrom: best.fetchedFrom
+        fetchedFrom: best.fetchedFrom,
+        rawText: best.rawText
       }
     : {
         schoolName: profile.schoolName || '',
@@ -384,6 +397,61 @@ async function generateRecommendations(studentProfile) {
     loadPeerProfiles(profile)
   ]);
 
+  if (ai && schoolCatalog && schoolCatalog.rawText) {
+    try {
+      console.log(`[AI] Generating recommendations via Gemini for ${profile.email}`);
+      const prompt = `You are an expert academic advisor. The student profile is:
+Name: ${profile.name}
+Interests: ${profile.interest}
+Careers: ${profile.careers.join(', ')}
+Skills: ${profile.skills.join(', ')}
+Goal: ${profile.goal}
+Grade: ${profile.schoolGrade}
+
+We have retrieved the following course catalog text for their school (or related to it):
+---
+${schoolCatalog.rawText.substring(0, 100000)}
+---
+
+Based heavily on the catalog text above, generate a highly personalized recommendation bundle. Return ONLY a valid JSON object matching this schema EXACTLY:
+{
+  "courses": [
+    { "name": "Exact course name from catalog", "category": "Math|Science|Core|Elective|CTE", "description": "Brief description of why this fits their goals", "gpaBoost": true, "gradeMin": 9, "keywords": "" }
+  ],
+  "jobs": [
+    { "title": "Job title", "category": "industry", "description": "Why it's relevant", "salaryRange": "$X - $Y" }
+  ],
+  "extracurriculars": [
+    { "name": "Club/Activity name", "role": "Suggested role", "description": "Why they should join based on profile" }
+  ]
+}
+Include exactly 6 courses, 4 jobs, and 4 extracurriculars. Output only valid JSON.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: { responseMimeType: "application/json" }
+      });
+      
+      const parsed = JSON.parse(response.text);
+      parsed.generatedAt = new Date().toISOString();
+      parsed.studentEmail = profile.email;
+      
+      return {
+        success: true,
+        data: parsed,
+        meta: {
+          schoolCatalog: { ...schoolCatalog, rawText: undefined },
+          peerCount: peers.length,
+          generatedAt: parsed.generatedAt,
+          aiPowered: true
+        }
+      };
+    } catch (e) {
+      console.warn("[AI] Gemini generation failed, falling back to heuristics:", e.message || e);
+    }
+  }
+
   const bundle = Core.buildRecommendationBundle(profile, {
     schoolCatalog,
     peerStudents: peers
@@ -393,9 +461,10 @@ async function generateRecommendations(studentProfile) {
     success: true,
     data: bundle,
     meta: {
-      schoolCatalog,
+      schoolCatalog: { ...schoolCatalog, rawText: undefined },
       peerCount: peers.length,
-      generatedAt: bundle.generatedAt
+      generatedAt: bundle.generatedAt,
+      aiPowered: false
     }
   };
 }

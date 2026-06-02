@@ -4,6 +4,7 @@
     "test:recommend": "node test-recommend.js"
   },
   "dependencies": {
+    "@google/genai": "^2.7.0",
     "@supabase/supabase-js": "^2.106.2"
   }
 }
