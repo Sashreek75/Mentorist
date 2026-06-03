@@ -362,9 +362,13 @@ const RecommendationEngine = {
     const roadmap = recommendations.roadmap || {};
     const gpaStrategy = recommendations.gpaStrategy || {};
 
+    const isFallback = schoolContext?.sourceType === 'playbook' || recommendations.aiPowered === false;
     let html = `
       <div class="rec-tips">
         <h3>School-Aware Strategy</h3>
+        ${isFallback 
+          ? `<div style="padding:12px;background:rgba(255,170,0,0.1);border:1px solid rgba(255,170,0,0.3);border-radius:8px;margin-bottom:16px;color:#ffaa00;font-size:14px;"><strong>Notice:</strong> We couldn't fetch your exact school's course catalog online, but we've generated some tailored fallback recommendations based on your onboarding quiz answers!</div>` 
+          : ''}
         <p>${esc(recommendations.summary || schoolContext.summary || 'Personalized recommendations')}</p>
         <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;">
           <span class="qtag-premium">${esc(profile.schoolName || 'School not set')}</span>

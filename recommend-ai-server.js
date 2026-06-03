@@ -190,8 +190,11 @@ async function searchSchoolCatalogCandidates(profile) {
   const titles = [];
 
   for (const query of queries) {
-    if (isLikelyCatalogUrl(query)) {
-      urls.push(query);
+    // Only treat it as a direct URL if it actually looks like one
+    if (/^https?:\/\//i.test(query) || /^www\./i.test(query) || /\.pdf$/i.test(query)) {
+      if (isLikelyCatalogUrl(query)) {
+        urls.push(query);
+      }
       continue;
     }
 
