@@ -168,6 +168,32 @@ const RecommendationEngine = {
     return this.normalizeRecommendations(result);
   },
 
+  async getInteractiveRecommendations(studentProfile, requestType, userQuery) {
+    const profile = this.normalizeStudentProfile(studentProfile);
+    const base = this.getApiBaseUrl();
+    
+    const response = await fetch(`${base}/api/recommend-interactive`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profile,
+        requestType,
+        userQuery
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}`);
+    }
+
+    const result = await response.json();
+    if (!result?.success) {
+      throw new Error(result?.error || 'Recommendation API error');
+    }
+
+    return result.data;
+  },
+
   getLocalPeerProfiles(profile) {
     try {
       if (typeof UserStore === 'undefined' || !UserStore?.getAll) return [];

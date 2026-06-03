@@ -3,62 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Personalized Recommendations — Mentorist</title>
+  <title>AI Strategy Engine — Mentorist</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="stylesheet" href="shared.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     body { background: var(--bg); }
 
     .rec-header {
-      max-width: 1200px;
-      margin: 120px auto 60px;
+      max-width: 900px;
+      margin: 120px auto 40px;
       padding: 0 24px;
       text-align: center;
     }
 
     .rec-title {
       font-family: var(--font-h);
-      font-size: clamp(36px, 6vw, 56px);
+      font-size: clamp(32px, 5vw, 48px);
       font-weight: 800;
       color: var(--t1);
       letter-spacing: -0.04em;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
     .rec-intro {
-      font-size: 18px;
+      font-size: 16px;
       color: var(--t3);
-      max-width: 700px;
-      margin: 0 auto 32px;
-      line-height: 1.8;
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.6;
     }
 
     .rec-container {
-      max-width: 1200px;
+      max-width: 900px;
       margin: 0 auto;
       padding: 0 24px 120px;
     }
 
-    .recommendations-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 60px;
-      margin-bottom: 80px;
-    }
-
-    .rec-section {
+    .interactive-card {
       background: var(--bg-1);
       border: 1px solid var(--b1);
       border-radius: var(--r-3xl);
-      padding: 48px;
+      padding: 40px;
       position: relative;
       overflow: hidden;
+      margin-bottom: 40px;
     }
-
-    .rec-section::before {
+    
+    .interactive-card::before {
       content: '';
       position: absolute;
-      top: -50%;
+      top: -30%;
       right: -10%;
       width: 300px;
       height: 300px;
@@ -67,160 +62,122 @@
       pointer-events: none;
     }
 
-    .rec-section-title {
-      font-family: var(--font-h);
-      font-size: 28px;
-      font-weight: 800;
+    .topic-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+      justify-content: center;
+    }
+
+    .topic-pill {
+      font-size: 14px;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: var(--r-pill);
+      background: var(--bg-2);
+      color: var(--t2);
+      border: 1px solid var(--b1);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .topic-pill:hover {
+      border-color: var(--b3);
       color: var(--t1);
-      margin-bottom: 32px;
-      position: relative;
-      z-index: 1;
-      letter-spacing: -0.03em;
     }
 
-    .rec-items {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 24px;
-      position: relative;
-      z-index: 1;
+    .topic-pill.active {
+      background: var(--green-dim);
+      color: var(--green);
+      border-color: rgba(0, 232, 122, 0.4);
     }
 
-    .rec-item {
+    .rec-input-box {
+      width: 100%;
+      min-height: 120px;
       background: var(--bg-2);
       border: 1px solid var(--b1);
-      border-radius: var(--r-2xl);
-      padding: 24px;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      cursor: default;
-    }
-
-    .rec-item:hover {
-      border-color: var(--green);
-      transform: translateY(-4px);
-      box-shadow: 0 12px 40px rgba(0, 232, 122, 0.1);
-    }
-
-    .rec-item-title {
-      font-size: 16px;
-      font-weight: 800;
+      border-radius: var(--r-xl);
+      padding: 20px;
+      font-family: inherit;
       color: var(--t1);
-      margin-bottom: 8px;
-      font-family: var(--font-h);
+      font-size: 16px;
+      resize: vertical;
+      margin-bottom: 24px;
+      transition: border-color 0.2s;
     }
 
-    .rec-item-desc {
-      font-size: 14px;
-      color: var(--t3);
-      line-height: 1.6;
-      margin-bottom: 12px;
+    .rec-input-box:focus {
+      outline: none;
+      border-color: var(--green);
     }
 
-    .rec-item-meta, .rec-item-skills, .rec-item-value, .rec-item-salary {
-      font-size: 12px;
-      color: var(--t4);
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
-
-    .rec-item-value, .rec-item-salary {
-      color: var(--green);
-      font-weight: 700;
-      margin-top: 12px;
-    }
-
-    .rec-tips {
-      background: var(--green-dim);
-      border: 1px solid rgba(0, 232, 122, 0.3);
+    .result-container {
+      background: var(--bg-1);
+      border: 1px solid var(--b1);
       border-radius: var(--r-3xl);
       padding: 40px;
-      margin-bottom: 60px;
-      position: relative;
-      overflow: hidden;
+      display: none;
     }
-
-    .rec-tips::before {
-      content: '';
-      position: absolute;
-      top: -20%;
-      left: -5%;
-      width: 200px;
-      height: 200px;
-      background: radial-gradient(circle, rgba(0, 232, 122, 0.2), transparent 70%);
-      filter: blur(40px);
-      pointer-events: none;
-    }
-
-    .rec-tips h3 {
-      font-family: var(--font-h);
-      font-size: 24px;
-      font-weight: 800;
-      color: var(--t1);
-      margin-bottom: 24px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .rec-tips ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 16px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .rec-tips li {
+    
+    .markdown-body {
       font-size: 15px;
+      line-height: 1.8;
       color: var(--t2);
-      line-height: 1.7;
-      padding-left: 24px;
-      position: relative;
     }
-
-    .rec-tips li::before {
-      content: '✓';
-      position: absolute;
-      left: 0;
-      color: var(--green);
+    
+    .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+      font-family: var(--font-h);
+      color: var(--t1);
+      margin-top: 1.5em;
+      margin-bottom: 0.5em;
       font-weight: 800;
-      font-size: 18px;
     }
-
-    .rec-nav {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      margin-bottom: 40px;
-      flex-wrap: wrap;
+    
+    .markdown-body h1 { font-size: 24px; }
+    .markdown-body h2 { font-size: 20px; border-bottom: 1px solid var(--b1); padding-bottom: 8px; }
+    .markdown-body h3 { font-size: 18px; }
+    
+    .markdown-body p { margin-bottom: 1em; }
+    
+    .markdown-body ul, .markdown-body ol {
+      margin-bottom: 1.5em;
+      padding-left: 24px;
     }
-
-    .rec-nav-btn {
-      padding: 12px 24px;
-      border-radius: var(--r-pill);
-      border: none;
+    
+    .markdown-body li {
+      margin-bottom: 0.5em;
+    }
+    
+    .markdown-body strong {
+      color: var(--t1);
       font-weight: 700;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-size: 14px;
     }
 
-    .rec-nav-btn.active {
-      background: var(--green);
-      color: #040404;
+    .loader {
+      display: none;
+      text-align: center;
+      padding: 40px;
+      color: var(--t3);
+      font-size: 15px;
+      font-weight: 600;
     }
 
-    .rec-nav-btn:not(.active) {
-      background: var(--bg-2);
-      color: var(--t2);
-      border: 1px solid var(--b1);
+    .loader-spinner {
+      border: 3px solid var(--b1);
+      border-top: 3px solid var(--green);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
     }
 
-    .rec-nav-btn:hover {
-      border-color: var(--green);
-      color: var(--green);
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
     .nav-actions-rec {
@@ -235,27 +192,10 @@
     @media(max-width: 768px) {
       .rec-header {
         margin-top: 100px;
-        margin-bottom: 40px;
+        margin-bottom: 30px;
       }
-
-      .rec-section {
-        padding: 32px 20px;
-      }
-
-      .rec-items {
-        grid-template-columns: 1fr;
-      }
-
-      .recommendations-grid {
-        gap: 40px;
-      }
-
-      .rec-title {
-        font-size: 28px;
-      }
-
-      .rec-intro {
-        font-size: 16px;
+      .interactive-card, .result-container {
+        padding: 24px;
       }
     }
   </style>
@@ -275,16 +215,46 @@
     </div>
   </nav>
 
+  <div class="rec-header">
+    <h1 class="rec-title">AI Strategy Engine</h1>
+    <p class="rec-intro">Powered by live web search. Ask for course plans, GPA strategies, or project ideas, and our AI will retrieve your school's catalog to build a realistic roadmap.</p>
+  </div>
+
   <div class="rec-container">
     <div class="nav-actions-rec">
-      <div>
-        <h1 style="font-family:var(--font-h);font-size:24px;font-weight:800;color:var(--t1);margin:0;">Your Personalized Recommendations</h1>
-        <p style="color:var(--t4);font-size:13px;margin-top:4px;font-weight:600;">Updated based on your profile</p>
-      </div>
-      <a href="studentdashboard.html" class="btn btn-primary btn-sm">Go to Dashboard</a>
+      <div></div>
+      <a href="studentdashboard.html" class="btn btn-ghost btn-sm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;margin-right:6px;"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to Dashboard
+      </a>
     </div>
 
-    <div id="recommendationsContent"></div>
+    <div class="interactive-card" id="engineForm">
+      <div class="topic-group" id="topicSelectors">
+        <div class="topic-pill active" onclick="selectTopic(this, 'Course Recommendations')">Course Recommendations</div>
+        <div class="topic-pill" onclick="selectTopic(this, 'GPA Boosters')">GPA Boosters</div>
+        <div class="topic-pill" onclick="selectTopic(this, 'Extracurriculars')">Extracurriculars</div>
+        <div class="topic-pill" onclick="selectTopic(this, 'Passion Projects')">Passion Projects</div>
+        <div class="topic-pill" onclick="selectTopic(this, 'Career Path')">Career Path</div>
+      </div>
+
+      <textarea class="rec-input-box" id="userQuery" placeholder="Optional: Elaborate on your goals. E.g. 'I want to be a software engineer but I am struggling in math.'"></textarea>
+
+      <button class="btn btn-primary btn-lg btn-full" onclick="generateStrategy()">
+        Generate Strategy
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <div class="loader" id="loader">
+      <div class="loader-spinner"></div>
+      <div>Analyzing your profile and searching school data...</div>
+      <div style="font-size:12px; color:var(--t4); margin-top:8px;">This can take up to 10 seconds.</div>
+    </div>
+
+    <div class="result-container" id="resultContainer">
+      <div class="markdown-body" id="resultContent"></div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -296,10 +266,10 @@
 
     if (!user) {
       window.location.href = 'auth.html';
-    }
-
-    if (!user.onboarded) {
+    } else if (!user.onboarded) {
       window.location.href = 'onboarding.html';
+    } else if (user.role === 'mentor') {
+      window.location.href = 'mentordashboard.html';
     }
 
     // Set up navigation
@@ -309,28 +279,44 @@
     av.style.color = 'var(--green)';
     av.textContent = Utils.initials(user.name);
 
-    async function loadRecommendations() {
-      document.getElementById('recommendationsContent').innerHTML = `
-        <div class="rec-section" style="text-align:center;">
-          <div class="rec-item-title">Building your school-aware roadmap...</div>
-          <div class="rec-item-desc">We are pulling your profile, looking up your school catalog, and comparing your pattern with similar students.</div>
-        </div>
-      `;
+    let activeTopic = 'Course Recommendations';
 
-      const recommendations = await RecommendationEngine.getRecommendations(user);
-      const html = RecommendationEngine.formatRecommendations(recommendations);
-      document.getElementById('recommendationsContent').innerHTML = html;
+    function selectTopic(el, topic) {
+      document.querySelectorAll('.topic-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      activeTopic = topic;
     }
 
-    loadRecommendations().catch((error) => {
-      console.error('[RECOMMENDATIONS] Failed to load:', error);
-      document.getElementById('recommendationsContent').innerHTML = `
-        <div class="rec-section">
-          <div class="rec-item-title">We could not load recommendations right now.</div>
-          <div class="rec-item-desc">The app will fall back automatically once the recommendation server is available again.</div>
-        </div>
-      `;
-    });
+    async function generateStrategy() {
+      const query = document.getElementById('userQuery').value.trim();
+      const btn = document.querySelector('#engineForm button');
+      const loader = document.getElementById('loader');
+      const resultContainer = document.getElementById('resultContainer');
+      const resultContent = document.getElementById('resultContent');
+
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      resultContainer.style.display = 'none';
+      loader.style.display = 'block';
+
+      try {
+        const response = await RecommendationEngine.getInteractiveRecommendations(user, activeTopic, query);
+        
+        if (response && response.markdown) {
+          resultContent.innerHTML = marked.parse(response.markdown);
+          resultContainer.style.display = 'block';
+        } else {
+          throw new Error("Invalid response format");
+        }
+      } catch (error) {
+        console.error('[AI Engine]', error);
+        Utils.toast('Failed to generate strategy. Please try again later.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        loader.style.display = 'none';
+      }
+    }
 
     // Scroll animations
     const nav = document.getElementById('nav');
@@ -338,5 +324,4 @@
   </script>
 
 </body>
-
 </html>

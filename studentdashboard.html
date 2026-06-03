@@ -125,6 +125,9 @@ body{background:var(--bg);}
     <button class="sidebar-link active" onclick="showView('ask')" id="sidebar-ask">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Ask Mentor
     </button>
+    <button class="sidebar-link" onclick="window.location.href='recommendations.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>AI Strategy Engine
+    </button>
     <button class="sidebar-link" onclick="showView('history')" id="sidebar-history">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>My Activity
     </button>
@@ -217,22 +220,7 @@ body{background:var(--bg);}
       </div>
     </div>
 
-    <!-- RECOMMENDATIONS SECTION -->
-    <div id="recommendationsPreview" style="display:none;margin-bottom:60px;" class="stagger">
-      <div style="margin-bottom:24px;">
-        <h2 style="font-family:var(--font-h);font-size:24px;font-weight:800;color:var(--t1);margin:0;">Your Personalized Recommendations</h2>
-        <p style="color:var(--t3);font-size:14px;margin-top:4px;margin-bottom:20px;">While you wait for mentor responses, explore courses, opportunities, and projects tailored to your profile.</p>
-      </div>
-
-      <div id="recPreviewContent"></div>
-
-      <div style="text-align:center;margin-top:32px;">
-        <a href="recommendations.html" class="btn btn-primary">
-          Explore Full Recommendations
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
-        </a>
-      </div>
-    </div>
+    <!-- RECOMMENDATIONS SECTION REMOVED (Now its own sidebar tool) -->
 
     <!-- HISTORY VIEW -->
     <div id="view-history" style="display:none;" class="stagger">
@@ -282,15 +270,7 @@ body{background:var(--bg);}
       }
       document.querySelector('#pSchool span').textContent = p.schoolName || 'Not set';
       
-      // Load recommendations
-      const recs = await RecommendationEngine.getRecommendations(user);
-      if (recs && (recs.courses?.length || recs.jobs?.length || recs.projects?.length)) {
-        const recPreview = document.getElementById('recommendationsPreview');
-        document.getElementById('recPreviewContent').innerHTML = RecommendationEngine.formatPreview(recs);
-        recPreview.style.display = 'block';
-      } else {
-        document.getElementById('recommendationsPreview').style.display = 'none';
-      }
+      // Recommendations preview removed - users will go to the dedicated page via sidebar.
     }
   }
 
