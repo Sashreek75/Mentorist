@@ -9,6 +9,7 @@ const http = require('http');
 const { createClient } = require('@supabase/supabase-js');
 const Core = require('./recommendation-core.js');
 const { GoogleGenAI } = require('@google/genai');
+require('dotenv').config();
 
 let ai = null;
 try {
@@ -222,10 +223,11 @@ async function fetchReadableCatalog(url) {
   const candidates = [];
   if (/^https?:\/\//i.test(url)) {
     candidates.push(url);
-    candidates.push(`https://r.jina.ai/http://${url.replace(/^https?:\/\//i, '')}`);
+    const proto = url.toLowerCase().startsWith('https') ? 'https' : 'http';
+    candidates.push(`https://r.jina.ai/${proto}://${url.replace(/^https?:\/\//i, '')}`);
   } else {
     candidates.push(`https://${url}`);
-    candidates.push(`https://r.jina.ai/http://${url.replace(/^https?:\/\//i, '')}`);
+    candidates.push(`https://r.jina.ai/https://${url}`);
   }
 
   for (const candidate of candidates) {
@@ -423,9 +425,33 @@ Based heavily on the catalog text above, generate a highly personalized recommen
   ],
   "extracurriculars": [
     { "name": "Club/Activity name", "role": "Suggested role", "description": "Why they should join based on profile" }
-  ]
+  ],
+  "projects": [
+    { "name": "Project name", "description": "Why they should do it", "time": "Time estimate" }
+  ],
+  "tools": [
+    { "name": "Tool name", "description": "Why it's useful", "resource": "Link or resource", "time": "Learning time" }
+  ],
+  "courseTracks": {
+    "now": [{ "name": "Course name", "description": "Why take now" }],
+    "next": [{ "name": "Course name", "description": "Why take next" }],
+    "stretch": [{ "name": "Course name", "description": "Why stretch" }],
+    "gpaBoost": [{ "name": "Course name", "description": "Why it boosts GPA" }]
+  },
+  "roadmap": {
+    "now": ["Action 1", "Action 2"],
+    "next": ["Action 1", "Action 2"],
+    "stretch": ["Action 1", "Action 2"]
+  },
+  "gpaStrategy": {
+    "headline": "Strategy headline",
+    "recommendations": ["Strategy 1", "Strategy 2"],
+    "caution": "Cautionary advice"
+  },
+  "mentorQuestions": ["Question 1", "Question 2"],
+  "tips": ["Tip 1", "Tip 2"]
 }
-Include exactly 6 courses, 4 jobs, and 4 extracurriculars. Output only valid JSON.`;
+Include exactly 6 courses, 4 jobs, 4 extracurriculars, 3 projects, and 3 tools. Output only valid JSON.`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -486,7 +512,7 @@ function readBody(req) {
 
 async function handleRecommend(req, res, origin, parsedUrl) {
   if (req.method === 'GET') {
-    const query = parsedUrl.query || {};
+    const query = Object.fromEntries(parsedUrl.searchParams);
     const profile = {
       name: query.name || 'Test Student',
       email: query.email || 'test@student.example',
@@ -555,36 +581,6 @@ async function handleRequest(req, res) {
     }
   }
 
-  if (parsedUrl.pathname === '/api/auto-confirm-email' && req.method === 'POST') {
-    try {
-      const body = await readBody(req);
-      const { email } = JSON.parse(body || '{}');
-      
-      if (!email) {
-        return json(res, 400, { success: false, error: 'Email is required' }, origin);
-      }
-
-      // Use admin API to update user's email_confirmed status
-      const { data: users, error: listError } = await supabase.auth.admin.listUsers();
-      if (listError) throw listError;
-
-      const user = users.users.find(u => u.email.toLowerCase() === email.toLowerCase());
-      if (!user) {
-        return json(res, 404, { success: false, error: 'User not found' }, origin);
-      }
-
-      const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {
-        email_confirm: true
-      });
-
-      if (updateError) throw updateError;
-
-      return json(res, 200, { success: true, message: 'Email auto-confirmed' }, origin);
-    } catch (error) {
-      console.error('[AUTO-CONFIRM] Error:', error);
-      return json(res, 500, { success: false, error: error.message || 'Auto-confirmation failed' }, origin);
-    }
-  }
 
   return json(res, 404, {
     error: 'Not found',

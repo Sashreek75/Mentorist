@@ -4,7 +4,6 @@
    ============================================================ */
 
 const CONFIG = {
-  GOOGLE_CLIENT_ID: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
   MENTOR_FORM_URL:  "https://forms.gle/JzCzRqB4PmBnqvzA8",
   SUPABASE_URL: "https://vmuukfegnjotlgvdqfrx.supabase.co",
   SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtdXVrZmVnbmpvdGxndmRxZnJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTY2MzYsImV4cCI6MjA5NDUzMjYzNn0.FswR9i0EgMZ5UPs8NpE-es4i3HonKQXilqBPA0ulT3Q",
@@ -1028,9 +1027,9 @@ const GoogleAuth = {
           provider: 'google',
           options: {
             redirectTo: redirectUrl,
+            skipBrowserRedirect: false,
             queryParams: {
-              prompt: 'select_account',
-              skipBrowserRedirect: false
+              prompt: 'select_account'
             }
           }
         });

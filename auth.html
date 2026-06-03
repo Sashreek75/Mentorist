@@ -409,7 +409,6 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         password: pass,
         options: {
           emailRedirectTo: undefined,
-          emailConfirmTo: false,
           data: {
             full_name: name,
             role: role,
@@ -469,25 +468,7 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
 
       console.log('[SIGNUP] Account created successfully, attempting automatic sign-in...');
       
-      // Try to auto-confirm email via backend API to bypass Supabase email confirmation
-      try {
-        console.log('[SIGNUP] Attempting to auto-confirm email via backend...');
-        const confirmResponse = await fetch('http://localhost:3000/api/auto-confirm-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
-        });
-        const confirmData = await confirmResponse.json();
-        if (confirmData.success) {
-          console.log('[SIGNUP] Email auto-confirmed successfully');
-        } else {
-          console.warn('[SIGNUP] Auto-confirm failed:', confirmData.error);
-        }
-      } catch (confirmErr) {
-        console.warn('[SIGNUP] Auto-confirm API call failed (server may not be running):', confirmErr.message);
-      }
-      
-      // Always attempt to sign in immediately after signup to bypass email confirmation
+      // Always attempt to sign in immediately after signup to establish session
       console.log('[SIGNUP] Attempting automatic sign-in to establish session...');
       
       // Small delay to ensure Supabase has processed the signup
@@ -588,7 +569,6 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
       password: pass,
       options: {
         emailRedirectTo: undefined,
-        emailConfirmTo: false,
         data: {
           full_name: fullName,
           role,
@@ -698,26 +678,6 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         } else if (errorMsg.includes('rate limit') || errorMsg.includes('too many')) {
           Utils.toast('Too many login attempts. Please try again in a few minutes.', 'error');
         } else if (errorMsg.includes('email not confirmed') || errorMsg.includes('email not verified')) {
-          // Email confirmation is blocking - attempt to bypass by re-signing in
-          console.warn('[LOGIN] Email confirmation required, attempting to bypass...');
-          Utils.toast('Logging you in...', 'info');
-          
-          // Try again with a slight delay - sometimes this works
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          const { data: retryData, error: retryError } = await supabaseClient.auth.signInWithPassword({
-            email,
-            password: pass
-          });
-          
-          if (!retryError && retryData?.session?.user) {
-            const appUser = Auth.finalizeAuthenticatedUser(retryData.session.user);
-            Utils.toast('Login successful!', 'success');
-            console.log('[LOGIN] Email confirmation bypassed on retry, routing now');
-            routeAuthenticatedUser(appUser);
-            return;
-          }
-          
           Utils.toast('Email confirmation required. Please check your email or contact support.', 'error');
         } else {
           Utils.toast(error.message || 'Login failed. Please try again.', 'error');
