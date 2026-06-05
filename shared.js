@@ -1308,6 +1308,13 @@ const GlobalBroadcast = {
   },
 
   show(al) {
+    // Check if this alert has already been dismissed
+    const dismissed = JSON.parse(localStorage.getItem('mn_dismissed_alerts') || '[]');
+    if (dismissed.includes(al.id)) {
+      console.log('[BROADCAST] Alert already dismissed, skipping:', al.id);
+      return;
+    }
+
     const overlay = document.createElement('div');
     overlay.className = 'broadcast-overlay';
     overlay.style.cssText = `

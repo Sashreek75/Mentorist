@@ -75,10 +75,14 @@ async function handleRecommendInteractive(req, res, origin) {
     return json(res, 500, { success: false, error: 'AI not configured on server.' }, origin);
   }
 
-  try {
-    console.log(`[AI] Generating interactive recommendations for ${profile.email} - Type: ${requestType}`);
-    
-    const prompt = `You are an expert academic and career advisor for high school and college students.
+  let lastError = null;
+  const maxRetries = 3;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      console.log(`[AI] Generating interactive recommendations for ${profile.email} - Type: ${requestType} (Attempt ${attempt + 1}/${maxRetries})`);
+      
+      const prompt = `You are an expert academic and career advisor for high school and college students.
 The student profile is:
 Name: ${profile.name}
 School: ${profile.schoolName || 'Unknown'} (Location: ${profile.schoolLocation || 'Unknown'})
@@ -95,26 +99,79 @@ Your task is to search the web using the Google Search tool for the course catal
 
 Format your response in clean Markdown. Use headings, bullet points, and bold text to make it easy to read. Do not output raw JSON. Speak directly to the student in a supportive, strategic, and professional tone. Keep your response concise but deeply insightful. Do not output a generic preamble, jump straight into the advice. Make sure to specifically list at least 3-4 actionable items (courses, clubs, or strategies) grounded in reality.`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: { 
-        tools: [{ googleSearch: {} }],
-        temperature: 0.7
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: { 
+          tools: [{ googleSearch: {} }],
+          temperature: 0.7
+        }
+      });
+      
+      if (!response || !response.text) {
+        throw new Error('AI returned empty response');
       }
-    });
-    
-    return json(res, 200, {
-      success: true,
-      data: {
-        markdown: response.text,
-        generatedAt: new Date().toISOString()
+      
+      return json(res, 200, {
+        success: true,
+        data: {
+          markdown: response.text,
+          generatedAt: new Date().toISOString()
+        }
+      }, origin);
+    } catch (e) {
+      lastError = e;
+      console.warn(`[AI] Attempt ${attempt + 1} failed:`, e.message || e);
+      
+      if (attempt < maxRetries - 1) {
+        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff: 1s, 2s, 4s
+        console.log(`[AI] Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
-    }, origin);
-  } catch (e) {
-    console.warn("[AI] Interactive generation failed:", e.message || e);
-    return json(res, 500, { success: false, error: 'Failed to generate recommendations.' }, origin);
+    }
   }
+  
+  // All retries failed, return fallback response
+  console.error("[AI] All retries failed, returning fallback:", lastError?.message);
+  
+  const fallbackResponse = generateFallbackResponse(profile, requestType, userQuery);
+  
+  return json(res, 200, {
+    success: true,
+    data: {
+      markdown: fallbackResponse,
+      generatedAt: new Date().toISOString(),
+      fallback: true
+    }
+  }, origin);
+}
+
+function generateFallbackResponse(profile, requestType, userQuery) {
+  const interest = profile.interest || 'your interests';
+  const grade = profile.schoolGrade || 'your grade level';
+  const school = profile.schoolName || 'your school';
+  
+  return `# Strategic Recommendations for ${requestType}
+
+Based on your profile as a ${grade} student interested in ${interest} at ${school}, here are targeted recommendations:
+
+## Course Strategy
+- Focus on core classes that align with ${interest}
+- Consider AP or Honors courses if your GPA allows
+- Balance rigor with manageable workload
+
+## Key Actions
+1. **Research your school's catalog** - Look for courses specifically in ${interest}
+2. **Build proof-of-work** - Create a project that demonstrates your skills
+3. **Find leadership opportunities** - Join clubs or start an initiative
+4. **Connect with mentors** - Reach out to teachers or professionals in ${interest}
+
+## Next Steps
+- Meet with your counselor to plan next year's schedule
+- Talk to teachers about ${interest} opportunities at ${school}
+- Start a small project this semester to build momentum
+
+*Note: AI-powered search was temporarily unavailable, so these recommendations are based on general best practices for your profile. For more specific advice, try again in a moment.*`;
 }
 
 // Keep the old endpoint for fallback just in case it's still hit somewhere else
