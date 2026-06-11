@@ -230,6 +230,10 @@ function buildAuthRedirectUrl() {
   return authUrl.toString();
 }
 
+// Routing guard — prevents duplicate navigation calls
+let _authRoutingInProgress = false;
+let _authLastRoutedEmail = null;
+
 // Handle Supabase Auth State globally
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
   if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
@@ -244,16 +248,10 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
 
     if (email.endsWith('@mentorist.org') || email.startsWith('admin')) {
       console.log(`[AUTH] Admin detected via email pattern: ${email}`);
-      nextMetadata = {
-        ...nextMetadata,
-        role: 'admin',
-        onboarded: true,
-        status: 'active'
-      };
+      nextMetadata = { ...nextMetadata, role: 'admin', onboarded: true, status: 'active' };
       localStorage.removeItem('pendingRole');
-      void supabaseClient.auth.updateUser({
-        data: { role: 'admin', onboarded: true, status: 'active' }
-      }).catch(err => console.warn("[AUTH] Failed to persist admin metadata:", err?.message));
+      void supabaseClient.auth.updateUser({ data: { role: 'admin', onboarded: true, status: 'active' } })
+        .catch(err => console.warn("[AUTH] Failed to persist admin metadata:", err?.message));
     } else if (!nextMetadata.role && pendingRole) {
       console.log(`[AUTH] First-time signup: setting role to ${pendingRole}`);
       nextMetadata = {
@@ -265,12 +263,7 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
       };
       localStorage.removeItem('pendingRole');
       void supabaseClient.auth.updateUser({
-        data: {
-          role: pendingRole,
-          status: pendingRole === 'mentor' ? 'pending' : 'active',
-          onboarded: pendingRole === 'admin',
-          full_name: metadata.full_name || email.split("@")[0]
-        }
+        data: { role: pendingRole, status: pendingRole === 'mentor' ? 'pending' : 'active', onboarded: pendingRole === 'admin', full_name: metadata.full_name || email.split("@")[0] }
       }).catch(err => console.warn("[AUTH] Failed to persist signup metadata:", err?.message));
     } else if (!nextMetadata.role && storedUser?.role) {
       console.log(`[AUTH] Returning user found in store: ${storedUser.role}`);
@@ -284,40 +277,35 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
         dismissedAlertIds: storedUser.dismissedAlertIds || []
       };
       void supabaseClient.auth.updateUser({
-        data: {
-          role: storedUser.role,
-          status: storedUser.status || (storedUser.role === 'mentor' ? 'pending' : 'active'),
-          onboarded: storedUser.onboarded ?? storedUser.role === 'admin',
-          profile: storedUser.profile || null,
-          applicationData: storedUser.applicationData || null,
-          dismissedAlertIds: storedUser.dismissedAlertIds || []
-        }
+        data: { role: storedUser.role, status: storedUser.status || (storedUser.role === 'mentor' ? 'pending' : 'active'), onboarded: storedUser.onboarded ?? storedUser.role === 'admin', profile: storedUser.profile || null, applicationData: storedUser.applicationData || null, dismissedAlertIds: storedUser.dismissedAlertIds || [] }
       }).catch(err => console.warn("[AUTH] Failed to restore stored user data:", err?.message));
     } else if (!nextMetadata.role) {
       console.log("[AUTH] New user detected, setting default role to student");
-      nextMetadata = {
-        ...nextMetadata,
-        role: 'student',
-        status: 'active',
-        onboarded: false
-      };
-      void supabaseClient.auth.updateUser({
-        data: { role: 'student', status: 'active', onboarded: false }
-      }).catch(err => console.warn("[AUTH] Failed to set default role:", err?.message));
+      nextMetadata = { ...nextMetadata, role: 'student', status: 'active', onboarded: false };
+      void supabaseClient.auth.updateUser({ data: { role: 'student', status: 'active', onboarded: false } })
+        .catch(err => console.warn("[AUTH] Failed to set default role:", err?.message));
     }
 
     user = { ...user, user_metadata: nextMetadata };
-
-    // Create/update the app user object immediately so the UI can route without waiting on remote sync.
     const appUser = Auth.finalizeAuthenticatedUser(user);
     console.log(`[AUTH] App user created:`, { email: appUser.email, role: appUser.role, onboarded: appUser.onboarded });
 
-    // Refresh the local cache in the background so dashboards catch up quickly.
+    // Background sync — never blocks routing
     void UserStore.refreshFromRemote()
       .then(() => console.log("[AUTH] Remote data refreshed"))
-      .catch(err => console.warn("[AUTH] Remote sync warning during auth state change:", err?.message));
+      .catch(err => console.warn("[AUTH] Remote sync warning:", err?.message));
+
     const shouldAutoRoute = isAuthPagePath() || isOAuthCallbackRequest() || hasRecentGoogleOAuthPending();
     if (shouldAutoRoute) {
+      // Prevent duplicate routing for same user
+      if (_authRoutingInProgress && _authLastRoutedEmail === email) {
+        console.log("[AUTH] Routing already in progress for this user, skipping duplicate");
+        return;
+      }
+      _authRoutingInProgress = true;
+      _authLastRoutedEmail = email;
+      setTimeout(() => { _authRoutingInProgress = false; }, 3000);
+
       clearGoogleOAuthPending();
       const googleRoute = consumeGooglePostAuthRoute();
       if (googleRoute === 'mentor-review') {
@@ -325,7 +313,6 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
         window.location.href = 'mentor-review.html';
         return;
       }
-      // For new signups via Google, route based on role
       if (!appUser.onboarded && appUser.role === 'mentor') {
         console.log("[AUTH] New mentor signup, routing to mentor-review");
         window.location.href = 'mentor-review.html';
@@ -343,11 +330,14 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     }
   } else if (event === 'SIGNED_OUT') {
     console.log("[AUTH] Sign-out event");
+    _authRoutingInProgress = false;
+    _authLastRoutedEmail = null;
     localStorage.removeItem("mn_user");
     localStorage.removeItem('pendingRole');
     clearGooglePostAuthRoute();
     clearGoogleOAuthPending();
-    if (!window.location.pathname.includes('/index') && window.location.pathname !== '/' && !window.location.pathname.includes('/auth') && !window.location.pathname.includes('/admin')) {
+    const currentPath = window.location.pathname;
+    if (!currentPath.includes('/index') && currentPath !== '/' && !currentPath.includes('/auth') && !currentPath.includes('/admin')) {
       window.location.href = "index.html";
     }
   }
@@ -391,13 +381,18 @@ const Auth = {
   },
   async bootstrapFromSession(options = {}) {
     try {
-      const { data, error } = await supabaseClient.auth.getSession();
+      // Race: getSession vs 4s timeout — prevents page freeze
+      const sessionPromise = supabaseClient.auth.getSession();
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Session bootstrap timed out')), 4000)
+      );
+      const { data, error } = await Promise.race([sessionPromise, timeoutPromise]);
       if (error) throw error;
       const sessionUser = data?.session?.user;
       if (!sessionUser) return null;
       return this.finalizeAuthenticatedUser(sessionUser, options);
     } catch (err) {
-      console.warn("[AUTH] Session bootstrap failed:", err?.message || err);
+      console.warn("[AUTH] Session bootstrap failed or timed out:", err?.message || err);
       return null;
     }
   },
@@ -463,15 +458,27 @@ const Auth = {
   },
   requireAuth() {
     const u = this.getUser();
-    if (!u) { 
-      const sbToken = localStorage.getItem("sb-vmuukfegnjotlgvdqfrx-auth-token");
-      if (sbToken) {
-        // Session exists in Supabase, show loading state
-        void this.bootstrapFromSession({ route: false });
+    if (!u) {
+      // Check for any Supabase session token key (handles different Supabase project refs)
+      const hasSupabaseToken = Object.keys(localStorage).some(k =>
+        k.startsWith('sb-') && k.endsWith('-auth-token')
+      );
+      if (hasSupabaseToken) {
+        // Session may exist — bootstrap silently in background and show loading placeholder
+        void this.bootstrapFromSession({ route: true }).then(bootstrapped => {
+          if (bootstrapped) {
+            // User loaded — page will route automatically via onAuthStateChange
+            console.log('[AUTH] requireAuth: bootstrapped user from token, routing...');
+          } else {
+            // Token was stale — redirect to auth
+            console.log('[AUTH] requireAuth: stale token, redirecting to auth');
+            window.location.href = 'auth.html';
+          }
+        }).catch(() => { window.location.href = 'auth.html'; });
         return { email: 'loading@mentorist.org', role: 'student', name: 'Loading...', status: 'active', onboarded: true };
       }
-      window.location.href = "auth.html"; 
-      return null; 
+      window.location.href = "auth.html";
+      return null;
     }
     return u;
   },

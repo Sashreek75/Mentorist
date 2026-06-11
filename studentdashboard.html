@@ -483,7 +483,16 @@ body{background:var(--bg);}
   const nav = document.getElementById('nav');
   window.addEventListener('scroll', ()=>nav.classList.toggle('scrolled', scrollY>60), {passive:true});
 
-  Promise.all([UserStore.refreshFromRemote(), QuestionStore.refreshFromRemote()]).then(() => init());
+  // Render immediately with local data
+  init();
+  
+  // Sync in background without blocking UI
+  Promise.all([UserStore.refreshFromRemote(), QuestionStore.refreshFromRemote()]).then(() => {
+    // Re-render feed after sync completes
+    if (document.getElementById('view-history').style.display === 'block') {
+      refreshFeed();
+    }
+  }).catch(e => console.warn('Background sync failed:', e));
 </script>
 </body>
 </html>

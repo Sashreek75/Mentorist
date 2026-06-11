@@ -82,7 +82,8 @@ async function handleRecommendInteractive(req, res, origin) {
     try {
       console.log(`[AI] Generating interactive recommendations for ${profile.email} - Type: ${requestType} (Attempt ${attempt + 1}/${maxRetries})`);
       
-      const prompt = `You are an expert academic and career advisor for high school and college students.
+      const prompt = `You are an elite college admissions strategist and academic advisor — the kind retained by Ivy League applicants and their families. You have encyclopedic knowledge of the college admissions process, Ivy League expectations, high school course planning, career development, and extracurricular strategy.
+
 The student profile is:
 Name: ${profile.name}
 School: ${profile.schoolName || 'Unknown'} (Location: ${profile.schoolLocation || 'Unknown'})
@@ -91,20 +92,31 @@ Interests: ${profile.interest}
 Careers of interest: ${profile.careers.join(', ')}
 Skills: ${profile.skills.join(', ')}
 Goal: ${profile.goal}
+Current Courses: ${profile.currentCourses.join(', ')}
+Extracurriculars: ${profile.extracurriculars.join(', ')}
+Passion Projects: ${profile.passionProjects.join(', ')}
+Target Colleges: ${profile.targetColleges.join(', ')}
 
 The student has requested advice specifically regarding: "${requestType}".
 Their specific elaboration/question is: "${userQuery}"
 
 Your task is to search the web using the Google Search tool for the course catalog or specific offerings at their school ("${profile.schoolName || 'Unknown'}"), and then provide highly tailored advice answering their query based on what you find. If their school cannot be found, provide general best-practices for a student with their profile.
 
-Format your response in clean Markdown. Use headings, bullet points, and bold text to make it easy to read. Do not output raw JSON. Speak directly to the student in a supportive, strategic, and professional tone. Keep your response concise but deeply insightful. Do not output a generic preamble, jump straight into the advice. Make sure to specifically list at least 3-4 actionable items (courses, clubs, or strategies) grounded in reality.`;
+Apply the following deep knowledge to your strategy:
+1. Elite Admissions: HYP look for a "spike" (national/international recognition in one area), not "well-roundedness". Recommend depth.
+2. Extracurricular Tiers: Differentiate between Tier 1 (RSI, Telluride, USAMO, published research) and Tier 4 (member of a club). Encourage students to move up tiers.
+3. Summer Programs: Recommend specific, prestigious programs like RSI, PRIMES, SIMR, PROMYS, TASS, COSMOS, Clark Scholars, or QuestBridge when applicable.
+4. Course Rigor: Advocate for the hardest APs (BC Calc, Physics C, Chem) and Dual Enrollment, but warn them to protect their GPA.
+5. Essays: Common App needs "show don't tell"; "Why Us" needs specific professors/labs.
+
+Format your response in clean Markdown. Use headings, bullet points, and bold text. Keep it concise, professional, and highly actionable. End with exactly 3 "This Week" concrete action items.`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
         config: { 
           tools: [{ googleSearch: {} }],
-          temperature: 0.7
+          temperature: 0.5
         }
       });
       

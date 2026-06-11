@@ -152,7 +152,7 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
     <div class="auth-box">
 
       <!-- SIGNUP -->
-      <div id="signupView">
+      <div id="signupView" style="display:none;">
         <h1 class="auth-title">Create account</h1>
         <p class="auth-sub">Already have one? <a href="#" onclick="showLogin();return false;">Sign in -&gt;</a></p>
 
@@ -222,10 +222,20 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
         <button class="btn btn-primary btn-full btn-lg" onclick="handleEmailLogin()">Sign in to Dashboard</button>
         <p class="auth-note" style="margin-top:20px;"><a href="#" style="color:var(--t4);">Forgot your password?</a></p>
       </div>
+      
+      <!-- LOADING STATE -->
+      <div id="loadingView" style="display:flex;flex-direction:column;align-items:center;padding:40px 0;">
+        <div style="width:40px;height:40px;border:3px solid var(--b2);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:20px;"></div>
+        <div style="font-weight:600;color:var(--t2);">Checking access...</div>
+      </div>
 
     </div>
   </div>
 </div>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="shared.js"></script>
@@ -257,26 +267,44 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
     Auth.routeAfterLogin(user);
   }
 
-  // Check if already logged in
+  // Check if already logged in (fast path)
   (async () => {
     try {
-      await UserStore.refreshFromRemote();
+      // Start remote sync but DO NOT await it to avoid freezing
+      UserStore.refreshFromRemote().catch(e => console.warn(e));
+      
       const bootstrappedUser = await Auth.bootstrapFromSession({ route: false });
       const currentUser = bootstrappedUser || Auth.getUser();
 
-      if (currentUser) {
+      if (currentUser && currentUser.email !== 'loading@mentorist.org') {
         console.log("[AUTH-PAGE] Already logged in as:", currentUser.email);
         routeAuthenticatedUser(currentUser);
       } else {
         console.log("[AUTH-PAGE] Not logged in, showing auth forms");
+        const p = new URLSearchParams(location.search);
+        if (p.get('mode') === 'login') {
+          showLogin();
+        } else {
+          showSignup();
+        }
       }
     } catch (err) {
       console.warn("[AUTH-PAGE] Error checking login status:", err);
+      showSignup();
     }
   })();
 
-  function showLogin(){document.getElementById('signupView').style.display='none';document.getElementById('loginView').style.display='block';}
-  function showSignup(){document.getElementById('loginView').style.display='none';document.getElementById('signupView').style.display='block';}
+  function showLogin(){
+    document.getElementById('loadingView').style.display='none';
+    document.getElementById('signupView').style.display='none';
+    document.getElementById('loginView').style.display='block';
+  }
+  
+  function showSignup(){
+    document.getElementById('loadingView').style.display='none';
+    document.getElementById('loginView').style.display='none';
+    document.getElementById('signupView').style.display='block';
+  }
 
   function pickRole(el){
     document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('selected'));

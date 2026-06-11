@@ -40,6 +40,24 @@ const scenarios = [
     }
   },
   {
+    name: 'Ivy League Target (Freshman)',
+    profile: {
+      name: 'Michael Chang',
+      email: 'mchang@example.com',
+      schoolName: 'Public High School',
+      schoolGrade: '9th grade',
+      grade: 'highschool',
+      interest: 'business',
+      workloadPreference: 'ambitious',
+      goal: 'Get into Wharton (UPenn) or Harvard',
+      careers: 'Finance, Investment Banking, Startup Founder',
+      skills: 'Debate, basic economics, leadership',
+      currentCourses: 'Honors Bio, Honors Geometry, English 9',
+      extracurriculars: 'Debate team, DECA, Student Council',
+      targetColleges: 'UPenn, Harvard, Columbia'
+    }
+  },
+  {
     name: 'Medicine-Focused Student',
     profile: {
       name: 'Emma Rodriguez',
@@ -137,6 +155,11 @@ function runScenario(scenario) {
   if (scenario.name.includes('Rouse')) {
     const courseNames = bundle.courses.map((course) => course.name.toLowerCase()).join(' | ');
     assert(courseNames.includes('computer science a') || courseNames.includes('cybersecurity'), 'Rouse scenario should surface AP CSA or Cybersecurity');
+  }
+  
+  if (scenario.name.includes('Ivy')) {
+    const isIvy = (bundle.profile.targetColleges || []).some(c => String(c).includes('UPenn'));
+    assert(isIvy, 'Profile target colleges should be parsed correctly');
   }
 
   console.log('  Validation: passed');
