@@ -268,6 +268,7 @@ Provide highly specific, actionable advice for this exact student. Reference spe
         role: 'user',
         parts: [{ text: studentContext }]
       }],
+      tools: [{ googleSearch: {} }],
       generationConfig: {
         temperature: 0.55,
         maxOutputTokens: 1200,
