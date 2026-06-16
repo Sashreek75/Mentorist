@@ -48,7 +48,8 @@ async function runLiveTest() {
     console.log('Fallback used:', result.fallback === true);
     console.log(`Length: ${result.markdown?.length} characters`);
     
-    if (result.markdown && result.markdown.length > 300) {
+    console.log('ACTUAL RESPONSE:', result.markdown);
+if (result.markdown && result.markdown.length > 300) {
       console.log('\nResponse Snippet:');
       console.log(result.markdown.slice(0, 300) + '...\n');
       

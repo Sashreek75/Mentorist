@@ -650,6 +650,8 @@
           if (response.fallback || response.source === 'local-playbook') {
             badge.textContent = '📋 Offline Playbook';
             badge.className = 'result-source-badge source-offline';
+            const noticeSpan = fallbackNotice.querySelector('span');
+            noticeSpan.textContent = response.fallbackReason || 'AI engine not reached — showing offline strategic playbook instead. Check your internet connection and try again for full AI advice.';
             fallbackNotice.style.display = 'flex';
           } else {
             badge.textContent = '✦ AI-Generated';

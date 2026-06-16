@@ -234,7 +234,7 @@ const RecommendationEngine = {
   },
 
   // ─── PATH 2: Browser-direct Gemini API (primary for Vercel/production) ────
-  async _tryGeminiDirect(profile, requestType, userQuery) {
+  async _tryGeminiDirect(profile, requestType, userQuery, onProgress) {
     const key = this.getGeminiKey();
     if (!key) throw new Error('No Gemini API key configured');
 
@@ -271,7 +271,7 @@ Provide highly specific, actionable advice for this exact student. Reference spe
       tools: [{ googleSearch: {} }],
       generationConfig: {
         temperature: 0.55,
-        maxOutputTokens: 1200,
+        maxOutputTokens: 8192,
         topP: 0.9
       },
       safetySettings: [
@@ -280,43 +280,55 @@ Provide highly specific, actionable advice for this exact student. Reference spe
       ]
     };
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 35000);
+    let lastError = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 35000);
 
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
-          signal: controller.signal
+      try {
+        if (onProgress) onProgress(`Consulting Ivy League admissions data and building your strategy... (Attempt ${attempt}/3)`);
+        
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody),
+            signal: controller.signal
+          }
+        );
+        clearTimeout(timeout);
+
+        if (!response.ok) {
+          const errBody = await response.text().catch(() => '');
+          throw new Error(`Gemini API error ${response.status}: ${errBody.slice(0, 200)}`);
         }
-      );
-      clearTimeout(timeout);
 
-      if (!response.ok) {
-        const errBody = await response.text().catch(() => '');
-        throw new Error(`Gemini API error ${response.status}: ${errBody.slice(0, 200)}`);
+        const data = await response.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text || text.trim().length < 50) {
+          throw new Error('Gemini returned empty or insufficient response');
+        }
+
+        console.log(`[AI] Used direct Gemini API path ✓ (Attempt ${attempt})`);
+        return {
+          markdown: text.trim(),
+          generatedAt: new Date().toISOString(),
+          source: 'gemini-direct'
+        };
+      } catch (e) {
+        clearTimeout(timeout);
+        lastError = e;
+        console.warn(`[AI] Direct API Attempt ${attempt} failed:`, e.message);
+        if (attempt < 3) {
+          await new Promise(resolve => setTimeout(resolve, attempt * 1500));
+        }
       }
-
-      const data = await response.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text || text.trim().length < 50) {
-        throw new Error('Gemini returned empty or insufficient response');
-      }
-
-      console.log('[AI] Used direct Gemini API path ✓');
-      return {
-        markdown: text.trim(),
-        generatedAt: new Date().toISOString(),
-        source: 'gemini-direct'
-      };
-    } catch (e) {
-      clearTimeout(timeout);
-      if (e.name === 'AbortError') throw new Error('AI request timed out after 35 seconds');
-      throw e;
     }
+    
+    // If we exhaust all retries, throw the last error to fall back to playbook
+    if (lastError.name === 'AbortError') throw new Error('AI request timed out after 35 seconds (all retries failed)');
+    throw lastError;
   },
 
   // ─── PATH 3: Rich local playbook fallback ─────────────────────────────────
@@ -498,19 +510,22 @@ ${coreAdvice}
 
     // Path 2: Browser-direct Gemini API
     const key = this.getGeminiKey();
+    let fallbackReason = 'AI engine unavailable';
     if (key) {
       updateStatus('Consulting Ivy League admissions data and building your strategy...');
       try {
-        const result = await this._tryGeminiDirect(profile, requestType, userQuery);
+        const result = await this._tryGeminiDirect(profile, requestType, userQuery, updateStatus);
         if (result?.markdown) return result;
       } catch (e) {
         console.warn('[AI] Direct Gemini call failed:', e.message);
+        fallbackReason = e.message.includes('429') || e.message.includes('quota') ? 'API Quota Exceeded. The AI key has run out of requests for today.' : 'AI is experiencing high demand. Please try again later.';
+        
         // Try once more with exponential backoff if it was a rate limit
         if (e.message.includes('429') || e.message.includes('quota')) {
           await this.sleep(2000);
           try {
             updateStatus('Rate limited — retrying...');
-            const retry = await this._tryGeminiDirect(profile, requestType, userQuery);
+            const retry = await this._tryGeminiDirect(profile, requestType, userQuery, updateStatus);
             if (retry?.markdown) return retry;
           } catch (e2) {
             console.warn('[AI] Retry also failed:', e2.message);
@@ -519,6 +534,7 @@ ${coreAdvice}
       }
     } else {
       console.warn('[AI] No Gemini API key found. Check window.__MN_GEMINI_KEY__');
+      fallbackReason = 'No API key configured for Gemini.';
     }
 
     // Path 3: Rich local fallback
@@ -529,6 +545,7 @@ ${coreAdvice}
       markdown: fallbackMarkdown,
       generatedAt: new Date().toISOString(),
       fallback: true,
+      fallbackReason: fallbackReason,
       source: 'local-playbook'
     };
   },
