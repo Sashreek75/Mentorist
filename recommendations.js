@@ -269,131 +269,114 @@ Provide highly specific, actionable advice for this exact student. Reference spe
     const rt = (requestType || '').toLowerCase();
 
     if (rt.includes('course') || rt.includes('gpa')) {
-      coreAdvice = `## Course & GPA Strategy for ${interest}
+      coreAdvice = `## Elite Course & GPA Strategy for ${interest}
 
 ### Highest-Priority Courses to Take
 ${interest.toLowerCase().includes('stem') || interest.toLowerCase().includes('computer') ? `
 - **AP Computer Science A** — The strongest CS signal for college apps. Learn Java, OOP, algorithms.
-- **AP Calculus BC** (not AB) — BC shows ambition; skips a full semester of college math.
-- **AP Physics C: Mechanics** — Calculus-based; top engineering signal for selective schools.
-- **AP Chemistry** — If targeting premed or chemical engineering.
-- **Dual Enrollment Math** — If your school allows it, taking Calc III or Linear Algebra at a local college is a massive differentiator.
+- **AP Calculus BC** (not AB) — BC shows ambition; skips a full semester of college math. Taking AB when BC is offered is a negative signal for elite STEM.
+- **AP Physics C: Mechanics & E&M** — Calculus-based; the top engineering signal for selective schools.
+- **AP Chemistry / AP Biology** — Essential core sciences.
+- **Dual Enrollment Math** — Taking post-AP math (Linear Algebra, Multivariable Calculus) at a local university is a massive differentiator.
 ` : interest.toLowerCase().includes('medicine') || interest.toLowerCase().includes('health') ? `
-- **AP Biology** — Core pre-med signal. Study hard; it's foundational.
-- **AP Chemistry** — Essential for pre-med. Pairs with AP Bio for strong science narrative.
-- **AP Statistics** — Helps with medical research literacy and is a solid GPA class.
-- **Anatomy & Physiology** — Practical healthcare vocab for hospital work and interviews.
-- **AP Psychology** — Useful for patient empathy; often a GPA booster if managed well.
+- **AP Biology & AP Chemistry** — The core pre-med signals. AOs expect to see these.
+- **AP Calculus BC** — Top medical programs still want to see high-end quantitative rigor.
+- **AP Statistics** — Critical for medical research literacy.
+- **Anatomy & Physiology / Dual Enrollment** — Practical healthcare knowledge.
 ` : interest.toLowerCase().includes('business') || interest.toLowerCase().includes('entrepreneur') ? `
 - **AP Economics (Macro + Micro)** — Foundational for business schools like Wharton, Ross, Stern.
-- **AP Statistics** — Essential for finance and analytics work.
+- **AP Statistics & AP Calculus BC** — Elite business programs require heavy quant skills.
 - **AP English Language** — Business writing and rhetoric are lifelong career assets.
-- **Accounting or Entrepreneurship** (CTE) — Real-world skills that differentiate you.
 ` : `
-- **AP English Language AND AP English Lit** — Two APs show depth in writing.
+- **AP English Language AND AP English Lit** — Two APs show depth in writing and analysis.
 - **AP US History + AP World History** — Strong humanities narrative.
 - **AP Government and Politics** — Required for law/policy-focused students.
 - **AP Seminar + AP Research (Capstone)** — Shows independent intellectual work.
 `}
 
 ### GPA Rules That Actually Matter
-- A 95 in AP Calc BC > 100 in regular math. Rigor signals > easy perfect scores.
-- If your GPA is above 3.7 unweighted, prioritize rigor. Below 3.5, prioritize protecting grades.
-- One B in a very hard AP is forgivable. Consistent Bs across all APs is a red flag.`;
+- **Protect the unweighted GPA**: A 4.0 unweighted is significantly better than a 4.0 weighted loaded with easy classes.
+- **Rigor Context**: AOs know what your school offers. If your school offers 15 APs and you take 3, you are not taking the "most rigorous" schedule.
+- **Trajectory**: An upward trend (3.5 -> 3.9) shows maturity. Stagnation or decline is a red flag.`;
 
     } else if (rt.includes('ivy') || rt.includes('college') || rt.includes('admissions')) {
-      coreAdvice = `## Ivy League & Elite College Strategy
+      coreAdvice = `## Ivy League & Elite College Strategy (2024-2026 Trends)
 
-### The Honest Truth About Ivy Admissions
-Elite schools accept 3-8% of applicants. What separates accepted students:
-1. **A "spike"** — Being nationally recognized in ONE thing (not being okay at many)
-2. **Strong academics** — Hardest courses available + high grades
-3. **A compelling narrative** — Your application tells ONE coherent story
+### The Honest Truth About Elite Admissions
+Elite schools (HYPSM) accept 3-5% of applicants. What separates accepted students:
+1. **The "Spike"** — Being nationally recognized in ONE thing. They do not want "well-rounded" students; they want a well-rounded class of hyper-specialized individuals.
+2. **Standardized Testing is Back** — Brown, Dartmouth, Yale, Harvard, and MIT require test scores again. Target 1540+ SAT or 34+ ACT.
+3. **A Cohesive Narrative** — Everything in your application (courses, activities, essays) must tell ONE undeniable story.
 
-### What Actually Matters (In Order)
-1. **Tier 1 extracurricular** — National competition winner, published research, real company internship, RSI/Telluride acceptance, founded org with genuine impact
-2. **Course rigor** — AP/IB in all core subjects; no "easy senior year"
-3. **GPA** — 3.9+ unweighted preferred; 4.5+ weighted common
-4. **Essays** — Specific, scene-driven, reveal your actual personality
-5. **Recs** — Teachers who know you as a thinker, not just a student
-6. **Test scores** — SAT 1500+/ACT 33+ for most ivies; 1550+ for HYP/MIT/Stanford
+### Extracurricular Tier Framework
+- **Tier 1 (Target)**: National/international recognition — USAMO qualifier, Regeneron STS finalist, published research in peer-reviewed journal, founded a registered 501(c)(3) with massive, quantifiable impact, elite summer program (RSI, Telluride).
+- **Tier 2 (Strong)**: State competition placements, meaningful research under a university professor resulting in a poster/presentation, club founder with verifiable large-scale impact.
+- **Tier 3 (Average)**: School-level leadership — varsity captain, club president, Eagle Scout. (Fine for state schools, not enough for HYPSM).
+- **Tier 4 (Fluff)**: Member of clubs, generic volunteering. DROP THESE.
 
 ### Summer Programs That Move the Needle
-- **RSI** (MIT, rising seniors) — The gold standard STEM research program
-- **Telluride TASS** (humanities) — Extremely selective, full scholarship
-- **PRIMES** (MIT, year-round math) — For math-focused students
-- **QuestBridge** — Critical if you need financial aid; partnered with all top schools
-- **Clark Scholars** (Texas Tech STEM research) — More accessible than RSI, still prestigious`;
+- **STEM**: RSI @ MIT (~1.5% acceptance), PRIMES @ MIT, SIMR @ Stanford, PROMYS, COSMOS, Clark Scholars.
+- **Humanities/Business**: Telluride TASS, Wharton Global Youth.
+- **Access**: QuestBridge College Prep Scholars.`;
 
     } else if (rt.includes('internship') || rt.includes('job') || rt.includes('career')) {
-      coreAdvice = `## Breaking Into Internships & Real Career Experience
+      coreAdvice = `## Breaking Into Internships & Elite Research
 
 ### The Fastest Path to Real Experience
-Most students think internships require connections. They don't — they require initiative:
+Internships at this level require initiative, not just applications:
 
-1. **Cold email professors** — Find a professor at a local university whose research interests you. Email them: "I'm a [grade] student passionate about [field]. I read your paper on [specific paper]. Could I assist your lab in any capacity?" 70% will say yes to free help.
+1. **Cold Emailing Professors** — Find a professor at a local university whose research aligns with your "spike." Email them: "I'm a [grade] student passionate about [field]. I read your paper on [specific topic]. Could I assist your lab by doing [specific task]?"
+2. **Proof of Work over Resumes** — A resume says you can do something. Proof of work *shows* it. Build a GitHub portfolio, publish a case study, or run a verifiable pilot program.
+3. **Local Startups over Big Tech** — A real role at a 20-person startup where you write production code or run real campaigns > a "shadow day" at Google.
+4. **Leverage LinkedIn** — Message alumni from your high school who are now at target colleges or companies. Ask for 15-minute informational interviews.
 
-2. **Local companies over big ones** — A real role at a 20-person startup > "shadow day" at a Fortune 500. Small companies will give you actual work.
-
-3. **Build your portfolio first** — For tech: GitHub with 2-3 real projects. For business: a case study or micro-business. For medicine: verified volunteer hours + any shadowing.
-
-4. **LinkedIn before you need it** — Set up a professional profile now. Connect with 50 people in your field. Message 5 people per week asking for a 15-minute conversation about their career.
-
-### Best Opportunities by Interest
+### High-Value Targets
 ${interest.toLowerCase().includes('stem') || interest.toLowerCase().includes('computer') ? `
-- **Google CSSI** (CS summer institute for rising seniors) — Competitive but prestigious
-- **Microsoft TEALS** — Get involved as a student leader
-- **Local startups** — Search "[your city] startup internship high school"
-- **Your school district IT** — Often hire student techs` : `
-- **Hospital volunteer programs** — Apply through hospital portals
-- **Nonprofit communications** — Easy to get; valuable for humanities/business students
-- **Research assistant positions** — Contact university professors directly
-- **Local elected officials** — Offer to help with constituent research or communications`}`;
+- **University Labs** — Best for research experience and recommendation letters.
+- **Local Tech Startups** — Best for shipping real code and product experience.
+- **Open Source Contributions** — Fixing bugs in public repos is verifiable proof of skill.` : `
+- **Think Tanks & Policy Orgs** — Offer to do data entry or constituent research.
+- **Local Political Campaigns** — Easiest way to get real-world organizing experience quickly.
+- **University Labs (Humanities/Social Science)** — Professors need help analyzing texts and data too.`}`;
 
     } else if (rt.includes('extracurricular') || rt.includes('project')) {
-      coreAdvice = `## Extracurricular Strategy & Projects That Actually Matter
+      coreAdvice = `## Extracurricular Strategy: Building a Spike
 
-### Stop Collecting Clubs. Build a Spike.
-AOs from selective schools have seen 10,000 student government presidents and National Honor Society members. What they haven't seen enough of:
-- A student who built an app solving a real problem with 1,000+ users
-- A researcher who co-authored a published paper
-- A founder whose nonprofit served 500 people
-- A competitor who placed at nationals
+### Stop Collecting Clubs. Build Depth.
+Admissions officers see thousands of NHS members and student body presidents. You must move from **Participation to Impact**.
 
-### Tier Framework (Know Where You Stand)
-- **Tier 1** (national/international impact): USAMO, Science Olympiad nationals, Intel/Regeneron STS, RSI acceptance, real startup, published work
-- **Tier 2** (regional/strong school): State competition, professor research, club founder with real results, paid internship
-- **Tier 3** (school-level): Varsity, club officer, editor, student government
-- **Right now, aim to move one tier up in your PRIMARY activity.**
+### The 4 Steps to an Elite Spike
+1. **Identify a Niche**: Combine a hard skill (e.g., coding, data analysis) with a domain you care about (e.g., climate, local policy).
+2. **Build Something Tangible**: Do not just "start a club." Build an app with 500+ users. Raise $10,000 for a specific cause. Publish a policy paper.
+3. **Seek External Validation**: Your school is too small of a pond. Win a state or national competition. Get your work featured in local news.
+4. **Drop the Fluff**: Actively drop time-consuming Tier 3/4 activities (generic volunteering, random club memberships) that do not support your main narrative.
 
 ### High-Impact Projects for Your Profile
 ${interest.toLowerCase().includes('stem') || interest.toLowerCase().includes('computer') ? `
-- Build a real app that solves a problem you personally face — deploy it, get users
-- Contribute to an open-source project on GitHub (start with good-first-issue tags)
-- Enter Science Olympiad, MATHCOUNTS, AMC/AIME, or a regional hackathon
-- Write a technical blog explaining complex concepts — shows communication + depth` : `
-- Start a newsletter/blog with a specific angle; pitch it to local publications
-- Enter Model UN (aim for Best Delegate at a national conference)
-- Write a policy white paper on an issue you care about; submit to youth policy journals
-- Organize a community event with measurable impact (attendance, funds raised)`}`;
+- **Develop and Deploy an App**: Solve a problem for a local business or nonprofit.
+- **Competitive STEM**: USAMO, Science Olympiad, Regeneron STS, Conrad Challenge.
+- **Publish Research**: Co-author a paper with a local professor.` : `
+- **Publish Writing**: Submit to national youth journals, The Concord Review, or start a hyper-niche Substack.
+- **Organize a Large-Scale Event**: A city-wide hackathon, a regional debate tournament, or a major fundraising gala.
+- **Competitive Humanities**: National Speech & Debate (TOC), Model UN (Best Delegate).`}`;
 
     } else {
       coreAdvice = `## Strategic Advice: ${requestType}
 
 ### Your Situation at a Glance
-You're a ${grade} student at ${school} with interest in ${interest} ${targetColleges ? `targeting ${targetColleges}` : ''}. Here's the honest playbook:
+You're a ${grade} student at ${school} with interest in ${interest} ${targetColleges ? `targeting ${targetColleges}` : ''}. Here is the elite playbook:
 
 ### The Most Important Thing Right Now
 ${isIvyTargeting ? `
-You're targeting elite schools. The gap between "good applicant" and "accepted applicant" is almost always ONE thing: a genuine spike. Start asking yourself: "What am I building toward that almost no one my age could do?" That's your north star for every decision — courses, activities, summer, even your essays.
+**You are targeting HYPSM/Elite schools.** The gap between "smart student" and "admitted student" is the "Spike." You must be exceptionally good at ONE thing, with national or international validation. Drop the "well-rounded" approach. Identify your spike today, and align your courses, summers, and projects to support it.
 ` : `
-Focus on building depth, not breadth. Choose 2-3 activities you genuinely care about and go all-in. Schools want to see commitment and growth — not a laundry list of clubs. Meanwhile, protect your GPA in the hardest courses you can handle.
+**Focus on building depth, not breadth.** Choose 1-2 activities you genuinely care about and push them as far as you can (regional/state impact). Meanwhile, protect your GPA while taking the hardest AP/IB courses your school offers.
 `}
 
 ### Three Priority Areas
-1. **Academic Rigor** — Are you taking the hardest relevant courses at your school? If not, that's the first fix.
-2. **A Primary Activity** — What's the one thing you're building that's distinctly yours?
-3. **Early Planning** — Junior year is when everything accelerates. Start any application processes (summer programs, research, competitions) at least 6 months early.`;
+1. **Academic Rigor** — Are you taking the hardest relevant courses at your school? (e.g., AP Calc BC, AP Physics C).
+2. **A Primary Activity (The Spike)** — What is the one quantifiable, high-impact thing you are building?
+3. **Test Preparation** — Standardized testing is back. Start preparing for the SAT/ACT early to hit the 1540+/34+ benchmark.`;
     }
 
     return `# ${requestType} — Strategic Advice
@@ -404,13 +387,13 @@ ${coreAdvice}
 
 ## This Week: 3 Concrete Actions
 
-1. **Research one named program** relevant to your interest (RSI, TASS, SIMR, QuestBridge, Clark Scholars) — check the deadline and add it to your calendar
-2. **Talk to your school counselor** this week about the course catalog for next year — ask specifically which AP/honors options are available in ${interest}
-3. **Start one tangible proof-of-work** — a GitHub repo, a draft blog post, an email to a professor, or a competition registration
+1. **Audit your Extracurriculars**: Identify 1-2 generic "fluff" activities you can drop this week to free up time for your Spike.
+2. **Research an Elite Program**: Look up the application requirements for RSI, Telluride, or a top university lab program. Add the deadline to your calendar.
+3. **Initiate Proof-of-Work**: Draft a cold email to a local professor or start the GitHub repo for your primary project. Do not wait for permission to start building.
 
 ---
 
-*⚡ This advice is generated from Mentorist's offline knowledge base. For real-time personalized AI analysis including your school's course catalog, check your internet connection and try again — or reach out to a Mentorist peer mentor directly.*`;
+*⚡ This advice is generated from Mentorist's offline playbook. For real-time, dynamic AI analysis tailored to your specific context, check your internet connection and try again.*`;
   },
 
   // ─── Main method: tri-path with smart fallback ───────────────────────────
