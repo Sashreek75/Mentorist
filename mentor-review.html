@@ -75,17 +75,20 @@
 </head>
 <body>
   <header class="navbar">
-    <div class="nav-brand">
-      <a href="index.html" class="nav-logo">
-        <img src="logo.png" alt="Mentorist Logo" class="logo-img" />
-        <span>Mentorist</span>
-      </a>
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logomark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" />
+          <path d="M2 17l10 5 10-5" />
+          <path d="M2 12l10 5 10-5" />
+        </svg>
+      </div>
+      <span class="nav-wordmark">Mentorist</span>
+    </a>
+    <div class="nav-actions">
+      <a href="index.html" class="btn btn-ghost btn-sm">Home</a>
+      <a href="mentorapplication.html" class="btn btn-ghost btn-sm">Application</a>
     </div>
-    <nav class="nav-links">
-      <a href="index.html">Home</a>
-      <a href="mentorapplication.html">Application</a>
-      <a href="auth.html">Account</a>
-    </nav>
   </header>
 
   <main class="review-page">
@@ -180,17 +183,17 @@
       }
 
       grid.innerHTML = pending.map(u => `
-        <article class=\"review-card\">
+        <article class="review-card">
           <h3>${safeText(u.name || 'Unnamed applicant')}</h3>
-          <div class=\"review-meta\">${safeText(u.email)}</div>
-          <div class=\"review-note\">
+          <div class="review-meta">${safeText(u.email)}</div>
+          <div class="review-note">
             ${safeText(u.applicationData?.experience || 'No statement provided.')}
           </div>
-          <div class=\"kv\"><strong>University</strong><span>${safeText(u.applicationData?.university || 'N/A')}</span></div>
-          <div class=\"kv\"><strong>Major</strong><span>${safeText(u.applicationData?.major || 'Not provided')}</span></div>
-          <div class=\"review-actions\" style=\"margin-top:18px;\">
-            <button class=\"btn btn-primary btn-lg\" onclick=\"handleReview(${JSON.stringify(u.email)}, 'active', 'approved')\">Approve Account</button>
-            <button class=\"btn btn-ghost btn-lg\" style=\"border:1px solid var(--b1);\" onclick=\"handleReview(${JSON.stringify(u.email)}, 'rejected', 'rejected')\">Reject</button>
+          <div class="kv"><strong>University</strong><span>${safeText(u.applicationData?.university || 'N/A')}</span></div>
+          <div class="kv"><strong>Major</strong><span>${safeText(u.applicationData?.major || 'Not provided')}</span></div>
+          <div class="review-actions" style="margin-top:18px;">
+            <button class="btn btn-primary btn-lg" onclick="handleReview('${u.email}', 'active', 'approved')">Approve Account</button>
+            <button class="btn btn-ghost btn-lg" style="border:1px solid var(--b1);" onclick="handleReview('${u.email}', 'rejected', 'rejected')">Reject</button>
           </div>
         </article>
       `).join('');

@@ -220,7 +220,7 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
           <input type="password" class="form-input" id="loginPassword" placeholder="••••••••">
         </div>
         <button class="btn btn-primary btn-full btn-lg" onclick="handleEmailLogin()">Sign in to Dashboard</button>
-        <p class="auth-note" style="margin-top:20px;"><a href="#" style="color:var(--t4);">Forgot your password?</a></p>
+        <p class="auth-note" style="margin-top:20px;"><a href="#" onclick="Utils.toast('Password reset is not configured. Contact admin.', 'info'); return false;" style="color:var(--t4);">Forgot your password?</a></p>
       </div>
       
       <!-- LOADING STATE -->

@@ -965,6 +965,7 @@
             setText('sumTimeline', data.internshipTimeline || 'Exploring');
         }
 
+        /* ── Completion ── */
         function finish() {
             if (!data.grade || !data.schoolName || !data.schoolGrade || !data.interest || !data.rigor || !data.goal || !data.careers || !data.skills) {
               Utils.toast('Please complete all profile steps before finishing.', 'error');

@@ -399,6 +399,12 @@ body{background:var(--bg);}
     document.body.style.overflow = 'auto';
   }
 
+  window.refreshMentoristState = function() {
+    const qs = QuestionStore.getAll();
+    allQuestions = qs.filter(q => q.answers && q.answers.length > 0);
+    filterVault();
+  };
+
   initVault();
 </script>
 </body>

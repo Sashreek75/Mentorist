@@ -206,38 +206,8 @@ const RecommendationEngine = {
     };
   },
 
-  // ─── PATH 1: Local recommendation server (dev mode) ───────────────────────
-  async _tryLocalServer(profile, requestType, userQuery) {
-    const base = this.getApiBaseUrl();
-    if (!base) throw new Error('No local server URL');
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-
-    try {
-      const response = await fetch(`${base}/api/recommend-interactive`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile, requestType, userQuery }),
-        signal: controller.signal
-      });
-      clearTimeout(timeout);
-      if (!response.ok) throw new Error(`Server returned ${response.status}`);
-      const result = await response.json();
-      if (!result?.success) throw new Error(result?.error || 'Server error');
-      console.log('[AI] Used local server path');
-      return result.data;
-    } catch (e) {
-      clearTimeout(timeout);
-      throw e;
-    }
-  },
-
-  // ─── PATH 2: Browser-direct Gemini API (primary for Vercel/production) ────
-  async _tryGeminiDirect(profile, requestType, userQuery, onProgress) {
-    const key = this.getGeminiKey();
-    if (!key) throw new Error('No Gemini API key configured');
-
+  // ─── PATH 1: Free Browser-direct AI via Pollinations ───────────────────────
+  async _tryFreeAI(profile, requestType, userQuery, onProgress) {
     const studentContext = `
 STUDENT PROFILE:
 - Name: ${profile.name || 'Student'}
@@ -261,23 +231,12 @@ Their question/context: "${userQuery || 'No additional context provided'}"
 Provide highly specific, actionable advice for this exact student. Reference specific programs, courses, competitions, or opportunities by name. Be direct and honest — if something won't help them, say so. Format in clean Markdown. End with exactly 3 "This Week" action items.`;
 
     const requestBody = {
-      system_instruction: {
-        parts: [{ text: MENTORIST_AI_SYSTEM_PROMPT }]
-      },
-      contents: [{
-        role: 'user',
-        parts: [{ text: studentContext }]
-      }],
-      tools: [{ googleSearch: {} }],
-      generationConfig: {
-        temperature: 0.55,
-        maxOutputTokens: 8192,
-        topP: 0.9
-      },
-      safetySettings: [
-        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
-        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' }
-      ]
+      model: 'openai',
+      messages: [
+        { role: 'system', content: MENTORIST_AI_SYSTEM_PROMPT },
+        { role: 'user', content: studentContext }
+      ],
+      temperature: 0.55
     };
 
     let lastError = null;
@@ -286,40 +245,38 @@ Provide highly specific, actionable advice for this exact student. Reference spe
       const timeout = setTimeout(() => controller.abort(), 35000);
 
       try {
-        if (onProgress) onProgress(`Consulting Ivy League admissions data and building your strategy... (Attempt ${attempt}/3)`);
+        if (onProgress) onProgress(`Consulting elite admissions strategies... (Attempt ${attempt}/3)`);
         
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody),
-            signal: controller.signal
-          }
-        );
+        const response = await fetch('https://text.pollinations.ai/openai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal
+        });
         clearTimeout(timeout);
 
         if (!response.ok) {
           const errBody = await response.text().catch(() => '');
-          throw new Error(`Gemini API error ${response.status}: ${errBody.slice(0, 200)}`);
+          throw new Error(`AI error ${response.status}: ${errBody.slice(0, 200)}`);
         }
 
         const data = await response.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const text = data?.choices?.[0]?.message?.content;
+        
         if (!text || text.trim().length < 50) {
-          throw new Error('Gemini returned empty or insufficient response');
+          throw new Error('AI returned empty or insufficient response');
         }
 
-        console.log(`[AI] Used direct Gemini API path ✓ (Attempt ${attempt})`);
+        console.log(`[AI] Used free AI path ✓ (Attempt ${attempt})`);
         return {
           markdown: text.trim(),
           generatedAt: new Date().toISOString(),
-          source: 'gemini-direct'
+          source: 'free-ai'
         };
       } catch (e) {
         clearTimeout(timeout);
         lastError = e;
-        console.warn(`[AI] Direct API Attempt ${attempt} failed:`, e.message);
+        console.warn(`[AI] AI Attempt ${attempt} failed:`, e.message);
         if (attempt < 3) {
           await new Promise(resolve => setTimeout(resolve, attempt * 1500));
         }
@@ -330,6 +287,8 @@ Provide highly specific, actionable advice for this exact student. Reference spe
     if (lastError.name === 'AbortError') throw new Error('AI request timed out after 35 seconds (all retries failed)');
     throw lastError;
   },
+
+
 
   // ─── PATH 3: Rich local playbook fallback ─────────────────────────────────
   generateLocalFallback(profile, requestType, userQuery) {
@@ -496,45 +455,15 @@ ${coreAdvice}
       if (typeof onStatusUpdate === 'function') onStatusUpdate(msg);
     };
 
-    // Path 1: Try local server (only relevant in dev/localhost)
-    const base = this.getApiBaseUrl();
-    if (base) {
-      try {
-        updateStatus('Contacting recommendation server...');
-        const result = await this._tryLocalServer(profile, requestType, userQuery);
-        if (result?.markdown) return result;
-      } catch (e) {
-        console.log('[AI] Local server not available, trying direct Gemini API:', e.message);
-      }
-    }
-
-    // Path 2: Browser-direct Gemini API
-    const key = this.getGeminiKey();
+    // Path 1: Free Browser-direct AI via Pollinations
     let fallbackReason = 'AI engine unavailable';
-    if (key) {
-      updateStatus('Consulting Ivy League admissions data and building your strategy...');
-      try {
-        const result = await this._tryGeminiDirect(profile, requestType, userQuery, updateStatus);
-        if (result?.markdown) return result;
-      } catch (e) {
-        console.warn('[AI] Direct Gemini call failed:', e.message);
-        fallbackReason = e.message.includes('429') || e.message.includes('quota') ? 'API Quota Exceeded. The AI key has run out of requests for today.' : 'AI is experiencing high demand. Please try again later.';
-        
-        // Try once more with exponential backoff if it was a rate limit
-        if (e.message.includes('429') || e.message.includes('quota')) {
-          await this.sleep(2000);
-          try {
-            updateStatus('Rate limited — retrying...');
-            const retry = await this._tryGeminiDirect(profile, requestType, userQuery, updateStatus);
-            if (retry?.markdown) return retry;
-          } catch (e2) {
-            console.warn('[AI] Retry also failed:', e2.message);
-          }
-        }
-      }
-    } else {
-      console.warn('[AI] No Gemini API key found. Check window.__MN_GEMINI_KEY__');
-      fallbackReason = 'No API key configured for Gemini.';
+    updateStatus('Consulting Ivy League admissions data and building your strategy...');
+    try {
+      const result = await this._tryFreeAI(profile, requestType, userQuery, updateStatus);
+      if (result?.markdown) return result;
+    } catch (e) {
+      console.warn('[AI] Free AI call failed:', e.message);
+      fallbackReason = 'AI is experiencing high demand. Please try again later.';
     }
 
     // Path 3: Rich local fallback

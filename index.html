@@ -283,7 +283,8 @@ footer{background:var(--bg);border-top:1px solid var(--b1);padding:48px 24px;col
 <script src="shared.js"></script>
 <script>
   Promise.resolve(UserStore.refreshFromRemote()).then(() => {
-    if (typeof Auth !== 'undefined' && Auth.isLoggedIn()) {
+    const noRedirect = new URLSearchParams(window.location.search).get('no_redirect') === 'true';
+    if (!noRedirect && typeof Auth !== 'undefined' && Auth.isLoggedIn()) {
       const user = Auth.syncCurrentUserFromStore(Auth.getUser()?.email) || Auth.getUser();
       if (user) {
         Auth.routeAfterLogin(user);
