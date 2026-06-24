@@ -87,6 +87,17 @@ const RecommendationEngine = {
     return this._geminiKey;
   },
 
+  getGeminiModelCandidates() {
+    const candidates = [];
+    if (typeof window !== 'undefined' && window.__MENTORIST_GEMINI_MODEL__) {
+      candidates.push(String(window.__MENTORIST_GEMINI_MODEL__).trim());
+    }
+    candidates.push('gemini-3.1-flash-lite');
+    candidates.push('gemini-2.5-flash');
+    candidates.push('gemini-flash-latest');
+    return [...new Set(candidates.filter(Boolean))];
+  },
+
   getEscapeFn() {
     if (typeof Utils !== 'undefined' && Utils?.escapeHtml) return Utils.escapeHtml;
     return (value) => String(value ?? '')
@@ -99,6 +110,19 @@ const RecommendationEngine = {
 
   sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  },
+
+  async fetchWithTimeout(url, options = {}, timeoutMs = 25000) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, {
+        ...options,
+        signal: options.signal || controller.signal
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
   },
 
   makeCacheKey(profile) {
@@ -172,9 +196,73 @@ const RecommendationEngine = {
     };
   },
 
+  buildTargetedAIContext(profile, requestType, userQuery) {
+    const bigPicture = [
+      profile.goal,
+      profile.targetColleges?.length ? `Target schools: ${profile.targetColleges.join(', ')}` : '',
+      profile.careers?.length ? `Career interests: ${profile.careers.join(', ')}` : ''
+    ].filter(Boolean).join(' | ');
+
+    const missing = [];
+    if (!profile.schoolName) missing.push('school name');
+    if (!profile.schoolGrade && !profile.grade) missing.push('grade level');
+    if (!profile.interest || profile.interest === 'undecided') missing.push('primary interest');
+    if (!profile.currentCourses?.length) missing.push('current courses');
+    if (!profile.targetColleges?.length && !profile.goal) missing.push('target colleges or goal');
+
+    return [
+      `REQUEST TYPE: ${requestType || 'General strategy'}`,
+      `USER QUESTION: ${userQuery || 'No extra context provided.'}`,
+      '',
+      'STUDENT PROFILE',
+      `- Name: ${profile.name || 'Student'}`,
+      `- School: ${profile.schoolName || 'Unknown school'}`,
+      `- Location: ${profile.schoolLocation || 'Unknown location'}`,
+      `- Grade: ${profile.schoolGrade || profile.grade || 'Unknown'}`,
+      `- Interest: ${profile.interest || 'Undecided'}`,
+      `- Workload preference: ${profile.workloadPreference || 'balanced'}`,
+      `- GPA: ${profile.currentGpa || 'Not specified'}`,
+      `- Courses: ${(profile.currentCourses || []).join(', ') || 'Not specified'}`,
+      `- Skills: ${(profile.skills || []).join(', ') || 'Not specified'}`,
+      `- Extracurriculars: ${(profile.extracurriculars || []).join(', ') || 'Not specified'}`,
+      `- Projects: ${(profile.passionProjects || []).join(', ') || 'Not specified'}`,
+      `- Target colleges: ${(profile.targetColleges || []).join(', ') || 'Not specified'}`,
+      `- Career goals: ${(profile.careers || []).join(', ') || 'Not specified'}`,
+      `- Long-term goal: ${profile.goal || 'Not specified'}`,
+      '',
+      `KNOWN GAPS: ${missing.length ? missing.join(', ') : 'No obvious gaps'}`,
+      bigPicture ? `BIG PICTURE: ${bigPicture}` : '',
+      '',
+      'INSTRUCTIONS',
+      '- Give targeted recommendations tied to the student\'s exact inquiry.',
+      '- If the profile is missing a key detail, ask up to 2 concise follow-up questions before advising.',
+      '- Otherwise, answer directly with specific courses, programs, projects, internships, or next steps by name.',
+      '- Be honest about tradeoffs and avoid generic club advice.',
+      '- Format in clean Markdown and end with exactly 3 "This Week" actions.'
+    ].filter(Boolean).join('\n');
+  },
+
+  parseAITextResponse(data) {
+    if (!data) return '';
+    if (typeof data === 'string') return data.trim();
+
+    const candidates = [
+      data?.text,
+      data?.output_text,
+      data?.response,
+      data?.choices?.[0]?.message?.content,
+      data?.choices?.[0]?.text,
+      data?.candidates?.[0]?.content?.parts?.map?.((part) => part?.text || '').join(''),
+      data?.candidates?.[0]?.content?.parts?.[0]?.text
+    ];
+
+    return candidates.find((value) => typeof value === 'string' && value.trim().length > 0)?.trim() || '';
+  },
+
   // ─── PATH 1: Free Browser-direct AI via Pollinations ───────────────────────
   async _tryFreeAI(profile, requestType, userQuery, onProgress) {
-    const studentContext = `
+    const studentContext = this.buildTargetedAIContext(profile, requestType, userQuery);
+    /*
 STUDENT PROFILE:
 - Name: ${profile.name || 'Student'}
 - School: ${profile.schoolName || 'Unknown school'}, ${profile.schoolLocation || ''}
@@ -196,6 +284,7 @@ Their question/context: "${userQuery || 'No additional context provided'}"
 
 Provide highly specific, actionable advice for this exact student. Reference specific programs, courses, competitions, or opportunities by name. Be direct and honest — if something won't help them, say so. Format in clean Markdown. End with exactly 3 "This Week" action items.`;
 
+    */
     const requestBody = {
       model: 'openai',
       messages: [
@@ -213,21 +302,25 @@ Provide highly specific, actionable advice for this exact student. Reference spe
       try {
         if (onProgress) onProgress(`Consulting elite admissions strategies... (Attempt ${attempt}/3)`);
         
-        const response = await fetch('https://text.pollinations.ai/openai', {
+        const response = await this.fetchWithTimeout('https://text.pollinations.ai/openai', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
-          signal: controller.signal
-        });
-        clearTimeout(timeout);
+          body: JSON.stringify(requestBody)
+        }, 18000);
 
         if (!response.ok) {
           const errBody = await response.text().catch(() => '');
           throw new Error(`AI error ${response.status}: ${errBody.slice(0, 200)}`);
         }
 
-        const data = await response.json();
-        const text = data?.choices?.[0]?.message?.content;
+        const rawText = await response.text();
+        let data = rawText;
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          // plain text responses are fine
+        }
+        const text = this.parseAITextResponse(data);
         
         if (!text || text.trim().length < 50) {
           throw new Error('AI returned empty or insufficient response');
@@ -252,6 +345,110 @@ Provide highly specific, actionable advice for this exact student. Reference spe
     // If we exhaust all retries, throw the last error to fall back to playbook
     if (lastError.name === 'AbortError') throw new Error('AI request timed out after 35 seconds (all retries failed)');
     throw lastError;
+  },
+
+  // ─── PATH 2: Direct Gemini browser call ───────────────────────────────────
+  async _tryGeminiAI(profile, requestType, userQuery, onProgress) {
+    const apiKey = this.getGeminiKey();
+    if (!apiKey) throw new Error('Missing Gemini API key');
+
+    const prompt = this.buildTargetedAIContext(profile, requestType, userQuery);
+    const requestBody = {
+      systemInstruction: {
+        parts: [{ text: MENTORIST_AI_SYSTEM_PROMPT }]
+      },
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: prompt }]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.55,
+        topP: 0.95,
+        maxOutputTokens: 1400
+      }
+    };
+
+    let lastError = null;
+    for (const model of this.getGeminiModelCandidates()) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      try {
+        if (onProgress) onProgress(`Contacting Gemini directly... (${model})`);
+        const response = await this.fetchWithTimeout(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        }, 22000);
+
+        if (!response.ok) {
+          const errBody = await response.text().catch(() => '');
+          const error = new Error(`Gemini error ${response.status}: ${errBody.slice(0, 200)}`);
+          error.statusCode = response.status;
+          throw error;
+        }
+
+        const data = await response.json();
+        const text = this.parseAITextResponse(data);
+        if (!text || text.trim().length < 50) {
+          throw new Error('Gemini returned empty or insufficient response');
+        }
+
+        console.log(`[AI] Used Gemini browser path ✓ (${model})`);
+        return {
+          markdown: text.trim(),
+          generatedAt: new Date().toISOString(),
+          source: 'gemini-ai',
+          provider: 'gemini',
+          model
+        };
+      } catch (error) {
+        lastError = error;
+        console.warn(`[AI] Gemini model ${model} failed:`, error.message);
+        if (![429, 503, 404].includes(error.statusCode)) {
+          // For non-transient failures, continue trying remaining models but keep the latest error.
+        }
+      }
+    }
+
+    throw lastError || new Error('Gemini unavailable');
+  },
+
+  // ─── PATH 2b: Local/remote API proxy ──────────────────────────────────────
+  async _tryServerAI(profile, requestType, userQuery, onProgress) {
+    const base = this.getApiBaseUrl();
+    if (!base) throw new Error('No API proxy available');
+
+    if (onProgress) onProgress('Connecting to the Mentorist AI service...');
+    const response = await this.fetchWithTimeout(`${base}/api/ai-strategy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profile,
+        requestType,
+        userQuery,
+        systemPrompt: MENTORIST_AI_SYSTEM_PROMPT
+      })
+    }, 22000);
+
+    if (!response.ok) {
+      const errBody = await response.text().catch(() => '');
+      throw new Error(`Strategy API ${response.status}: ${errBody.slice(0, 200)}`);
+    }
+
+    const data = await response.json();
+    const text = this.parseAITextResponse(data);
+    if (!text || text.trim().length < 50) {
+      throw new Error('Strategy API returned empty or insufficient response');
+    }
+
+    console.log('[AI] Used API proxy path ✓');
+    return {
+      markdown: text.trim(),
+      generatedAt: new Date().toISOString(),
+      source: 'api-proxy',
+      provider: 'server'
+    };
   },
 
 
@@ -404,18 +601,26 @@ ${coreAdvice}
       if (typeof onStatusUpdate === 'function') onStatusUpdate(msg);
     };
 
-    // Path 1: Free Browser-direct AI via Pollinations
+    // Try the strongest live AI paths first, then degrade gracefully.
     let fallbackReason = 'AI engine unavailable';
     updateStatus('Consulting Ivy League admissions data and building your strategy...');
-    try {
-      const result = await this._tryFreeAI(profile, requestType, userQuery, updateStatus);
-      if (result?.markdown) return result;
-    } catch (e) {
-      console.warn('[AI] Free AI call failed:', e.message);
-      fallbackReason = 'AI is experiencing high demand. Please try again later.';
+
+    const pathAttempts = [];
+    if (this.getApiBaseUrl()) pathAttempts.push(() => this._tryServerAI(profile, requestType, userQuery, updateStatus));
+    pathAttempts.push(() => this._tryGeminiAI(profile, requestType, userQuery, updateStatus));
+    pathAttempts.push(() => this._tryFreeAI(profile, requestType, userQuery, updateStatus));
+
+    for (const attempt of pathAttempts) {
+      try {
+        const result = await attempt();
+        if (result?.markdown) return result;
+      } catch (e) {
+        console.warn('[AI] Live AI path failed:', e.message);
+        fallbackReason = e?.message || 'AI is experiencing high demand. Please try again later.';
+      }
     }
 
-    // Path 3: Rich local fallback
+    // Rich local fallback
     console.log('[AI] Using rich local playbook fallback');
     updateStatus('Loading your personalized playbook...');
     const fallbackMarkdown = this.generateLocalFallback(profile, requestType, userQuery);
