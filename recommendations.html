@@ -438,9 +438,15 @@
         Generate My Strategy
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
       </button>
+      <div id="aiUsageNote" style="margin-top:12px;font-size:12px;line-height:1.6;color:var(--t4);text-align:center;">
+        Live AI uses today: --. Resets daily per account.
+      </div>
 
       <p style="font-size:12px;color:var(--t4);text-align:center;margin-top:14px;line-height:1.6;">
         Trained on Ivy League admissions data · Atlas Education methodology · QuestBridge · NACAC research
+      </p>
+      <p style="font-size:12px;color:var(--t4);text-align:center;margin-top:10px;line-height:1.6;">
+        For the most useful recommendations, include your grade, school, current courses, target schools, goals, and the exact decision you need help with.
       </p>
     </div>
 
@@ -527,6 +533,13 @@
       navAv.style.color = 'var(--green)';
       navAv.textContent = Utils.initials(user.name);
     }
+
+    function refreshAiUsageNote(profile = user) {
+      const el = document.getElementById('aiUsageNote');
+      if (!el || typeof RecommendationEngine === 'undefined') return;
+      el.textContent = RecommendationEngine.formatUsageHint(profile);
+    }
+    refreshAiUsageNote();
 
     // ── Mobile bottom nav ─────────────────────────────────────────────────────
     function updateBottomNav() {
@@ -637,6 +650,7 @@
         );
 
         if (response && response.markdown) {
+          refreshAiUsageNote();
           // Configure marked
           marked.setOptions({ breaks: true, gfm: true, smartypants: false });
           resultContent.innerHTML = marked.parse(response.markdown);

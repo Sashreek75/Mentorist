@@ -51,6 +51,7 @@ A true "spike" means you are a national or international standout in ONE primary
 
 const RecommendationEngine = {
   CACHE_TTL: 60 * 60 * 1000,
+  AI_DAILY_LIMIT: 12,
   API_BASE_URL: null,
   _geminiKey: null,
   _abortController: null,
@@ -96,6 +97,104 @@ const RecommendationEngine = {
     candidates.push('gemini-2.5-flash');
     candidates.push('gemini-flash-latest');
     return [...new Set(candidates.filter(Boolean))];
+  },
+
+  getQuotaDateKey(date = new Date()) {
+    return date.toLocaleDateString('en-CA');
+  },
+
+  getUsageStorageKey(profile) {
+    const email = String(profile?.email || 'anon').toLowerCase().trim() || 'anon';
+    return `mn_ai_usage_${email}`;
+  },
+
+  readUsageState(profile) {
+    const today = this.getQuotaDateKey();
+    const fallback = { date: today, used: 0, lastSource: '', lastUsedAt: null };
+    try {
+      const raw = localStorage.getItem(this.getUsageStorageKey(profile));
+      if (!raw) return fallback;
+      const parsed = JSON.parse(raw);
+      if (!parsed || parsed.date !== today) return fallback;
+      return {
+        date: today,
+        used: Number(parsed.used) || 0,
+        lastSource: parsed.lastSource || '',
+        lastUsedAt: parsed.lastUsedAt || null
+      };
+    } catch {
+      return fallback;
+    }
+  },
+
+  persistUsageState(profile, state) {
+    const normalized = {
+      date: this.getQuotaDateKey(),
+      used: Math.max(0, Number(state?.used) || 0),
+      lastSource: String(state?.lastSource || ''),
+      lastUsedAt: state?.lastUsedAt || null
+    };
+
+    try {
+      localStorage.setItem(this.getUsageStorageKey(profile), JSON.stringify(normalized));
+    } catch (error) {
+      console.warn('[RECOMMENDATIONS] Usage cache write failed:', error?.message || error);
+    }
+
+    try {
+      if (profile?.email && typeof UserStore !== 'undefined' && UserStore?.updateUserFields) {
+        const current = UserStore.getByEmail(profile.email) || {};
+        const currentProfile = current.profile || {};
+        UserStore.updateUserFields(profile.email, {
+          profile: {
+            ...currentProfile,
+            aiRecommendationUsage: normalized
+          }
+        });
+      }
+    } catch (error) {
+      console.warn('[RECOMMENDATIONS] Usage sync failed:', error?.message || error);
+    }
+  },
+
+  getUsageSummary(profile) {
+    const state = this.readUsageState(profile);
+    const quota = this.AI_DAILY_LIMIT;
+    return {
+      quota,
+      used: state.used,
+      remaining: Math.max(0, quota - state.used),
+      resetAt: this.getQuotaDateKey(),
+      date: state.date
+    };
+  },
+
+  canUseLiveAI(profile) {
+    const summary = this.getUsageSummary(profile);
+    return {
+      allowed: summary.used < summary.quota,
+      ...summary
+    };
+  },
+
+  recordLiveAIUsage(profile, source = 'gemini-ai') {
+    const state = this.readUsageState(profile);
+    const next = {
+      date: this.getQuotaDateKey(),
+      used: (Number(state.used) || 0) + 1,
+      lastSource: source,
+      lastUsedAt: new Date().toISOString()
+    };
+    this.persistUsageState(profile, next);
+    return next;
+  },
+
+  formatUsageHint(profile) {
+    const summary = this.getUsageSummary(profile);
+    if (!profile?.email) {
+      return `Live AI uses today: ${summary.remaining} of ${summary.quota} remaining. Sign in to save your own quota.`;
+    }
+    return `Live AI uses today: ${summary.remaining} of ${summary.quota} remaining. Resets daily per account.`;
   },
 
   getEscapeFn() {
@@ -602,18 +701,31 @@ ${coreAdvice}
     };
 
     // Try the strongest live AI paths first, then degrade gracefully.
-    let fallbackReason = 'AI engine unavailable';
+    const liveAI = this.canUseLiveAI(profile);
+    let fallbackReason = liveAI.allowed
+      ? 'AI engine unavailable'
+      : `You’ve reached your live AI limit for today. The offline playbook is still available and resets daily.`;
     updateStatus('Consulting Ivy League admissions data and building your strategy...');
 
     const pathAttempts = [];
-    if (this.getApiBaseUrl()) pathAttempts.push(() => this._tryServerAI(profile, requestType, userQuery, updateStatus));
-    pathAttempts.push(() => this._tryGeminiAI(profile, requestType, userQuery, updateStatus));
-    pathAttempts.push(() => this._tryFreeAI(profile, requestType, userQuery, updateStatus));
+    if (liveAI.allowed) {
+      if (this.getApiBaseUrl()) pathAttempts.push(() => this._tryServerAI(profile, requestType, userQuery, updateStatus));
+      pathAttempts.push(() => this._tryGeminiAI(profile, requestType, userQuery, updateStatus));
+      pathAttempts.push(() => this._tryFreeAI(profile, requestType, userQuery, updateStatus));
+    }
 
     for (const attempt of pathAttempts) {
       try {
         const result = await attempt();
-        if (result?.markdown) return result;
+        if (result?.markdown) {
+          if (!result.fallback && result.source !== 'local-playbook') {
+            this.recordLiveAIUsage(profile, result.source || 'live-ai');
+          }
+          return {
+            ...result,
+            usage: this.getUsageSummary(profile)
+          };
+        }
       } catch (e) {
         console.warn('[AI] Live AI path failed:', e.message);
         fallbackReason = e?.message || 'AI is experiencing high demand. Please try again later.';
@@ -629,7 +741,8 @@ ${coreAdvice}
       generatedAt: new Date().toISOString(),
       fallback: true,
       fallbackReason: fallbackReason,
-      source: 'local-playbook'
+      source: 'local-playbook',
+      usage: this.getUsageSummary(profile)
     };
   },
 
