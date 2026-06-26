@@ -16,7 +16,53 @@
   </script>
 
   <style>
-    body { background: var(--bg); }
+    html { scroll-behavior: smooth; }
+    body {
+      background:
+        radial-gradient(circle at 10% 0%, rgba(0,232,122,0.16), transparent 28%),
+        radial-gradient(circle at 92% 8%, rgba(245,158,11,0.14), transparent 24%),
+        linear-gradient(180deg, #030404 0%, #050707 45%, #020202 100%);
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before,
+    body::after {
+      content: '';
+      position: fixed;
+      inset: auto;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .rec-ambient {
+      position: fixed;
+      width: 340px;
+      height: 340px;
+      border-radius: 50%;
+      filter: blur(40px);
+      opacity: 0.28;
+      pointer-events: none;
+      z-index: 0;
+      animation: floatOrb 16s ease-in-out infinite;
+    }
+    .rec-ambient-a {
+      top: -100px;
+      left: -120px;
+      background: radial-gradient(circle, rgba(0,232,122,0.42), transparent 70%);
+    }
+    .rec-ambient-b {
+      top: 90px;
+      right: -120px;
+      background: radial-gradient(circle, rgba(245,158,11,0.32), transparent 72%);
+      animation-delay: -6s;
+    }
+    .rec-ambient-c {
+      bottom: -140px;
+      right: 15%;
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle, rgba(96,165,250,0.22), transparent 70%);
+      animation-delay: -11s;
+    }
 
     /* ── Page Header ── */
     .rec-header {
@@ -24,6 +70,9 @@
       margin: 100px auto 36px;
       padding: 0 20px;
       text-align: center;
+      position: relative;
+      z-index: 1;
+      animation: fadeUp 0.7s ease both;
     }
     @media(max-width:640px) {
       .rec-header { margin-top: 80px; margin-bottom: 24px; }
@@ -34,8 +83,8 @@
       align-items: center;
       gap: 8px;
       padding: 6px 16px;
-      background: var(--green-dim);
-      border: 1px solid rgba(0,232,122,0.25);
+      background: linear-gradient(135deg, rgba(0,232,122,0.16), rgba(0,232,122,0.06));
+      border: 1px solid rgba(0,232,122,0.28);
       border-radius: var(--r-pill);
       font-size: 12px;
       font-weight: 800;
@@ -43,6 +92,8 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
       margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,232,122,0.08);
+      backdrop-filter: blur(10px);
     }
     .rec-badge-dot {
       width: 6px; height: 6px;
@@ -59,6 +110,7 @@
       letter-spacing: -0.04em;
       margin-bottom: 14px;
       line-height: 1.1;
+      text-shadow: 0 0 30px rgba(0,232,122,0.06);
     }
     .rec-intro {
       font-size: clamp(14px, 2.5vw, 16px);
@@ -73,6 +125,8 @@
       max-width: 860px;
       margin: 0 auto;
       padding: 0 20px clamp(80px, 15vw, 120px);
+      position: relative;
+      z-index: 1;
     }
 
     /* ── Back button row ── */
@@ -84,22 +138,43 @@
 
     /* ── Engine Card ── */
     .engine-card {
-      background: var(--bg-1);
-      border: 1px solid var(--b1);
+      background: linear-gradient(180deg, rgba(10,10,10,0.88), rgba(8,8,8,0.92));
+      border: 1px solid rgba(255,255,255,0.08);
       border-radius: var(--r-3xl);
       padding: clamp(24px, 5vw, 44px);
       position: relative;
       overflow: hidden;
       margin-bottom: 28px;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.38);
+      backdrop-filter: blur(16px);
+      animation: fadeUp 0.8s ease both;
+      transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
     }
     .engine-card::before {
       content: '';
       position: absolute;
-      top: -40%; right: -8%;
-      width: 280px; height: 280px;
-      background: radial-gradient(circle, rgba(0,232,122,0.09), transparent 70%);
-      filter: blur(60px);
+      top: -20%; right: -6%;
+      width: 320px; height: 320px;
+      background: radial-gradient(circle, rgba(0,232,122,0.11), transparent 72%);
+      filter: blur(50px);
       pointer-events: none;
+    }
+    .engine-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(0,232,122,0.22), transparent 30%, rgba(245,158,11,0.10));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+    .engine-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(0,232,122,0.18);
+      box-shadow: 0 28px 85px rgba(0,0,0,0.46);
     }
 
     .engine-label {
@@ -123,11 +198,11 @@
       font-weight: 700;
       padding: 10px 18px;
       border-radius: var(--r-pill);
-      background: var(--bg-2);
+      background: rgba(255,255,255,0.03);
       color: var(--t3);
       border: 1px solid var(--b2);
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
       user-select: none;
       white-space: nowrap;
       -webkit-tap-highlight-color: transparent;
@@ -136,13 +211,15 @@
     .topic-pill:hover {
       border-color: var(--b3);
       color: var(--t1);
-      background: var(--bg-3);
+      background: rgba(255,255,255,0.06);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.22);
     }
     .topic-pill.active {
-      background: var(--green-dim);
+      background: linear-gradient(135deg, rgba(0,232,122,0.18), rgba(0,232,122,0.06));
       color: var(--green);
       border-color: rgba(0,232,122,0.4);
-      box-shadow: 0 0 0 1px rgba(0,232,122,0.1);
+      box-shadow: 0 0 0 1px rgba(0,232,122,0.1), 0 12px 30px rgba(0,232,122,0.08);
     }
     @media(max-width:500px) {
       .topic-pill { font-size: 12px; padding: 9px 14px; }
@@ -179,13 +256,20 @@
       text-align: center;
       padding: clamp(32px, 6vw, 56px) 24px;
       gap: 16px;
+      background: linear-gradient(180deg, rgba(10,10,10,0.82), rgba(8,8,8,0.92));
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--r-3xl);
+      box-shadow: 0 24px 70px rgba(0,0,0,0.32);
+      backdrop-filter: blur(14px);
+      animation: fadeUp 0.5s ease both;
     }
     .loader-spinner {
       width: 44px; height: 44px;
-      border: 3px solid var(--b2);
+      border: 3px solid rgba(255,255,255,0.08);
       border-top-color: var(--green);
       border-radius: 50%;
       animation: spin 0.9s linear infinite;
+      box-shadow: 0 0 30px rgba(0,232,122,0.12);
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -231,12 +315,14 @@
 
     /* ── Result Container ── */
     .result-container {
-      background: var(--bg-1);
-      border: 1px solid var(--b1);
+      background: linear-gradient(180deg, rgba(10,10,10,0.92), rgba(7,7,7,0.96));
+      border: 1px solid rgba(255,255,255,0.08);
       border-radius: var(--r-3xl);
       padding: clamp(24px, 5vw, 44px);
       display: none;
       animation: fadeUp 0.5s ease both;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.36);
+      backdrop-filter: blur(14px);
     }
 
     .result-header {
@@ -268,6 +354,8 @@
       border-radius: var(--r-pill);
       text-transform: uppercase;
       letter-spacing: 0.06em;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+      animation: pulseSoft 3s ease-in-out infinite;
     }
     .source-ai { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,232,122,0.2); }
     .source-offline { background: rgba(245,158,11,0.12); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
@@ -350,8 +438,8 @@
       align-items: flex-start;
       gap: 12px;
       padding: 16px 18px;
-      background: rgba(245,158,11,0.07);
-      border: 1px solid rgba(245,158,11,0.2);
+      background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.05));
+      border: 1px solid rgba(245,158,11,0.22);
       border-radius: var(--r-lg);
       margin-bottom: 24px;
       font-size: 13px;
@@ -376,10 +464,22 @@
       }
     }
     .rec-bottom-nav { display: none; }
+
+    @keyframes floatOrb {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(0, 18px, 0) scale(1.06); }
+    }
+    @keyframes pulseSoft {
+      0%, 100% { transform: translateY(0); opacity: 1; }
+      50% { transform: translateY(-1px); opacity: 0.88; }
+    }
   </style>
 </head>
 
 <body>
+  <div class="rec-ambient rec-ambient-a"></div>
+  <div class="rec-ambient rec-ambient-b"></div>
+  <div class="rec-ambient rec-ambient-c"></div>
 
   <nav class="navbar" id="nav">
     <a href="index.html" class="nav-logo">
@@ -510,9 +610,9 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="shared.js"></script>
-  <script src="recommendation-core.js"></script>
-  <script src="recommendations.js"></script>
+  <script src="shared.js?v=20260625a"></script>
+  <script src="recommendation-core.js?v=20260625a"></script>
+  <script src="recommendations.js?v=20260625a"></script>
   <script>
     // ── Auth ──────────────────────────────────────────────────────────────────
     const user = Auth.requireAuth();

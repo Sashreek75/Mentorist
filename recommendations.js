@@ -291,15 +291,34 @@ const RecommendationEngine = {
       passionProjects: normalizeList(source.passionProjects || source.projects || ''),
       internshipTimeline: source.internshipTimeline || source.internshipReadiness || '',
       timeAvailability: source.timeAvailability || source.weeklyAvailability || source.hoursPerWeek || '',
-      targetColleges: normalizeList(source.targetColleges || source.colleges || '')
+      targetColleges: normalizeList(source.targetColleges || source.colleges || ''),
+      learningStyle: source.learningStyle || source.learning_style || '',
+      supportNeeds: normalizeList(source.supportNeeds || source.support_needs || ''),
+      specificConditions: normalizeList(source.specificConditions || source.specific_conditions || ''),
+      challenges: normalizeList(source.challenges || source.challengeAreas || ''),
+      additionalContext: source.additionalContext || source.additional_context || '',
+      brainTypeIdentity: source.brainTypeIdentity || source.brain_type_identity || ''
     };
   },
 
+  buildDefaultQuestion(profile, requestType) {
+    const topic = requestType || 'Academic strategy';
+    const grade = profile.schoolGrade || profile.grade || 'high school';
+    const school = profile.schoolName ? ` at ${profile.schoolName}` : '';
+    const interest = profile.interest && profile.interest !== 'undecided' ? profile.interest : 'their goals';
+    return `Based on the onboarding profile${school}, give the most useful ${topic.toLowerCase()} for a ${grade} student focused on ${interest}.`;
+  },
+
   buildTargetedAIContext(profile, requestType, userQuery) {
+    const resolvedQuery = String(userQuery || '').trim() || this.buildDefaultQuestion(profile, requestType);
     const bigPicture = [
       profile.goal,
       profile.targetColleges?.length ? `Target schools: ${profile.targetColleges.join(', ')}` : '',
-      profile.careers?.length ? `Career interests: ${profile.careers.join(', ')}` : ''
+      profile.careers?.length ? `Career interests: ${profile.careers.join(', ')}` : '',
+      profile.learningStyle ? `Learning style: ${profile.learningStyle}` : '',
+      profile.supportNeeds?.length ? `Support needs: ${profile.supportNeeds.join(', ')}` : '',
+      profile.challenges?.length ? `Challenges: ${profile.challenges.join(', ')}` : '',
+      profile.additionalContext ? `Additional context: ${profile.additionalContext}` : ''
     ].filter(Boolean).join(' | ');
 
     const missing = [];
@@ -311,7 +330,7 @@ const RecommendationEngine = {
 
     return [
       `REQUEST TYPE: ${requestType || 'General strategy'}`,
-      `USER QUESTION: ${userQuery || 'No extra context provided.'}`,
+      `USER QUESTION: ${resolvedQuery}`,
       '',
       'STUDENT PROFILE',
       `- Name: ${profile.name || 'Student'}`,
@@ -328,12 +347,18 @@ const RecommendationEngine = {
       `- Target colleges: ${(profile.targetColleges || []).join(', ') || 'Not specified'}`,
       `- Career goals: ${(profile.careers || []).join(', ') || 'Not specified'}`,
       `- Long-term goal: ${profile.goal || 'Not specified'}`,
+      profile.brainTypeIdentity ? `- Brain type / identity: ${profile.brainTypeIdentity}` : '',
+      profile.learningStyle ? `- Learning style: ${profile.learningStyle}` : '',
+      profile.supportNeeds?.length ? `- Support needs: ${profile.supportNeeds.join(', ')}` : '',
+      profile.challenges?.length ? `- Challenges: ${profile.challenges.join(', ')}` : '',
+      profile.additionalContext ? `- Additional context: ${profile.additionalContext}` : '',
       '',
       `KNOWN GAPS: ${missing.length ? missing.join(', ') : 'No obvious gaps'}`,
       bigPicture ? `BIG PICTURE: ${bigPicture}` : '',
       '',
       'INSTRUCTIONS',
       '- Give targeted recommendations tied to the student\'s exact inquiry.',
+      '- If no freeform prompt was provided, infer the highest-value plan from the onboarding profile and current topic.',
       '- If the profile is missing a key detail, ask up to 2 concise follow-up questions before advising.',
       '- Otherwise, answer directly with specific courses, programs, projects, internships, or next steps by name.',
       '- Be honest about tradeoffs and avoid generic club advice.',
@@ -711,7 +736,6 @@ ${coreAdvice}
     if (liveAI.allowed) {
       if (this.getApiBaseUrl()) pathAttempts.push(() => this._tryServerAI(profile, requestType, userQuery, updateStatus));
       pathAttempts.push(() => this._tryGeminiAI(profile, requestType, userQuery, updateStatus));
-      pathAttempts.push(() => this._tryFreeAI(profile, requestType, userQuery, updateStatus));
     }
 
     for (const attempt of pathAttempts) {
