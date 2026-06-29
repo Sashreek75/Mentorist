@@ -17,10 +17,19 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
+// SECURITY: The service role key was previously hardcoded and committed to this
+// file. That key MUST be rotated in the Supabase dashboard immediately. The
+// service role key is now read from the SUPABASE_SERVICE_ROLE_KEY env var.
+const ADMIN_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!ADMIN_KEY) {
+  console.error('Set SUPABASE_SERVICE_ROLE_KEY env var to run this script.');
+  process.exit(1);
+}
+
 const CONFIG = {
   SUPABASE_URL: "https://vmuukfegnjotlgvdqfrx.supabase.co",
   SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtdXVrZmVnbmpvdGxndmRxZnJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTY2MzYsImV4cCI6MjA5NDUzMjYzNn0.FswR9i0EgMZ5UPs8NpE-es4i3HonKQXilqBPA0ulT3Q",
-  ADMIN_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtdXVrZmVnbmpvdGxndmRxZnJ4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODk1NjYzNiwiZXhwIjoyMDk0NTMyNjM2fQ.Ii8J2TTKRsq_gzLvz10mL0BLI1iKI8KvblAjMEWsvx0"
+  ADMIN_KEY: ADMIN_KEY
 };
 
 const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
@@ -63,13 +72,8 @@ async function wipeEverything() {
         if (aErr) console.error('    ⚠️  Error:', aErr.message);
         else console.log('    ✅ Alerts deleted');
 
-        console.log('  [3/5] Deleting mentor applications...');
-        const { error: mErr } = await supabase.from('mentorist_mentors').delete().neq('id', '');
-        if (mErr) console.error('    ⚠️  Error:', mErr.message);
-        else console.log('    ✅ Mentor apps deleted');
-
         console.log('  [4/5] Deleting user profiles...');
-        const { error: pErr } = await supabase.from('mentorist_profiles').delete().neq('id', '');
+        const { error: pErr } = await supabase.from('mentorist_profiles').delete().neq('email', '');
         if (pErr) console.error('    ⚠️  Error:', pErr.message);
         else console.log('    ✅ Profiles deleted');
 

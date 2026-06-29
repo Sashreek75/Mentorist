@@ -863,53 +863,6 @@
             if (isLast) renderSummary();
         }
 
-        /* ── Summary render ── */
-        function renderSummary() {
-            const gradeMap = {
-                'highschool': 'High School Navigator', 'college': 'Undergrad Navigator',
-                'gap': 'Gap Year Explorer', 'grad': 'Early Career Navigator',
-                parent: 'Parent Explorer', international: 'International Applicant'
-            };
-            const interestMap = {
-                stem: 'STEM-focused Track', medicine: 'Medical Track Focus',
-                business: 'Business Track', humanities: 'Humanities Focus',
-                arts: 'Arts & Design Field', undecided: 'Interdisciplinary Focus'
-            };
-            const rigorMap = {
-                standard: 'Standard College-Prep',
-                rigorous: 'Honors / AP / IB Mix',
-                extreme: 'Maximum Rigor (4+ APs)'
-            };
-
-            document.getElementById('sumEdu').textContent = gradeMap[data.grade] || '—';
-            document.getElementById('sumFocus').textContent = interestMap[data.interest] || '—';
-            document.getElementById('sumRigor').textContent = rigorMap[data.rigor] || '—';
-            document.getElementById('sumGoal').textContent = data.goal || 'Not yet defined';
-            document.getElementById('sumCareers').textContent = data.careers || 'Not specified';
-            document.getElementById('sumSkills').textContent = data.skills || 'Not specified';
-        }
-
-        /* ── Completion ── */
-        function finish() {
-            // Validate all required fields are filled
-            if (!data.grade || !data.interest || !data.rigor || !data.goal || !data.careers || !data.skills) {
-              Utils.toast('Please complete all profile steps before finishing.', 'error');
-              curStep = 0;
-              updateMeta();
-              document.getElementById('step-complete').classList.remove('active');
-              document.getElementById('step-complete').style.display = 'none';
-              document.getElementById('step-0').style.display = 'block';
-              requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById('step-0').classList.add('active')));
-              return;
-            }
-            
-            Auth.updateUser({ profile: data, onboarded: true });
-            const updated = Auth.getUser();
-            window.location.href = (updated.role === 'mentor')
-                ? 'mentordashboard.html'
-                : 'recommendations.html?new=true';
-        }
-
         function completeMentor() {
             Auth.updateUser({ onboarded: true });
             window.location.href = 'mentordashboard.html';

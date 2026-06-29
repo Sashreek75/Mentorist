@@ -292,7 +292,13 @@ body{background:var(--bg);}
   let activeCategory = 'all';
 
   function initVault() {
-    const user = Auth.getUser();
+    // Auth gate: only authenticated users may read archived Q&A.
+    // requireAuth() redirects to auth.html when there is no session, and returns a
+    // 'loading@mentorist.org' placeholder while a session token is being bootstrapped
+    // (the page re-routes automatically once that completes).
+    const user = Auth.requireAuth();
+    if (!user) return;
+    if (user.email === 'loading@mentorist.org') return;
     if(user) {
       const actions = document.getElementById('navActions');
       actions.innerHTML = `<a href="index.html" class="nav-sign-in">Home</a><a href="${user.role==='mentor'?'mentordashboard.html':user.role==='admin'?'admin.html':'studentdashboard.html'}" class="nav-get-started">My Dashboard</a>`;
@@ -326,7 +332,7 @@ body{background:var(--bg);}
       const avs = q.answers.slice(0, 3).map(a => `<div class="v-m-av">${Utils.initials(a.mentorName)}</div>`).join('');
       
       return `
-        <div class="v-card stagger" style="animation-delay: ${idx * 0.1}s" onclick="openQuestion('${q.id}')">
+        <div class="v-card stagger" style="animation-delay: ${idx * 0.1}s" onclick="openQuestion('${Utils.escapeHtml(q.id)}')">
           <div class="v-head">
             <span class="v-tag">${Utils.escapeHtml(tag)}</span>
             <span class="v-date">${Utils.relativeDate(q.createdAt)}</span>

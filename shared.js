@@ -18,7 +18,11 @@ const supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.
 
 function inferRoleFromEmail(email = "") {
   const lower = String(email).toLowerCase();
-  if (lower.endsWith("@mentorist.org") || lower.startsWith("admin")) return "admin";
+  // SECURITY: only the verified @mentorist.org domain maps to admin. The old
+  // `startsWith("admin")` rule let anyone register e.g. admin@gmail.com and
+  // self-promote. Real admin authority should be granted server-side via DB
+  // role + RLS; this domain check is a stopgap.
+  if (lower.endsWith("@mentorist.org")) return "admin";
   return "student";
 }
 
@@ -246,8 +250,8 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
 
     console.log(`[AUTH] ${event} event for ${email}, role=${metadata.role || 'unset'}, pendingRole=${pendingRole}`);
 
-    if (email.endsWith('@mentorist.org') || email.startsWith('admin')) {
-      console.log(`[AUTH] Admin detected via email pattern: ${email}`);
+    if (email.endsWith('@mentorist.org')) {
+      console.log(`[AUTH] Admin detected via verified domain: ${email}`);
       nextMetadata = { ...nextMetadata, role: 'admin', onboarded: true, status: 'active' };
       localStorage.removeItem('pendingRole');
       void supabaseClient.auth.updateUser({ data: { role: 'admin', onboarded: true, status: 'active' } })
@@ -413,7 +417,7 @@ const Auth = {
     const role = isMentorApplicant(user) ? 'mentor' : (user.role || inferRoleFromEmail(user.email));
     const merged = {
       ...user,
-      role: user.email ? (user.email.endsWith('@mentorist.org') || user.email.startsWith('admin') ? 'admin' : role) : role,
+      role: user.email ? (user.email.endsWith('@mentorist.org') ? 'admin' : role) : role,
       status: user.status || (isMentorApplicant(user) || role === "mentor" ? "pending" : "active"),
       onboarded: user.onboarded ?? role === "admin"
     };
@@ -969,6 +973,9 @@ const Utils = {
     document.getElementById("toast-container")?.remove();
     const wrap = document.createElement("div");
     wrap.id = "toast-container";
+    // Announce toasts to assistive tech. Errors are assertive, others polite.
+    wrap.setAttribute("role", "status");
+    wrap.setAttribute("aria-live", type === "error" ? "assertive" : "polite");
     wrap.style.cssText = "position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:9000;pointer-events:none;";
     const t = document.createElement("div");
     t.style.cssText = `

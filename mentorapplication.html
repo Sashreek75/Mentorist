@@ -336,7 +336,9 @@
       syncApplicationView();
     }
 
-    Promise.resolve(UserStore.refreshFromRemote()).then(syncApplicationView);
+    Promise.resolve(UserStore.refreshFromRemote())
+      .then(syncApplicationView)
+      .catch(err => { console.error(err); syncApplicationView(); });
   </script>
 </body>
 

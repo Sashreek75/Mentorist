@@ -1,7 +1,7 @@
 /* ============================================================
-   Mentorist recommendation client v5
-   Primary: browser-direct Gemini API call (no server needed)
-   Secondary: local recommendation server (if running)
+   Mentorist recommendation client v6
+   Primary: API proxy / same-origin AI service
+   Secondary: optional browser Gemini only when explicitly enabled
    Tertiary: rich local playbook fallback
    ============================================================ */
 
@@ -66,8 +66,9 @@ const RecommendationEngine = {
       const { protocol, hostname } = window.location;
       if (protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1') {
         this.API_BASE_URL = 'http://localhost:3000';
+      } else if (protocol === 'http:' || protocol === 'https:') {
+        this.API_BASE_URL = window.location.origin;
       } else {
-        // On Vercel or any deployed host — no local server exists
         this.API_BASE_URL = null;
       }
     } else {
@@ -79,11 +80,12 @@ const RecommendationEngine = {
   getGeminiKey() {
     if (this._geminiKey) return this._geminiKey;
     if (typeof window !== 'undefined') {
-      // Try multiple sources
-      this._geminiKey =
-        window.__MN_GEMINI_KEY__ ||
-        window.__MENTORIST_GEMINI_KEY__ ||
-        null;
+      if (window.__MENTORIST_ALLOW_BROWSER_GEMINI__ === true) {
+        this._geminiKey =
+          window.__MENTORIST_GEMINI_KEY__ ||
+          window.__MN_GEMINI_KEY__ ||
+          null;
+      }
     }
     return this._geminiKey;
   },
@@ -93,8 +95,10 @@ const RecommendationEngine = {
     if (typeof window !== 'undefined' && window.__MENTORIST_GEMINI_MODEL__) {
       candidates.push(String(window.__MENTORIST_GEMINI_MODEL__).trim());
     }
-    candidates.push('gemini-3.1-flash-lite');
+    // Real, published model ids only (the prior 'gemini-3.1-flash-lite' was
+    // invalid and burned a failed request on every call before falling back).
     candidates.push('gemini-2.5-flash');
+    candidates.push('gemini-2.0-flash');
     candidates.push('gemini-flash-latest');
     return [...new Set(candidates.filter(Boolean))];
   },
@@ -383,95 +387,7 @@ const RecommendationEngine = {
     return candidates.find((value) => typeof value === 'string' && value.trim().length > 0)?.trim() || '';
   },
 
-  // ─── PATH 1: Free Browser-direct AI via Pollinations ───────────────────────
-  async _tryFreeAI(profile, requestType, userQuery, onProgress) {
-    const studentContext = this.buildTargetedAIContext(profile, requestType, userQuery);
-    /*
-STUDENT PROFILE:
-- Name: ${profile.name || 'Student'}
-- School: ${profile.schoolName || 'Unknown school'}, ${profile.schoolLocation || ''}
-- Grade Level: ${profile.schoolGrade || profile.grade || 'Unknown'}
-- Primary Interest / Major Focus: ${profile.interest || 'Undecided'}
-- Career Goals: ${(profile.careers || []).join(', ') || 'Not specified'}
-- Current Courses: ${(profile.currentCourses || []).join(', ') || 'Not specified'}
-- Current Skills: ${(profile.skills || []).join(', ') || 'Not specified'}
-- Extracurriculars: ${(profile.extracurriculars || []).join(', ') || 'Not specified'}
-- Passion Projects: ${(profile.passionProjects || []).join(', ') || 'Not specified'}
-- Target Colleges: ${(profile.targetColleges || []).join(', ') || 'Not specified'}
-- Long-term Goal: ${profile.goal || 'Not specified'}
-- Current GPA: ${profile.currentGpa || 'Not specified'}
-- Workload Preference: ${profile.workloadPreference || 'balanced'}
-
-STUDENT'S REQUEST:
-Topic: "${requestType}"
-Their question/context: "${userQuery || 'No additional context provided'}"
-
-Provide highly specific, actionable advice for this exact student. Reference specific programs, courses, competitions, or opportunities by name. Be direct and honest — if something won't help them, say so. Format in clean Markdown. End with exactly 3 "This Week" action items.`;
-
-    */
-    const requestBody = {
-      model: 'openai',
-      messages: [
-        { role: 'system', content: MENTORIST_AI_SYSTEM_PROMPT },
-        { role: 'user', content: studentContext }
-      ],
-      temperature: 0.55
-    };
-
-    let lastError = null;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 35000);
-
-      try {
-        if (onProgress) onProgress(`Consulting elite admissions strategies... (Attempt ${attempt}/3)`);
-        
-        const response = await this.fetchWithTimeout('https://text.pollinations.ai/openai', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody)
-        }, 18000);
-
-        if (!response.ok) {
-          const errBody = await response.text().catch(() => '');
-          throw new Error(`AI error ${response.status}: ${errBody.slice(0, 200)}`);
-        }
-
-        const rawText = await response.text();
-        let data = rawText;
-        try {
-          data = JSON.parse(rawText);
-        } catch {
-          // plain text responses are fine
-        }
-        const text = this.parseAITextResponse(data);
-        
-        if (!text || text.trim().length < 50) {
-          throw new Error('AI returned empty or insufficient response');
-        }
-
-        console.log(`[AI] Used free AI path ✓ (Attempt ${attempt})`);
-        return {
-          markdown: text.trim(),
-          generatedAt: new Date().toISOString(),
-          source: 'free-ai'
-        };
-      } catch (e) {
-        clearTimeout(timeout);
-        lastError = e;
-        console.warn(`[AI] AI Attempt ${attempt} failed:`, e.message);
-        if (attempt < 3) {
-          await new Promise(resolve => setTimeout(resolve, attempt * 1500));
-        }
-      }
-    }
-    
-    // If we exhaust all retries, throw the last error to fall back to playbook
-    if (lastError.name === 'AbortError') throw new Error('AI request timed out after 35 seconds (all retries failed)');
-    throw lastError;
-  },
-
-  // ─── PATH 2: Direct Gemini browser call ───────────────────────────────────
+  // PATH 1: Optional direct Gemini browser call
   async _tryGeminiAI(profile, requestType, userQuery, onProgress) {
     const apiKey = this.getGeminiKey();
     if (!apiKey) throw new Error('Missing Gemini API key');
@@ -538,7 +454,7 @@ Provide highly specific, actionable advice for this exact student. Reference spe
     throw lastError || new Error('Gemini unavailable');
   },
 
-  // ─── PATH 2b: Local/remote API proxy ──────────────────────────────────────
+  // PATH 2: Local/remote API proxy
   async _tryServerAI(profile, requestType, userQuery, onProgress) {
     const base = this.getApiBaseUrl();
     if (!base) throw new Error('No API proxy available');
@@ -735,7 +651,9 @@ ${coreAdvice}
     const pathAttempts = [];
     if (liveAI.allowed) {
       if (this.getApiBaseUrl()) pathAttempts.push(() => this._tryServerAI(profile, requestType, userQuery, updateStatus));
-      pathAttempts.push(() => this._tryGeminiAI(profile, requestType, userQuery, updateStatus));
+      if (this.getGeminiKey()) {
+        pathAttempts.push(() => this._tryGeminiAI(profile, requestType, userQuery, updateStatus));
+      }
     }
 
     for (const attempt of pathAttempts) {

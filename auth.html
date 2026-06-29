@@ -420,7 +420,8 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
       }
 
       let role = existingProfile?.role || selRole;
-      if (email.endsWith('@mentorist.org') || email.startsWith('admin')) {
+      // Admin must be granted server-side via DB role; email-domain check is a stopgap.
+      if (email.endsWith('@mentorist.org')) {
         role = 'admin';
       }
       const status = existingProfile?.status || (role === 'mentor' ? 'pending' : 'active');

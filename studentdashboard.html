@@ -237,9 +237,10 @@ body{background:var(--bg);}
 <script src="shared.js"></script>
 <script>
   const user = Auth.requireAuth();
-  if (!user) { window.location.href = 'auth.html'; }
-  else if (!user.onboarded) { window.location.href = 'onboarding.html'; }
-  else if (user.role === 'mentor') { window.location.href = 'mentordashboard.html'; }
+  let _redirecting = false;
+  if (!user) { window.location.href = 'auth.html'; _redirecting = true; }
+  else if (!user.onboarded) { window.location.href = 'onboarding.html'; _redirecting = true; }
+  else if (user.role === 'mentor') { window.location.href = 'mentordashboard.html'; _redirecting = true; }
 
   let selTopics = [];
 
@@ -408,7 +409,7 @@ body{background:var(--bg);}
     }
     feed.innerHTML = qs.map(q => {
       const isAns = q.answers?.length > 0;
-      const tags = (q.topics||[]).map(t=>`<span class="qtag-premium">${t}</span>`).join('');
+      const tags = (q.topics||[]).map(t=>`<span class="qtag-premium">${Utils.escapeHtml(t)}</span>`).join('');
       const answersHtml = isAns ? q.answers.map((a, aIdx)=>`
         <div class="mentor-profile-mini" style="justify-content: space-between; display:flex; width:100%;">
           <div style="display:flex; align-items:center; gap:14px;">
@@ -482,15 +483,17 @@ body{background:var(--bg);}
   window.addEventListener('scroll', ()=>nav.classList.toggle('scrolled', scrollY>60), {passive:true});
 
   // Render immediately with local data
-  init();
-  
-  // Sync in background without blocking UI
-  Promise.all([UserStore.refreshFromRemote(), QuestionStore.refreshFromRemote()]).then(() => {
-    // Re-render feed after sync completes
-    if (document.getElementById('view-history').style.display === 'block') {
-      refreshFeed();
-    }
-  }).catch(e => console.warn('Background sync failed:', e));
+  if (!_redirecting) {
+    init();
+
+    // Sync in background without blocking UI
+    Promise.all([UserStore.refreshFromRemote(), QuestionStore.refreshFromRemote()]).then(() => {
+      // Re-render feed after sync completes
+      if (document.getElementById('view-history').style.display === 'block') {
+        refreshFeed();
+      }
+    }).catch(e => console.warn('Background sync failed:', e));
+  }
 </script>
 </body>
 </html>

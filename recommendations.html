@@ -9,11 +9,13 @@
   <link rel="stylesheet" href="shared.css">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-  <!-- ═══ Gemini API Key (safe for Vercel static hosting) ═══ -->
-  <script>
-    window.__MN_GEMINI_KEY__ = 'AIzaSyAb8RN6KKXkyEcNTwe-yTdxEuCq1kvoDbROBMAwyvPuXBoRBwig';
-    window.__MENTORIST_GEMINI_MODEL__ = 'gemini-3.1-flash-lite';
-  </script>
+  <!--
+    AI calls are routed exclusively through the Mentorist server proxy
+    (/api/ai-strategy), which holds the Gemini key server-side. The API key
+    must NEVER be embedded in client HTML (it is publicly extractable and can
+    be abused). The previously-committed key has been removed and should be
+    rotated in Google AI Studio.
+  -->
 
   <style>
     html { scroll-behavior: smooth; }

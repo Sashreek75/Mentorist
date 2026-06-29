@@ -148,9 +148,10 @@ body{background:var(--bg);}
 <script src="shared.js"></script>
 <script>
   const user = Auth.requireAuth();
-  if (!user) { window.location.href = 'auth.html'; }
-  else if (!user.onboarded) { window.location.href = 'onboarding.html'; }
-  else if (user.role !== 'mentor') { window.location.href = 'studentdashboard.html'; }
+  let _redirecting = false;
+  if (!user) { window.location.href = 'auth.html'; _redirecting = true; }
+  else if (!user.onboarded) { window.location.href = 'onboarding.html'; _redirecting = true; }
+  else if (user.role !== 'mentor') { window.location.href = 'studentdashboard.html'; _redirecting = true; }
 
   let activeF = 'all';
   let sidebarF = 'unanswered';
@@ -183,19 +184,19 @@ body{background:var(--bg);}
         </div>
         <div style="flex:1; min-width:0;">
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
-            <span style="font-size:10px; font-weight:800; color:var(--green); background:var(--green-dim); padding:2px 8px; border-radius:var(--r-pill); text-transform:uppercase;">${a.tag}</span>
-            <span style="font-size:14px; font-weight:700; color:var(--t1);">${a.title}</span>
+            <span style="font-size:10px; font-weight:800; color:var(--green); background:var(--green-dim); padding:2px 8px; border-radius:var(--r-pill); text-transform:uppercase;">${Utils.escapeHtml(a.tag)}</span>
+            <span style="font-size:14px; font-weight:700; color:var(--t1);">${Utils.escapeHtml(a.title)}</span>
           </div>
-          <p style="font-size:13px; color:var(--t3); margin:0;">${a.body}</p>
+          <p style="font-size:13px; color:var(--t3); margin:0;">${Utils.escapeHtml(a.body)}</p>
         </div>
         <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end; flex-shrink:0; border-left:1px solid var(--b1); padding-left:18px;">
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; font-weight:700; color:var(--t2); user-select:none;">
-            <input type="checkbox" onchange="acknowledgeAlert('${a.id}', this)" style="width:16px; height:16px; accent-color: var(--green);">
+            <input type="checkbox" onchange="acknowledgeAlert('${Utils.escapeHtml(a.id)}', this)" style="width:16px; height:16px; accent-color: var(--green);">
             I understand
           </label>
           <div style="text-align:right;">
             <div style="font-size:11px; color:var(--t4); font-weight:600;">Broadcasted by</div>
-            <div style="font-size:12px; font-weight:700; color:var(--t2);">${a.author}</div>
+            <div style="font-size:12px; font-weight:700; color:var(--t2);">${Utils.escapeHtml(a.author)}</div>
           </div>
         </div>
       </div>
@@ -311,7 +312,7 @@ body{background:var(--bg);}
       const gm={'9':'9th Grade','10':'10th Grade','11':'11th Grade','12':'12th Grade','parent':'Parent','international':'Intl.'};
       const im={stem:'STEM',business:'Business',humanities:'Humanities',arts:'Arts',medicine:'Med',law:'Law',undecided:'Exploring'};
       
-      const tags = (q.topics||[]).map(t=>`<span class="mc-tag">${t}</span>`).join('');
+      const tags = (q.topics||[]).map(t=>`<span class="mc-tag">${Utils.escapeHtml(t)}</span>`).join('');
       const status = q.answers?.length > 0 ? `<div class="badge badge-green" style="margin-top:8px;">Answered</div>` : '';
 
       return `<div class="m-card-luxury">
@@ -382,6 +383,10 @@ body{background:var(--bg);}
       Utils.toast('Please write some guidance before submitting.', 'error');
       return;
     }
+    if (text.length > 5000) {
+      Utils.toast('Guidance is too long (max 5000 characters).', 'error');
+      return;
+    }
     QuestionStore.addAnswer(id, {
       mentorEmail: user.email,
       mentorName: user.name,
@@ -399,7 +404,11 @@ body{background:var(--bg);}
     render();
   }
 
-  Promise.all([UserStore.refreshFromRemote(), QuestionStore.refreshFromRemote()]).then(init);
+  if (!_redirecting) {
+    Promise.all([UserStore.refreshFromRemote(), QuestionStore.refreshFromRemote()])
+      .then(init)
+      .catch(err => { console.error(err); init(); });
+  }
 </script>
 </body>
 </html>

@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mentor Review | Mentorist</title>
+  <link rel="stylesheet" href="shared.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="shared.js"></script>
   <style>
@@ -174,8 +175,12 @@
       if (pending.length === 0) {
         grid.innerHTML = `
           <div class="empty-state" style="grid-column:1 / -1;">
-            <div style="font-size:48px; margin-bottom:8px;">OK</div>
-            <h2>Queue is Clear</h2>
+            <div class="empty-state-icon" style="color:var(--green);">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </div>
+            <h3>Queue is Clear</h3>
             <p>All mentor applications have been processed. Great work!</p>
           </div>
         `;
@@ -234,7 +239,12 @@
 
       document.body.innerHTML = `
         <div class="access-state">
-          <div style="font-size:64px;">LOCK</div>
+          <div class="empty-state-icon" style="width:72px;height:72px;color:var(--t3);">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
           <h1 style="font-family:var(--font-h); font-size:32px; margin-bottom:8px;">Access Restricted</h1>
           <p style="color:var(--t3); max-width:480px; line-height:1.7;">This page is reserved for mentor applicants and the admin review queue. If you need mentor access, continue the application flow.</p>
           <a href="index.html" class="btn btn-primary">Return Home</a>
