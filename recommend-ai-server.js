@@ -357,12 +357,12 @@ function clientIp(req) {
 /* ─────────────────────────── HTTP plumbing ─────────────────────────────── */
 
 function corsHeaders(req) {
-  const origin = req.headers.origin;
+  const origin = req.headers.origin || '';
   let allow = '*';
   if (ALLOWED_ORIGINS.length) {
     allow = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  } else if (origin) {
-    allow = origin; // echo (functional default)
+  } else if (origin && origin !== 'null') {
+    allow = origin; // echo for browser requests from a real origin
   }
   return {
     'Access-Control-Allow-Origin': allow,

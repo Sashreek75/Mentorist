@@ -56,25 +56,33 @@ const RecommendationEngine = {
   _geminiKey: null,
   _abortController: null,
 
-  getApiBaseUrl() {
-    if (this.API_BASE_URL) return this.API_BASE_URL;
+  getApiBaseUrlCandidates() {
+    const candidates = [];
+
     if (typeof window !== 'undefined' && window.__MENTORIST_RECOMMEND_API__) {
-      this.API_BASE_URL = window.__MENTORIST_RECOMMEND_API__;
-      return this.API_BASE_URL;
+      candidates.push(String(window.__MENTORIST_RECOMMEND_API__).replace(/\/$/, ''));
     }
+
     if (typeof window !== 'undefined') {
-      const { protocol, hostname } = window.location;
-      if (protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1') {
-        this.API_BASE_URL = 'http://localhost:3000';
+      const { protocol, hostname, origin } = window.location;
+      if (origin && origin !== 'null') candidates.push(origin);
+
+      if (protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '') {
+        candidates.push('http://127.0.0.1:3000', 'http://localhost:3000');
       } else if (protocol === 'http:' || protocol === 'https:') {
-        this.API_BASE_URL = window.location.origin;
-      } else {
-        this.API_BASE_URL = null;
+        candidates.push('http://127.0.0.1:3000', 'http://localhost:3000');
       }
-    } else {
-      this.API_BASE_URL = 'http://localhost:3000';
     }
-    return this.API_BASE_URL;
+
+    if (!candidates.length) {
+      candidates.push('http://127.0.0.1:3000', 'http://localhost:3000');
+    }
+
+    return [...new Set(candidates.filter(Boolean))];
+  },
+
+  getApiBaseUrl() {
+    return this.getApiBaseUrlCandidates()[0] || null;
   },
 
   getGeminiKey() {
@@ -456,39 +464,49 @@ const RecommendationEngine = {
 
   // PATH 2: Local/remote API proxy
   async _tryServerAI(profile, requestType, userQuery, onProgress) {
-    const base = this.getApiBaseUrl();
-    if (!base) throw new Error('No API proxy available');
+    const bases = this.getApiBaseUrlCandidates();
+    if (!bases.length) throw new Error('No API proxy available');
 
-    if (onProgress) onProgress('Connecting to the Mentorist AI service...');
-    const response = await this.fetchWithTimeout(`${base}/api/ai-strategy`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        profile,
-        requestType,
-        userQuery,
-        systemPrompt: MENTORIST_AI_SYSTEM_PROMPT
-      })
-    }, 22000);
+    const errors = [];
+    for (const base of bases) {
+      try {
+        if (onProgress) onProgress(`Connecting to the Mentorist AI service... (${base})`);
+        const response = await this.fetchWithTimeout(`${base}/api/ai-strategy`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            profile,
+            requestType,
+            userQuery,
+            systemPrompt: MENTORIST_AI_SYSTEM_PROMPT
+          })
+        }, 22000);
 
-    if (!response.ok) {
-      const errBody = await response.text().catch(() => '');
-      throw new Error(`Strategy API ${response.status}: ${errBody.slice(0, 200)}`);
+        if (!response.ok) {
+          const errBody = await response.text().catch(() => '');
+          throw new Error(`Strategy API ${response.status}: ${errBody.slice(0, 200)}`);
+        }
+
+        const data = await response.json();
+        const text = this.parseAITextResponse(data);
+        if (!text || text.trim().length < 50) {
+          throw new Error('Strategy API returned empty or insufficient response');
+        }
+
+        console.log(`[AI] Used API proxy path ✓ (${base})`);
+        return {
+          markdown: text.trim(),
+          generatedAt: new Date().toISOString(),
+          source: 'api-proxy',
+          provider: 'server'
+        };
+      } catch (error) {
+        errors.push(error?.message || String(error));
+        console.warn(`[AI] Proxy attempt failed at ${base}:`, error?.message || error);
+      }
     }
 
-    const data = await response.json();
-    const text = this.parseAITextResponse(data);
-    if (!text || text.trim().length < 50) {
-      throw new Error('Strategy API returned empty or insufficient response');
-    }
-
-    console.log('[AI] Used API proxy path ✓');
-    return {
-      markdown: text.trim(),
-      generatedAt: new Date().toISOString(),
-      source: 'api-proxy',
-      provider: 'server'
-    };
+    throw new Error(errors[0] || 'No API proxy available');
   },
 
 
@@ -650,7 +668,7 @@ ${coreAdvice}
 
     const pathAttempts = [];
     if (liveAI.allowed) {
-      if (this.getApiBaseUrl()) pathAttempts.push(() => this._tryServerAI(profile, requestType, userQuery, updateStatus));
+      if (this.getApiBaseUrlCandidates().length) pathAttempts.push(() => this._tryServerAI(profile, requestType, userQuery, updateStatus));
       if (this.getGeminiKey()) {
         pathAttempts.push(() => this._tryGeminiAI(profile, requestType, userQuery, updateStatus));
       }
