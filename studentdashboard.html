@@ -103,7 +103,21 @@ body{background:var(--bg);}
   .form-input, .form-textarea { font-size: 16px; }
   .btn-lg { height: 44px; }
 }
-</style>
+.tour-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999;padding:24px;background:rgba(0,0,0,0.56);backdrop-filter:blur(4px);}
+  .tour-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.65);}
+  .tour-dialog{position:relative;width:min(680px,100%);background:rgba(5,5,5,0.98);border:1px solid rgba(255,255,255,0.08);border-radius:32px;box-shadow:0 32px 90px rgba(0,0,0,0.4);overflow:hidden;padding:32px;display:flex;flex-direction:column;gap:24px;}
+  .tour-header{display:flex;align-items:flex-start;gap:18px;}
+  .tour-icon{width:52px;height:52px;border-radius:18px;background:linear-gradient(135deg, var(--green), var(--green-2));color:#040404;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+  .tour-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(0,232,122,0.08);border:1px solid rgba(0,232,122,0.18);border-radius:999px;font-size:12px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:0.08em;}
+  .tour-steps{display:flex;flex-direction:column;gap:20px;}
+  .tour-step{padding:24px;border-radius:24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);}
+  .tour-step-index{font-size:12px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+  .tour-step h3{font-size:20px;font-weight:800;color:var(--t1);margin-bottom:10px;}
+  .tour-step p{font-size:14px;color:var(--t3);line-height:1.8;margin-bottom:12px;}
+  .tour-step-action{font-size:13px;color:var(--t2);font-weight:700;}
+  .tour-actions{display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap;}
+  @media(max-width:720px){.tour-dialog{padding:24px;}.tour-header{flex-direction:column;align-items:flex-start;}.tour-actions{justify-content:flex-start;}}  
+  </style>
 </head>
 <body>
 
@@ -150,6 +164,24 @@ body{background:var(--bg);}
           <div class="stat-card"><strong>Real mentors</strong><span>lived experience</span></div>
           <div class="stat-card"><strong>AI strategy</strong><span>guided planning</span></div>
           <div class="stat-card"><strong>Free access</strong><span>always available</span></div>
+        </div>
+      </div>
+    </div>
+    <div id="studentTourModal" class="tour-modal" style="display:none;">
+      <div class="tour-modal-backdrop" onclick="dismissTour()"></div>
+      <div class="tour-dialog">
+        <div class="tour-header">
+          <div class="tour-icon">M</div>
+          <div>
+            <div class="tour-badge">Mentorist Tour</div>
+            <h2>Welcome to your student workspace</h2>
+            <p>Learn how Mentorist helps you ask better questions, connect with mentors, and build a stronger academic plan.</p>
+          </div>
+        </div>
+        <div class="tour-steps" id="tourSteps"></div>
+        <div class="tour-actions">
+          <button class="btn btn-ghost" onclick="dismissTour()">Skip Tour</button>
+          <button class="btn btn-primary" onclick="nextTourStep()">Next</button>
         </div>
       </div>
     </div>
@@ -456,6 +488,80 @@ body{background:var(--bg);}
     }).join('');
   }
 
+  const tourSteps = [
+    {
+      title: 'Ask the right things',
+      body: 'Use the question form to share your goal, current courses, and what you need help with. The more context, the stronger the mentor guidance.',
+      action: 'Start your first question now.'
+    },
+    {
+      title: 'AI Strategy Engine',
+      body: 'The strategy tool gives you structured planning advice for courses, college applications, and internships. It works alongside your mentors to sharpen your next steps.',
+      action: 'Visit the AI Strategy Engine when you want a fast, plan-focused perspective.'
+    },
+    {
+      title: 'Track your progress',
+      body: 'Your past questions and mentor feedback appear under My Roadmap Inquiries so you can review the advice and follow through with confidence.',
+      action: 'Check your activity anytime from the menu.'
+    }
+  ];
+  let currentTourIndex = 0;
+
+  function showTour() {
+    const modal = document.getElementById('studentTourModal');
+    if (!modal) return;
+    currentTourIndex = 0;
+    renderTourStep();
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function renderTourStep() {
+    const step = tourSteps[currentTourIndex];
+    const container = document.getElementById('tourSteps');
+    if (!step || !container) return;
+    container.innerHTML = `
+      <div class="tour-step">
+        <div class="tour-step-index">Step ${currentTourIndex + 1} of ${tourSteps.length}</div>
+        <h3>${Utils.escapeHtml(step.title)}</h3>
+        <p>${Utils.escapeHtml(step.body)}</p>
+        <div class="tour-step-action">${Utils.escapeHtml(step.action)}</div>
+      </div>
+    `;
+    document.querySelector('.tour-actions button.btn-primary').textContent = currentTourIndex === tourSteps.length - 1 ? 'Finish Tour' : 'Next';
+  }
+
+  function nextTourStep() {
+    if (currentTourIndex < tourSteps.length - 1) {
+      currentTourIndex += 1;
+      renderTourStep();
+      return;
+    }
+    dismissTour(true);
+  }
+
+  function dismissTour(markCompleted = true) {
+    const modal = document.getElementById('studentTourModal');
+    if (!modal) return;
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    if (user?.email) {
+      localStorage.setItem('mn_student_tour_seen_' + user.email.toLowerCase(), '1');
+    }
+  }
+
+  function shouldShowTour() {
+    if (!user?.email || user.role !== 'student') return false;
+    const seen = localStorage.getItem('mn_student_tour_seen_' + user.email.toLowerCase());
+    return !seen && user.onboarded;
+  }
+
+  function maybeShowTour() {
+    if (shouldShowTour()) {
+      setTimeout(showTour, 400);
+    }
+  }
+
   function toggleInq(id, hasAns) { if(hasAns) document.getElementById('inq-'+id).classList.toggle('open'); }
 
   function markHelpful(qId, aIdx, btn) {
@@ -494,6 +600,7 @@ body{background:var(--bg);}
   // Render immediately with local data
   if (!_redirecting) {
     init();
+    maybeShowTour();
 
     // Sync in background without blocking UI
     Promise.all([UserStore.refreshFromRemote(), QuestionStore.refreshFromRemote()]).then(() => {

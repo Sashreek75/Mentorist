@@ -460,7 +460,9 @@ const server = http.createServer(async (req, res) => {
       json(res, req, 200, {
         success: true,
         source: 'gemini',
+        text: text,
         markdown: text,
+        output_text: text,
         model,
         grounded,
         usedInternalData: !!(mentors.length || opportunities.length),

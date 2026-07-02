@@ -65,12 +65,17 @@ const RecommendationEngine = {
 
     if (typeof window !== 'undefined') {
       const { protocol, hostname, origin } = window.location;
-      if (origin && origin !== 'null') candidates.push(origin);
+      const normalizedHost = String(hostname || '').toLowerCase();
+      const localHosts = ['localhost', '127.0.0.1', '[::1]', ''];
+      const addLocal = ['http://127.0.0.1:3000', 'http://localhost:3000'];
+      const originHasLocalPort = origin?.includes(':3000');
+      const originIsLocal = localHosts.includes(normalizedHost) || originHasLocalPort;
 
-      if (protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '') {
-        candidates.push('http://127.0.0.1:3000', 'http://localhost:3000');
-      } else if (protocol === 'http:' || protocol === 'https:') {
-        candidates.push('http://127.0.0.1:3000', 'http://localhost:3000');
+      if (protocol === 'file:' || originIsLocal) {
+        candidates.push(...addLocal);
+        if (originIsLocal && origin && origin !== 'null') {
+          candidates.push(origin.replace(/\/$/, ''));
+        }
       }
     }
 
@@ -384,6 +389,7 @@ const RecommendationEngine = {
 
     const candidates = [
       data?.text,
+      data?.markdown,
       data?.output_text,
       data?.response,
       data?.choices?.[0]?.message?.content,
@@ -487,7 +493,13 @@ const RecommendationEngine = {
           throw new Error(`Strategy API ${response.status}: ${errBody.slice(0, 200)}`);
         }
 
-        const data = await response.json();
+        const textBody = await response.text().catch(() => '');
+        let data;
+        try {
+          data = textBody ? JSON.parse(textBody) : null;
+        } catch (parseErr) {
+          throw new Error(`Strategy API returned invalid JSON: ${parseErr.message} - ${textBody.slice(0, 200)}`);
+        }
         const text = this.parseAITextResponse(data);
         if (!text || text.trim().length < 50) {
           throw new Error('Strategy API returned empty or insufficient response');
