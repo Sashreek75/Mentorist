@@ -618,8 +618,15 @@
   <script>
     // ── Auth ──────────────────────────────────────────────────────────────────
     const user = Auth.requireAuth();
+    const effectiveUser = user || {
+      email: 'guest@example.com',
+      name: 'Guest Student',
+      role: 'student',
+      onboarded: true
+    };
+
     if (!user) {
-      window.location.href = 'auth.html';
+      console.info('[AI Engine] No authenticated user detected; running in guest mode.');
     } else if (!user.onboarded) {
       window.location.href = 'onboarding.html';
     } else if (user.role === 'mentor') {
@@ -629,14 +636,14 @@
     // ── Nav setup ─────────────────────────────────────────────────────────────
     const navEmail = document.getElementById('navEmail');
     const navAv = document.getElementById('navAv');
-    if (navEmail) navEmail.textContent = user.email;
+    if (navEmail) navEmail.textContent = effectiveUser.email;
     if (navAv) {
       navAv.style.background = 'var(--green-dim)';
       navAv.style.color = 'var(--green)';
-      navAv.textContent = Utils.initials(user.name);
+      navAv.textContent = Utils.initials(effectiveUser.name);
     }
 
-    function refreshAiUsageNote(profile = user) {
+    function refreshAiUsageNote(profile = effectiveUser) {
       const el = document.getElementById('aiUsageNote');
       if (!el || typeof RecommendationEngine === 'undefined') return;
       el.textContent = RecommendationEngine.formatUsageHint(profile);

@@ -1156,6 +1156,102 @@
     };
   }
 
+  function buildPracticalNextSteps(profile, bundle) {
+    const interest = normalizeText(profile.interest || 'your area of interest');
+    const gradeLabel = profile.schoolGradeLabel || profile.schoolGrade || 'your current grade';
+    const schoolName = profile.schoolName || 'your school';
+    const topCourse = bundle?.courses?.[0]?.name || null;
+    const topProject = bundle?.projects?.[0]?.name || null;
+    const topOpportunity = bundle?.jobs?.[0]?.title || null;
+    const steps = [];
+
+    if (topCourse) {
+      steps.push(`Ask your counselor or academic advisor this week whether ${topCourse} is the best fit for ${gradeLabel.toLowerCase()} and whether it can be slotted in without hurting your GPA.`);
+    }
+
+    if (topProject) {
+      steps.push(`Start a real first milestone for ${topProject} this week by outlining the first deliverable, deadline, and evidence you will show.`);
+    }
+
+    if (topOpportunity) {
+      steps.push(`Send 3 targeted outreach messages this week for ${topOpportunity} opportunities or a professor/mentor contact in your field.`);
+    }
+
+    if (interest.includes('stem') || interest.includes('computer') || interest.includes('science')) {
+      steps.push('Create one public artifact this week—a GitHub repo, portfolio page, or project demo—so your work is visible to mentors and colleges.');
+    } else if (interest.includes('medicine') || interest.includes('health')) {
+      steps.push('Document one concrete health or research experience this week, such as a lab observation, volunteer reflection, or short data analysis write-up.');
+    } else if (interest.includes('business') || interest.includes('entrepreneur')) {
+      steps.push('Write one short case study or pitch this week that shows how you solve a real problem for a customer, club, or local organization.');
+    } else {
+      steps.push(`Turn one interest into visible proof this week by sharing a sample, portfolio piece, or short write-up tied to ${schoolName}.`);
+    }
+
+    if (profile.targetColleges?.length) {
+      steps.push(`Pick your top 2 target colleges from ${profile.targetColleges.slice(0, 2).join(' and ')} and note one specific program, professor, or opportunity to mention in a future essay.`);
+    }
+
+    return steps.slice(0, 5);
+  }
+
+  function buildActionableStrategyMarkdown(rawProfile, options = {}) {
+    const bundle = buildRecommendationBundle(rawProfile, options);
+    const profile = bundle.profile || {};
+    const requestType = options.requestType || 'Strategy';
+    const schoolName = profile.schoolName || 'your school';
+    const gradeLabel = profile.schoolGradeLabel || profile.schoolGrade || 'your current grade';
+    const interest = profile.interest || 'your interests';
+    const topCourse = bundle.courses?.[0];
+    const topProject = bundle.projects?.[0];
+    const topOpportunity = bundle.jobs?.[0];
+    const practicalSteps = bundle.practicalNextSteps || [];
+    const courseNow = bundle.courseTracks?.now?.slice(0, 3) || [];
+    const courseNext = bundle.courseTracks?.next?.slice(0, 3) || [];
+    const gpaBoost = bundle.courseTracks?.gpaBoost?.slice(0, 3) || [];
+
+    const lines = [];
+    lines.push(`# ${requestType}`);
+    lines.push('');
+    lines.push(`For a ${gradeLabel.toLowerCase()} student at ${schoolName} interested in ${interest}, the strongest move is to combine one high-signal course, one visible project, and one concrete outreach effort.`);
+    lines.push('');
+    lines.push('## What to do first');
+    lines.push('');
+    lines.push(`- ${topCourse ? `Prioritize ${topCourse.name} because it is the strongest course fit for your profile and ${topCourse.why.toLowerCase()}` : 'Pick the highest-fit course from the list above and verify it fits your schedule without harming your GPA.'}`);
+    lines.push(`- ${topProject ? `Start ${topProject.name} this week; it gives you evidence of work and a better story than generic extracurricular participation.` : 'Choose one project that creates visible proof of work and can be explained clearly in interviews or essays.'}`);
+    lines.push(`- ${topOpportunity ? `Use ${topOpportunity.title} as the target opportunity to build toward, because it aligns with your current interests and readiness.` : 'Target one realistic opportunity that you can actually begin applying for this month.'}`);
+    lines.push('');
+    lines.push('## Practical course plan');
+    lines.push('');
+    if (courseNow.length) {
+      lines.push('- Take Now: ' + courseNow.map((course) => `${course.name} (${course.reason || course.why || 'high-fit'})`).join('; '));
+    }
+    if (courseNext.length) {
+      lines.push('- Next Up: ' + courseNext.map((course) => `${course.name} (${course.reason || course.why || 'next step'})`).join('; '));
+    }
+    if (gpaBoost.length) {
+      lines.push('- GPA-safe rigor: ' + gpaBoost.map((course) => course.name).join(', '));
+    }
+    lines.push('');
+    lines.push('## Proof-of-work to build');
+    lines.push('');
+    lines.push(`- ${topProject ? `${topProject.name}: ${topProject.description || topProject.why || 'Create a visible artifact you can show to mentors and colleges.'}` : 'Build one artifact that shows your work clearly, such as a portfolio page, demo, or short write-up.'}`);
+    lines.push(`- ${topOpportunity ? `Target ${topOpportunity.title} as a realistic near-term goal and prepare a short email or portfolio link.` : 'Find one concrete opportunity and prepare a short tailored message.'}`);
+    lines.push('');
+    lines.push('## This Week');
+    lines.push('');
+    practicalSteps.slice(0, 3).forEach((step, index) => {
+      lines.push(`${index + 1}. ${step}`);
+    });
+    lines.push('');
+    lines.push('## Questions to ask a mentor');
+    lines.push('');
+    lines.push('- Which of these options is most realistic for my schedule and GPA this semester?');
+    lines.push('- What one project would make my application or resume stronger faster?');
+    lines.push('- Which opportunity should I pursue first if I want evidence of real work soon?');
+
+    return lines.join('\n').trim();
+  }
+
   function buildRecommendationBundle(rawProfile, options = {}) {
     const profile = normalizeProfile(rawProfile);
     const schoolCatalog = options.schoolCatalog || options.catalog || null;
@@ -1171,6 +1267,12 @@
     const mentorQuestions = buildMentorQuestions(profile, courseData.courseTracks, peerInsights);
     const summary = buildSummary(profile, courseData, peerInsights);
     const roadmap = buildRoadmap(profile, courseData.courseTracks);
+    const practicalNextSteps = buildPracticalNextSteps(profile, {
+      courses: courseData.courses,
+      projects,
+      jobs,
+      courseTracks: courseData.courseTracks
+    });
     const schoolCatalogInfo = {
       found: !!(schoolCatalog && (schoolCatalog.courses || schoolCatalog.extractedCourses || schoolCatalog.items || []).length),
       name: schoolCatalog?.schoolName || profile.schoolName || '',
@@ -1217,6 +1319,7 @@
       gpaStrategy,
       tips,
       mentorQuestions,
+      practicalNextSteps,
       summary,
       generatedAt: new Date().toISOString(),
       playbookInterest: profile.interest
@@ -1234,6 +1337,7 @@
     buildTools,
     buildGpaStrategy,
     buildTips,
+    buildActionableStrategyMarkdown,
     inferInterest,
     gradeToNumber,
     gradeLabel,

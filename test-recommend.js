@@ -139,6 +139,19 @@ function printHighlights(bundle) {
   console.log(`  Peer signal: ${bundle.peerPatterns.summary || 'n/a'}`);
 }
 
+function validateActionableMarkdown(bundle, scenario) {
+  const markdown = Core.buildActionableStrategyMarkdown(scenario.profile, {
+    schoolCatalog: scenario.schoolCatalog,
+    peerStudents: scenarios.map((item) => item.profile),
+    requestType: 'Course Recommendations'
+  });
+
+  assert(typeof markdown === 'string' && markdown.length > 220, 'Actionable markdown should be generated');
+  assert(markdown.includes('This Week') || markdown.includes('this week'), 'Actionable markdown should include concrete weekly actions');
+  assert(markdown.includes(bundle.courses[0]?.name || ''), 'Actionable markdown should mention the top recommended course');
+  assert(markdown.includes(bundle.projects[0]?.name || ''), 'Actionable markdown should mention the top recommended project');
+}
+
 function runScenario(scenario) {
   console.log(`\n${'='.repeat(70)}`);
   console.log(`Scenario: ${scenario.name}`);
@@ -150,6 +163,7 @@ function runScenario(scenario) {
   });
 
   validateBundle(bundle);
+  validateActionableMarkdown(bundle, scenario);
   printHighlights(bundle);
 
   if (scenario.name.includes('Rouse')) {

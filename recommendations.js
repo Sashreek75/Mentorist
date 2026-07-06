@@ -46,6 +46,9 @@ A true "spike" means you are a national or international standout in ONE primary
 - **Be ruthless but constructive**: Like a $1,000/hr consultant. If their profile is weak for their goals, tell them the hard truth and exactly how to fix it.
 - **Format**: Use clean Markdown. Use bolding for emphasis. Use bullet points.
 - **Specifics**: Name ACTUAL programs, competitions, or courses. NEVER say "join a club." Say "Apply for the Conrad Challenge" or "Cold-email professors at [Local University] referencing their recent paper on [Topic]."
+- **Course planning**: For course or GPA strategy questions, provide a prioritized course plan with at least one lower-risk alternative and a clear note about workload/GPA impact.
+- **Structure**: When asked for course recommendations, respond with clear headings and short bullet sections: Summary, Recommended Courses, Why it fits, GPA/Workload note, Next steps, This Week.
+- **No fluff**: Do not start with a long motivational paragraph. Start with the answer.
 - **Actionable**: Always end with exactly 3 "This Week" action items that are concrete and achievable in the next 7 days.
 - Keep responses highly dense, efficient, and under 600 words.`;
 
@@ -71,11 +74,12 @@ const RecommendationEngine = {
       const originHasLocalPort = origin?.includes(':3000');
       const originIsLocal = localHosts.includes(normalizedHost) || originHasLocalPort;
 
+      if (origin && origin !== 'null') {
+        candidates.push(origin.replace(/\/$/, ''));
+      }
+
       if (protocol === 'file:' || originIsLocal) {
         candidates.push(...addLocal);
-        if (originIsLocal && origin && origin !== 'null') {
-          candidates.push(origin.replace(/\/$/, ''));
-        }
       }
     }
 
@@ -420,7 +424,8 @@ const RecommendationEngine = {
       generationConfig: {
         temperature: 0.55,
         topP: 0.95,
-        maxOutputTokens: 1400
+        maxOutputTokens: 2600,
+        candidateCount: 1
       }
     };
 
@@ -433,7 +438,7 @@ const RecommendationEngine = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody)
-        }, 22000);
+        }, 30000);
 
         if (!response.ok) {
           const errBody = await response.text().catch(() => '');
@@ -477,7 +482,8 @@ const RecommendationEngine = {
     for (const base of bases) {
       try {
         if (onProgress) onProgress(`Connecting to the Mentorist AI service... (${base})`);
-        const response = await this.fetchWithTimeout(`${base}/api/ai-strategy`, {
+        const requestUrl = base ? `${base}/api/ai-strategy` : '/api/ai-strategy';
+        const response = await this.fetchWithTimeout(requestUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -525,10 +531,16 @@ const RecommendationEngine = {
 
   // ─── PATH 3: Rich local playbook fallback ─────────────────────────────────
   generateLocalFallback(profile, requestType, userQuery) {
+    if (typeof MentoristRecommendationCore !== 'undefined' && typeof MentoristRecommendationCore.buildActionableStrategyMarkdown === 'function') {
+      return MentoristRecommendationCore.buildActionableStrategyMarkdown(profile, {
+        requestType: requestType || 'AI Strategy Engine',
+        userQuery
+      });
+    }
+
     const interest = profile.interest || 'your area of interest';
     const grade = profile.schoolGrade || profile.grade || 'your current grade';
     const school = profile.schoolName || 'your school';
-    const careers = (profile.careers || []).slice(0, 3).join(', ') || 'your target field';
     const targetColleges = (profile.targetColleges || []).slice(0, 2).join(', ');
     const isIvyTargeting = (targetColleges + profile.goal + '').toLowerCase().match(/ivy|harvard|yale|princeton|mit|stanford|columbia|penn|brown|dartmouth|cornell/);
 
