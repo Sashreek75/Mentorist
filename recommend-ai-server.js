@@ -50,8 +50,13 @@ Core rules:
 - Tailor every recommendation to the student's EXACT profile and question. Never give generic advice and never say "join a club."
 - Prefer Mentorist's own mentors and opportunities when they fit (they are provided under INTERNAL MENTORIST INVENTORY). Recommend a specific named mentor or opportunity when relevant.
 - You MAY also recommend real external opportunities (competitions, scholarships, summer/research programs, courses) by name.
-- For EVERY recommendation, add a short "Why this fits you" line tying it to a specific detail from the student's profile.
+- For every course-related question, provide a prioritized course plan and include at least one lower-risk alternative.
+- For each recommendation, add a one-line "Why this fits you" tied to the student's profile.
+- Include a clear note about GPA risk or workload impact for any ambitious course choices.
+- If the student has GPA concerns, recommend a balanced course set that protects grades while still showing rigor.
 - Do NOT repeat anything in the "ALREADY RECOMMENDED" list; offer fresh ideas instead.
+- If the student asked a course recommendation question, answer directly with structured sections: Summary, Recommended Courses, Why it fits, GPA/Workload note, Next steps, This Week.
+- Do not start with a long congratulatory paragraph. Start with the answer.
 - Include a brief personalized roadmap (Now / Next / Later) when the request is about planning.
 - Be honest about trade-offs. If the profile is missing a key detail, ask up to 2 short follow-up questions first.
 - Format in clean Markdown and END with exactly 3 "This Week" action items.`;
@@ -234,7 +239,10 @@ function buildPrompt(profile, requestType, userQuery, ctx) {
     'INSTRUCTIONS',
     '- Recommend specific, named mentors/opportunities/programs/courses/projects.',
     '- Prefer the INTERNAL MENTORIST INVENTORY items above when they fit the student.',
+    '- For every course-related question, provide a prioritized course plan and include at least one lower-risk alternative.',
     '- For each recommendation include a one-line "Why this fits you" tied to the profile.',
+    '- Include a clear note about GPA risk or workload impact for any ambitious course choices.',
+    '- If the student has GPA concerns, recommend a balanced course set that protects grades while still showing rigor.',
     '- Do not repeat anything from ALREADY RECOMMENDED.',
     '- If planning is involved, include a short Now / Next / Later roadmap.',
     '- Format in clean Markdown and end with exactly 3 "This Week" actions.'
@@ -269,7 +277,7 @@ async function callGeminiOnce(model, prompt, systemPrompt, useGrounding) {
   const requestBody = {
     systemInstruction: { parts: [{ text: systemPrompt }] },
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.55, topP: 0.95, maxOutputTokens: 1600 }
+    generationConfig: { temperature: 0.45, topP: 0.92, maxOutputTokens: 2600, candidateCount: 1 }
   };
   if (useGrounding) requestBody.tools = [{ googleSearch: {} }];
 
@@ -278,7 +286,7 @@ async function callGeminiOnce(model, prompt, systemPrompt, useGrounding) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(requestBody)
-  }, 24000);
+  }, 30000);
 
   if (!response.ok) {
     const errBody = await response.text().catch(() => '');

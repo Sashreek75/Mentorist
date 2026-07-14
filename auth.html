@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://fonts.gstatic.com https://supabase.mentorist.local https://*.supabase.co data: blob:;">
+<script src="analytics.js"></script>
 <title>Sign In - Mentorist</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="stylesheet" href="shared.css">
@@ -256,6 +258,11 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
   
   function routeAuthenticatedUser(user) {
     if (!user) return;
+    if (localStorage.getItem('mn_student_tour_pending') === '1' && user.role === 'student') {
+      localStorage.setItem('mn_student_tour_pending_' + user.email.toLowerCase(), '1');
+    }
+    localStorage.removeItem('mn_student_tour_pending');
+
     const googleRoute = consumeGooglePostAuthRoute();
     if (googleRoute === 'mentor-review') {
       console.log("[AUTH-PAGE] Routing to mentor-review per pending route");
@@ -547,9 +554,10 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
 
       if (signInData?.session?.user) {
         const appUser = Auth.finalizeAuthenticatedUser(signInData.session.user);
-        Utils.toast('Account created! Welcome to Mentorist!', 'success');
-        console.log('[SIGNUP] Automatic sign-in successful, routing now');
-        
+        if (appUser.role === 'student') {
+          localStorage.setItem('mn_student_tour_pending_' + appUser.email.toLowerCase(), '1');
+          localStorage.removeItem('mn_student_tour_pending');
+        }
         // Direct routing based on role for new signups
         if (appUser.role === 'mentor') {
           console.log('[SIGNUP] New mentor, routing to mentor-review.html');
@@ -640,6 +648,8 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
     if (isLoginInProgress) return;
     isLoginInProgress = true;
     
+    localStorage.removeItem('mn_student_tour_pending');
+
     const loginBtn = document.querySelector('[onclick="handleEmailLogin()"]');
     const originalText = loginBtn?.textContent;
     if (loginBtn) {

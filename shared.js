@@ -1013,14 +1013,16 @@ const GoogleAuth = {
               setGooglePostAuthRoute('mentor-review');
               console.log(`[GOOGLE] Mentor signup - will route to mentor-review after auth`);
             } else {
+              localStorage.setItem('mn_student_tour_pending', '1');
               clearGooglePostAuthRoute();
-              console.log(`[GOOGLE] ${selectedRole} signup - will route to normal path`);
+              console.log(`[GOOGLE] ${selectedRole} signup - will route to normal path with student tour pending`);
             }
           } else {
             console.warn("[GOOGLE] No role card selected!");
           }
         } else {
           clearGooglePostAuthRoute();
+          try { localStorage.removeItem('mn_student_tour_pending'); } catch {}
         }
 
         // Build the proper redirect URL - use absolute URL construction
