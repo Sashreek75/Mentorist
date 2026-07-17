@@ -1197,59 +1197,128 @@
   function buildActionableStrategyMarkdown(rawProfile, options = {}) {
     const bundle = buildRecommendationBundle(rawProfile, options);
     const profile = bundle.profile || {};
-    const requestType = options.requestType || 'Strategy';
+    const requestType = options.requestType || 'Your Strategy Plan';
+    const userQuery = normalizeText(options.userQuery || '');
     const schoolName = profile.schoolName || 'your school';
+    const hasSchool = !!profile.schoolName;
     const gradeLabel = profile.schoolGradeLabel || profile.schoolGrade || 'your current grade';
     const interest = profile.interest || 'your interests';
-    const topCourse = bundle.courses?.[0];
-    const topProject = bundle.projects?.[0];
-    const topOpportunity = bundle.jobs?.[0];
-    const practicalSteps = bundle.practicalNextSteps || [];
-    const courseNow = bundle.courseTracks?.now?.slice(0, 3) || [];
-    const courseNext = bundle.courseTracks?.next?.slice(0, 3) || [];
-    const gpaBoost = bundle.courseTracks?.gpaBoost?.slice(0, 3) || [];
+    const isCollege = /college|university|undergrad|freshman|sophomore|junior|senior/i.test(String(gradeLabel)) || profile.grade === 'college';
 
-    const lines = [];
-    lines.push(`# ${requestType}`);
-    lines.push('');
-    lines.push(`For a ${gradeLabel.toLowerCase()} student at ${schoolName} interested in ${interest}, the strongest move is to combine one high-signal course, one visible project, and one concrete outreach effort.`);
-    lines.push('');
-    lines.push('## What to do first');
-    lines.push('');
-    lines.push(`- ${topCourse ? `Prioritize ${topCourse.name} because it is the strongest course fit for your profile and ${topCourse.why.toLowerCase()}` : 'Pick the highest-fit course from the list above and verify it fits your schedule without harming your GPA.'}`);
-    lines.push(`- ${topProject ? `Start ${topProject.name} this week; it gives you evidence of work and a better story than generic extracurricular participation.` : 'Choose one project that creates visible proof of work and can be explained clearly in interviews or essays.'}`);
-    lines.push(`- ${topOpportunity ? `Use ${topOpportunity.title} as the target opportunity to build toward, because it aligns with your current interests and readiness.` : 'Target one realistic opportunity that you can actually begin applying for this month.'}`);
-    lines.push('');
-    lines.push('## Practical course plan');
-    lines.push('');
-    if (courseNow.length) {
-      lines.push('- Take Now: ' + courseNow.map((course) => `${course.name} (${course.reason || course.why || 'high-fit'})`).join('; '));
-    }
-    if (courseNext.length) {
-      lines.push('- Next Up: ' + courseNext.map((course) => `${course.name} (${course.reason || course.why || 'next step'})`).join('; '));
-    }
-    if (gpaBoost.length) {
-      lines.push('- GPA-safe rigor: ' + gpaBoost.map((course) => course.name).join(', '));
-    }
-    lines.push('');
-    lines.push('## Proof-of-work to build');
-    lines.push('');
-    lines.push(`- ${topProject ? `${topProject.name}: ${topProject.description || topProject.why || 'Create a visible artifact you can show to mentors and colleges.'}` : 'Build one artifact that shows your work clearly, such as a portfolio page, demo, or short write-up.'}`);
-    lines.push(`- ${topOpportunity ? `Target ${topOpportunity.title} as a realistic near-term goal and prepare a short email or portfolio link.` : 'Find one concrete opportunity and prepare a short tailored message.'}`);
-    lines.push('');
-    lines.push('## This Week');
-    lines.push('');
-    practicalSteps.slice(0, 3).forEach((step, index) => {
-      lines.push(`${index + 1}. ${step}`);
-    });
-    lines.push('');
-    lines.push('## Questions to ask a mentor');
-    lines.push('');
-    lines.push('- Which of these options is most realistic for my schedule and GPA this semester?');
-    lines.push('- What one project would make my application or resume stronger faster?');
-    lines.push('- Which opportunity should I pursue first if I want evidence of real work soon?');
+    const courseTracks = bundle.courseTracks || {};
+    const courseNow = (courseTracks.now || []).slice(0, 3);
+    const courseNext = (courseTracks.next || []).slice(0, 3);
+    const courseStretch = (courseTracks.stretch || []).slice(0, 2);
+    const gpaBoost = (courseTracks.gpaBoost || []).slice(0, 3);
+    const jobs = (bundle.jobs || []).slice(0, 2);
+    const projects = (bundle.projects || []).slice(0, 2);
+    const gpa = bundle.gpaStrategy || {};
+    const peers = bundle.peerPatterns || {};
+    const mentorQs = (bundle.mentorQuestions && bundle.mentorQuestions.length ? bundle.mentorQuestions : [
+      'Which of these options is most realistic for my schedule and GPA this semester?',
+      'What single project would strengthen my application or resume fastest?',
+      'Which opportunity should I pursue first for real, visible experience?'
+    ]).slice(0, 4);
+    const steps = (bundle.practicalNextSteps || []).slice(0, 3);
+    const catalogNote = hasSchool
+      ? `Recommendations are matched to ${schoolName}'s catalog where we could infer it; confirm exact titles and prerequisites with your counselor.`
+      : `Add your school on your profile and we'll match these to its real course catalog.`;
 
-    return lines.join('\n').trim();
+    const courseLine = (c) => {
+      const why = (c.reason || c.why || '').replace(/\s+/g, ' ').trim();
+      const src = c.source === 'school catalog' ? ' _(from your school catalog)_' : '';
+      return `**${c.name}**${src}${why ? ` — ${why}` : ''}`;
+    };
+
+    const L = [];
+    L.push(`# ${requestType}`);
+    L.push('');
+    L.push(`**Your read:** For a ${String(gradeLabel).toLowerCase()} student focused on ${interest}${hasSchool ? ` at ${schoolName}` : ''}, the highest-leverage move is a focused "spike": one clear course sequence, one GPA-safe rigor pick, one proof-of-work project, and one real opportunity you start pursuing now — not a scattered résumé.`);
+    if (userQuery) { L.push(''); L.push(`> Responding to: _${userQuery}_`); }
+    L.push('');
+
+    // ── Course plan ──
+    L.push(isCollege ? '## Course & credential plan' : '## Your course plan');
+    L.push('');
+    if (courseNow.length) L.push(`**Take now:** ${courseNow.map(courseLine).join('  ·  ')}`);
+    if (courseNext.length) { L.push(''); L.push(`**Line up next:** ${courseNext.map(courseLine).join('  ·  ')}`); }
+    if (courseStretch.length) { L.push(''); L.push(`**Stretch (if the load is sustainable):** ${courseStretch.map((c) => `**${c.name}**`).join(', ')}`); }
+    if (!courseNow.length && !courseNext.length) {
+      L.push('Once your grade and interest are set, we build a term-by-term sequence here. For now, prioritize the most advanced course in your interest area that you can take without hurting your GPA.');
+    }
+    L.push('');
+    L.push(`_${catalogNote}_`);
+    L.push('');
+
+    // ── GPA strategy ──
+    L.push('## GPA & rigor strategy');
+    L.push('');
+    if (gpa.recommendations && gpa.recommendations.length) {
+      L.push(`**Weighted-core picks that protect GPA:** ${gpa.recommendations.slice(0, 5).join(', ')}.`);
+      L.push('');
+    }
+    if (gpa.caution) { L.push(`**Watch out:** ${gpa.caution}`); L.push(''); }
+    if (gpa.notes) { L.push(gpa.notes); L.push(''); }
+
+    // ── Opportunities ──
+    if (jobs.length) {
+      L.push(isCollege ? '## Internships & roles to target' : '## Opportunities to build toward');
+      L.push('');
+      jobs.forEach((j) => {
+        L.push(`### ${j.title}${j.readiness ? ` · _${j.readiness}_` : ''}`);
+        if (j.why || j.description) L.push(`${j.why || j.description}`);
+        if (j.companies && j.companies.length) L.push(`- **Where to look:** ${j.companies.slice(0, 4).join(', ')}`);
+        if (j.howToBreakIn) L.push(`- **How to break in:** ${j.howToBreakIn}`);
+        if (j.skillsBuild && j.skillsBuild.length) L.push(`- **Skills you'll build:** ${j.skillsBuild.slice(0, 4).join(', ')}`);
+        if (j.salary) L.push(`- **Typical range:** ${j.salary}`);
+        L.push('');
+      });
+    }
+
+    // ── Projects ──
+    if (projects.length) {
+      L.push('## Proof-of-work projects');
+      L.push('');
+      projects.forEach((p) => {
+        const meta = [p.time ? `~${p.time}` : '', p.portfolioValue ? `${p.portfolioValue} portfolio value` : ''].filter(Boolean).join(' · ');
+        L.push(`- **${p.name}**${meta ? ` _(${meta})_` : ''} — ${p.description || p.why || 'A visible artifact you can show mentors and colleges.'}`);
+      });
+      L.push('');
+    }
+
+    // ── Peer signal ──
+    if (peers.sampleSize && peers.topActivities && peers.topActivities.length) {
+      L.push('## What is working for students like you');
+      L.push('');
+      L.push(`Across ${peers.sampleSize} similar Mentorist profiles, the highest-signal moves are: ${peers.topActivities.slice(0, 4).join(', ')}. Aim to go deep on one of these rather than sampling all of them.`);
+      L.push('');
+    }
+
+    // ── Roadmap ──
+    L.push('## Roadmap');
+    L.push('');
+    L.push(`- **Now (this term):** ${courseNow.length ? courseNow.map((c) => c.name).join(', ') : 'lock your course sequence'} + start your top project.`);
+    L.push(`- **Next (this year):** ${courseNext.length ? courseNext.map((c) => c.name).join(', ') : 'raise rigor where GPA allows'} + turn the project into a visible result.`);
+    L.push(`- **Later:** pursue ${jobs[0] ? jobs[0].title.toLowerCase() : 'a real opportunity'} and connect it to ${profile.targetColleges && profile.targetColleges.length ? profile.targetColleges.slice(0, 2).join(' / ') : 'your target programs'}.`);
+    L.push('');
+
+    // ── This week ──
+    L.push('## This Week');
+    L.push('');
+    const weekActions = steps.length ? steps : [
+      `Confirm your top course with your counselor and check it won't hurt your GPA.`,
+      `Outline the first milestone of your top project — deliverable, deadline, and the evidence you'll show.`,
+      `Send 2–3 outreach messages toward ${jobs[0] ? jobs[0].title.toLowerCase() : 'a mentor or program'} in your field.`
+    ];
+    weekActions.slice(0, 3).forEach((s, i) => L.push(`${i + 1}. ${s}`));
+    L.push('');
+
+    // ── Mentor questions ──
+    L.push('## Bring these to your mentor');
+    L.push('');
+    mentorQs.forEach((q) => L.push(`- ${q}`));
+
+    return L.join('\n').trim();
   }
 
   function buildRecommendationBundle(rawProfile, options = {}) {

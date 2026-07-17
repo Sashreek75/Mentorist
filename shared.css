@@ -498,3 +498,25 @@ body::after{
   .app-layout,.on-layout{padding-top:80px;padding-bottom:60px;}
   .bottom-nav{display:flex;}
 }
+
+/* ===== GLOBAL MOBILE HARDENING ===== */
+/* Wide content (tables, code, AI output) must never break the viewport. */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.markdown-body pre,.markdown-body code{white-space:pre-wrap;overflow-wrap:anywhere;}
+h1,h2,h3,h4,p,li{overflow-wrap:break-word;}
+
+@media(max-width:768px){
+  /* Comfortable tap targets everywhere. */
+  .btn{min-height:44px;}
+  .nav-link,.nav-sign-in,.nav-get-started,.sidebar-link,.tag-pill,.topic-pill{min-height:42px;display:inline-flex;align-items:center;}
+  /* Tighter, cleaner card padding on phones. */
+  .card,.feature-card,.impact-card,.aud-card,.timeline-card,.step{padding:20px;}
+}
+
+@media(max-width:520px){
+  /* Stack primary CTAs full-width so they're easy to hit. */
+  .hero-actions .btn,.mentor-cta .btn,.final-cta .btn{width:100%;}
+  /* Keep gutters consistent and generous. */
+  .container,.footer-inner{padding-left:18px;padding-right:18px;}
+  .foot-bottom{flex-direction:column;gap:8px;}
+}
