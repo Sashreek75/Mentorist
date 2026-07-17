@@ -979,12 +979,13 @@ const Utils = {
     wrap.style.cssText = "position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:9000;pointer-events:none;";
     const t = document.createElement("div");
     t.style.cssText = `
-      padding:12px 22px;border-radius:999px;font-size:14px;font-weight:500;
+      padding:13px 24px;border-radius:999px;font-size:14px;font-weight:600;
       white-space:nowrap;font-family:var(--font);
+      box-shadow:0 12px 34px rgba(16,40,30,0.16);backdrop-filter:blur(12px);
       animation:fadeUp 0.3s ease both;
-      ${type==="success" ? "background:#0a2e1a;color:#00e87a;border:1px solid rgba(0,232,122,0.3);" : ""}
-      ${type==="error"   ? "background:#2e0a0a;color:#ff6b6b;border:1px solid rgba(255,68,68,0.3);" : ""}
-      ${type==="info"    ? "background:#1a1a2e;color:#93c5fd;border:1px solid rgba(96,165,250,0.3);" : ""}
+      ${type==="success" ? "background:#ffffff;color:#0b8459;border:1px solid rgba(14,159,110,0.32);" : ""}
+      ${type==="error"   ? "background:#ffffff;color:#c93b3b;border:1px solid rgba(220,75,75,0.32);" : ""}
+      ${type==="info"    ? "background:#ffffff;color:#2f74d0;border:1px solid rgba(47,116,208,0.32);" : ""}
     `;
     t.textContent = msg;
     wrap.appendChild(t);
@@ -1334,7 +1335,7 @@ const GlobalBroadcast = {
     const overlay = document.createElement('div');
     overlay.className = 'broadcast-overlay';
     overlay.style.cssText = `
-      position:fixed; inset:0; background:rgba(0,0,0,0.85); 
+      position:fixed; inset:0; background:rgba(15,28,23,0.45);
       backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
       z-index:9999; display:flex; align-items:center; justify-content:center;
       padding:24px; animation:fadeIn 0.4s ease;
@@ -1345,12 +1346,12 @@ const GlobalBroadcast = {
       background:var(--bg-1); border:1px solid var(--green);
       border-radius:var(--r-3xl); width:100%; max-width:540px;
       padding:48px; position:relative; overflow:hidden;
-      box-shadow: 0 0 60px rgba(0,232,122,0.15);
+      box-shadow: 0 30px 80px rgba(16,40,30,0.25);
       animation:scaleIn 0.5s cubic-bezier(0.2, 1, 0.3, 1);
     `;
 
     card.innerHTML = `
-      <div style="position:absolute; top:0; left:0; width:100%; height:4px; background:linear-gradient(90deg, var(--green), #1aff8e);"></div>
+      <div style="position:absolute; top:0; left:0; width:100%; height:4px; background:linear-gradient(90deg, var(--green), var(--green-4));"></div>
       <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
         <span style="font-size:10px; font-weight:800; color:var(--green); background:var(--green-dim); padding:4px 12px; border-radius:var(--r-pill); text-transform:uppercase; letter-spacing:0.1em; border:1px solid rgba(0,232,122,0.2);">${Utils.escapeHtml(al.tag || 'Global Update')}</span>
         <span style="font-size:12px; color:var(--t4); font-weight:600;">Broadcasted by ${Utils.escapeHtml(al.author || 'Founder')}</span>

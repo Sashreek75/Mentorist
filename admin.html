@@ -4,7 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://fonts.gstatic.com https://supabase.mentorist.local https://*.supabase.co data: blob:;">
+<meta name="theme-color" content="#f7f4ee">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://mentorist-website.vercel.app; base-uri 'self'; frame-ancestors 'self'; form-action 'self' https://forms.gle;">
 <script src="analytics.js"></script>
 <title>Admin Dashboard — Mentorist</title>
   <link rel="icon" type="image/png" href="favicon.png">
@@ -15,21 +16,21 @@
     }
 
     .admin-card {
-      background: linear-gradient(180deg, rgba(15, 21, 20, 0.7), rgba(10, 14, 13, 0.9));
+      background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.9));
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(33,38,29,0.06);
       border-radius: var(--r-3xl);
       padding: clamp(24px, 6vw, 48px);
       margin-top: 40px;
       position: relative;
       overflow: hidden;
-      box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+      box-shadow: 0 40px 80px -20px rgba(40,35,25,0.14), inset 0 1px 1px rgba(33,38,29,0.05);
       transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
     .admin-card:hover {
-      box-shadow: 0 45px 90px -20px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+      box-shadow: 0 45px 90px -20px rgba(40,35,25,0.14), inset 0 1px 1px rgba(33,38,29,0.08);
     }
 
     .admin-card::before {
@@ -39,7 +40,7 @@
       left: 0;
       right: 0;
       height: 4px;
-      background: linear-gradient(90deg, var(--green), #1aff8e, var(--green));
+      background: linear-gradient(90deg, var(--green), #16a86b, var(--green));
       background-size: 200% 100%;
       animation: gradientMove 4s ease infinite;
     }
@@ -52,9 +53,9 @@
 
     .table-wrap {
       margin-top: 40px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(33,38,29,0.05);
       border-radius: var(--r-2xl);
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(40,35,25,0.14);
       overflow: hidden;
     }
 
@@ -66,13 +67,13 @@
     th {
       text-align: left;
       padding: 16px 24px;
-      background: rgba(255, 255, 255, 0.02);
+      background: rgba(33,38,29,0.02);
       color: var(--t4);
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       font-weight: 800;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba(33,38,29,0.05);
     }
 
     tr {
@@ -80,12 +81,12 @@
     }
 
     tr:hover td {
-      background: rgba(255, 255, 255, 0.015);
+      background: rgba(33,38,29,0.015);
     }
 
     td {
       padding: 20px 24px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid rgba(33,38,29,0.03);
       font-size: 14px;
       color: var(--t2);
       vertical-align: middle;
@@ -127,19 +128,19 @@
 
     .st-pending {
       background: rgba(245, 158, 11, 0.1);
-      color: #fbbf24;
+      color: #b06d10;
       border: 1px solid rgba(245, 158, 11, 0.2);
     }
 
     .st-active {
       background: var(--green-dim);
       color: var(--green);
-      border: 1px solid rgba(0, 232, 122, 0.2);
+      border: 1px solid rgba(15, 157, 99, 0.2);
     }
 
     .st-rejected {
       background: rgba(239, 68, 68, 0.1);
-      color: #f87171;
+      color: #c0392b;
       border: 1px solid rgba(239, 68, 68, 0.2);
     }
 
@@ -244,19 +245,19 @@
     }
 
     .btn-approve:hover {
-      background: #00ff85;
+      background: #0f9d63;
       transform: translateY(-1px);
     }
 
     .btn-reject {
       background: rgba(239, 68, 68, 0.1);
-      color: #f87171;
+      color: #c0392b;
       border-color: rgba(239, 68, 68, 0.2);
     }
 
     .btn-reject:hover {
       background: rgba(239, 68, 68, 0.2);
-      border-color: #f87171;
+      border-color: #c0392b;
     }
 
     .btn-undo {
@@ -269,7 +270,7 @@
       background: var(--green-dim);
       padding: 12px 24px;
       border-radius: var(--r-xl);
-      border: 1px solid rgba(0,232,122,0.2);
+      border: 1px solid rgba(15,157,99,0.2);
       margin-bottom: 24px;
       display: flex;
       justify-content: space-between;
@@ -285,21 +286,21 @@
     }
 
     .stat-card {
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+      background: linear-gradient(180deg, rgba(33,38,29,0.02), transparent);
       backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.05);
+      border: 1px solid rgba(33,38,29,0.05);
       border-radius: var(--r-2xl);
       padding: 24px;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      box-shadow: inset 0 1px 1px rgba(255,255,255,0.03);
+      box-shadow: inset 0 1px 1px rgba(33,38,29,0.03);
       transition: transform 0.3s ease, border-color 0.3s ease;
     }
 
     .stat-card:hover {
       transform: translateY(-2px);
-      border-color: rgba(0, 232, 122, 0.2);
+      border-color: rgba(15, 157, 99, 0.2);
     }
 
     .stat-val {
@@ -338,7 +339,7 @@
 
     .realtime-connecting {
       background: rgba(251, 191, 36, 0.12);
-      color: #f59e0b;
+      color: #b06d10;
       border-color: rgba(251, 191, 36, 0.2);
     }
 
@@ -383,7 +384,7 @@
       </div>
     </div>
 
-    <div class="admin-card" id="mentorReviewCenter" style="display:none; border-color: var(--green); box-shadow: 0 0 40px rgba(0,232,122,0.1);">
+    <div class="admin-card" id="mentorReviewCenter" style="display:none; border-color: var(--green); box-shadow: 0 0 40px rgba(15,157,99,0.1);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
         <div>
           <h2 style="font-family:var(--font-h); font-size:28px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">Mentor Review Center</h2>
@@ -391,7 +392,7 @@
         </div>
         <div style="display:flex; gap:12px; align-items:center;">
           <a href="mentor-review.html" class="btn btn-primary btn-sm">Open Full Review Center</a>
-          <div style="background:var(--green-dim); padding:8px 16px; border-radius:var(--r-lg); border:1px solid rgba(0,232,122,0.3);">
+          <div style="background:var(--green-dim); padding:8px 16px; border-radius:var(--r-lg); border:1px solid rgba(15,157,99,0.3);">
             <span id="pendingCountBadge" style="font-size:14px; font-weight:800; color:var(--green);">0 Pending</span>
           </div>
         </div>
@@ -418,7 +419,7 @@
           <h2 style="font-family:var(--font-h); font-size:28px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">Founder Broadcast Center</h2>
           <p style="color:var(--t3); font-size:15px;">Send strategic opportunities and critical updates directly to every Mentorist user.</p>
         </div>
-        <div style="background:var(--green-dim); padding:10px 16px; border-radius:var(--r-lg); border:1px solid rgba(0,232,122,0.2);">
+        <div style="background:var(--green-dim); padding:10px 16px; border-radius:var(--r-lg); border:1px solid rgba(15,157,99,0.2);">
           <span style="font-size:11px; font-weight:800; color:var(--green); text-transform:uppercase; letter-spacing:0.05em;">Founder Status: Active</span>
         </div>
       </div>
@@ -503,7 +504,7 @@
               <span class="status-pill st-pending">Pending</span>
             </div>
 
-            <div style="margin-bottom:20px; padding:16px; background:rgba(255,255,255,0.02); border-radius:var(--r-lg); border:1px solid var(--b1);">
+            <div style="margin-bottom:20px; padding:16px; background:rgba(33,38,29,0.02); border-radius:var(--r-lg); border:1px solid var(--b1);">
               <div style="font-size:11px; font-weight:800; color:var(--t4); text-transform:uppercase; margin-bottom:8px; letter-spacing:0.05em;">Academic Credentials</div>
               <div style="color:var(--t1); font-weight:700; font-size:14px; margin-bottom:4px;">${Utils.escapeHtml(u.applicationData?.university || 'N/A')}</div>
               <div style="color:var(--t3); font-size:13px;">${Utils.escapeHtml(u.applicationData?.major || 'No major specified')}</div>
@@ -613,7 +614,7 @@
               <div style="display: flex; justify-content: space-between; align-items: center; padding-left: 8px;">
                 <span class="badge badge-gray" style="font-size: 10px;">${u.role}</span>
                 ${isAdmin ? `
-                  <button class="btn-action" style="background: rgba(255,255,255,0.05); color: var(--t2); border: 1px solid var(--b1); padding: 4px 10px; font-size: 11px;" onclick="performAction('${u.email}', 'active', 'unsuspended')">Unsuspend</button>
+                  <button class="btn-action" style="background: rgba(33,38,29,0.05); color: var(--t2); border: 1px solid var(--b1); padding: 4px 10px; font-size: 11px;" onclick="performAction('${u.email}', 'active', 'unsuspended')">Unsuspend</button>
                 ` : ''}
               </div>
             </div>`;

@@ -5,7 +5,15 @@
    Tertiary: rich local playbook fallback
    ============================================================ */
 
-const MENTORIST_AI_SYSTEM_PROMPT = `You are an elite college admissions strategist and academic advisor — the kind retained by Ivy League applicants and their families. You have encyclopedic knowledge of the college admissions process, Ivy League expectations, high school course planning, career development, and extracurricular strategy.
+const MENTORIST_AI_SYSTEM_PROMPT = `You are Mentorist's Strategy Engine — an elite college admissions strategist and career advisor, the kind retained by top applicants and their families. You serve ambitious students across the full range: middle schoolers getting a head start, high schoolers building a standout profile, and college undergraduates hunting for internships and roles. You have encyclopedic knowledge of the U.S. education system, college admissions, high school course planning, career/internship strategy, and extracurricular development.
+
+## GROUND EVERYTHING IN REAL DATA (CRITICAL)
+You have a Google Search tool — USE IT before answering:
+- When the student names a school, look up that school's OFFICIAL course catalog / program of studies and recommend courses that ACTUALLY EXIST there (e.g. search "Rouse High School course catalog"). Name the real courses and cite the catalog.
+- For college students seeking internships/roles, search for REAL, currently-relevant openings and name REAL companies/programs, with how to apply.
+- For target colleges, check what they actually value and align the plan.
+- Never invent a course, program, or company. If you can't verify a specific, say so and give the best proven general guidance instead.
+- Adapt depth to the student's level — don't push Ivy-only tactics on a 7th grader or a career-focused undergrad.
 
 ## YOUR KNOWLEDGE BASE
 
@@ -685,9 +693,11 @@ ${coreAdvice}
 
     // Try the strongest live AI paths first, then degrade gracefully.
     const liveAI = this.canUseLiveAI(profile);
+    // User-facing fallback message. We NEVER surface raw technical errors
+    // (status codes, stack traces) — the offline playbook is a real feature.
     let fallbackReason = liveAI.allowed
-      ? 'AI engine unavailable'
-      : `You’ve reached your live AI limit for today. The offline playbook is still available and resets daily.`;
+      ? 'Showing your offline strategic playbook. Live AI was briefly unreachable — try again in a moment for web-grounded picks.'
+      : `You’ve reached today’s live AI limit. Here’s your offline strategic playbook — it resets daily, so check back tomorrow for fresh web-grounded advice.`;
     updateStatus('Consulting Ivy League admissions data and building your strategy...');
 
     const pathAttempts = [];
@@ -711,8 +721,10 @@ ${coreAdvice}
           };
         }
       } catch (e) {
-        console.warn('[AI] Live AI path failed:', e.message);
-        fallbackReason = e?.message || 'AI is experiencing high demand. Please try again later.';
+        // Log the real error for debugging, but keep the user-facing message clean.
+        console.warn('[AI] Live AI path failed:', e?.message || e);
+        // Intentionally do NOT copy e.message into fallbackReason — users should
+        // never see "Gemini error 400" etc. The friendly default stands.
       }
     }
 

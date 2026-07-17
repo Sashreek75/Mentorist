@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://fonts.gstatic.com https://supabase.mentorist.local https://*.supabase.co data: blob:;">
+<meta name="theme-color" content="#f7f4ee">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://mentorist-website.vercel.app; base-uri 'self'; frame-ancestors 'self'; form-action 'self' https://forms.gle;">
 <script src="analytics.js"></script>
 <title>Sign In - Mentorist</title>
 <link rel="icon" type="image/png" href="favicon.png">
@@ -19,14 +20,14 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
 }
 .al-glow{
   position:absolute;width:600px;height:600px;border-radius:50%;
-  background:radial-gradient(circle,rgba(0,232,122,0.1) 0%,transparent 70%);
+  background:radial-gradient(circle,rgba(15,157,99,0.1) 0%,transparent 70%);
   filter:blur(80px);top:-100px;right:-100px;pointer-events:none;
 }
-.al-grid{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,0.02) 1px,transparent 1px);background-size:32px 32px;}
+.al-grid{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(33,38,29,0.02) 1px,transparent 1px);background-size:32px 32px;}
 .al-content{position:relative;z-index:2;max-width:480px;}
 
 .al-logo{display:flex;align-items:center;gap:12px;text-decoration:none;margin-bottom:64px;}
-.al-logo-mark{width:36px;height:36px;border-radius:10px;background:var(--green);display:flex;align-items:center;justify-content:center;box-shadow: 0 4px 12px rgba(0,232,122,0.3);}
+.al-logo-mark{width:36px;height:36px;border-radius:10px;background:var(--green);display:flex;align-items:center;justify-content:center;box-shadow: 0 4px 12px rgba(15,157,99,0.3);}
 .al-logo-mark svg{width:18px;height:18px;color:#040404;}
 .al-wordmark{font-family:var(--font-h);font-size:20px;font-weight:800;color:var(--t1);letter-spacing:-0.03em;}
 
@@ -35,7 +36,7 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
 .al-body{font-size:16px;color:var(--t3);line-height:1.8;margin-bottom:48px;}
 
 .al-quote{
-  padding:28px;background:rgba(255,255,255,0.02);border:1px solid var(--b1);border-radius:var(--r-2xl);
+  padding:28px;background:rgba(33,38,29,0.02);border:1px solid var(--b1);border-radius:var(--r-2xl);
   position:relative;backdrop-filter: blur(10px);
 }
 .al-quote::before{content:'"';position:absolute;top:-10px;left:24px;font-size:64px;font-weight:800;color:var(--green);line-height:1;opacity:0.3;}
@@ -52,11 +53,11 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
 .auth-box{
   width:100%;
   max-width:460px;
-  background:linear-gradient(180deg, rgba(15,21,20,0.98), rgba(10,14,13,0.98));
-  border:1px solid rgba(255,255,255,0.08);
+  background:linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.98));
+  border:1px solid rgba(33,38,29,0.08);
   border-radius:var(--r-3xl);
   padding:clamp(28px,4vw,40px);
-  box-shadow:0 28px 60px rgba(0,0,0,0.35);
+  box-shadow:0 28px 60px rgba(40,35,25,0.14);
   animation:fadeUp 0.6s cubic-bezier(0.2, 1, 0.3, 1) both;
 }
 .auth-title{font-family:var(--font-h);font-size:32px;font-weight:800;color:var(--t1);letter-spacing:-0.03em;margin-bottom:8px;}
@@ -75,14 +76,14 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
   width:42px;height:42px;border-radius:14px;
   display:flex;align-items:center;justify-content:center;
   font-size:15px;font-weight:800;
-  margin-bottom:12px;background:rgba(255,255,255,0.04);
+  margin-bottom:12px;background:rgba(33,38,29,0.04);
   border:1px solid var(--b1);color:var(--green);
 }
 .rc-name{font-size:15px;font-weight:700;color:var(--t1);margin-bottom:4px;}
 .rc-desc{font-size:12px;color:var(--t4);line-height:1.5;}
 
 .auth-notice{
-  padding:14px 18px;background:var(--green-dim);border:1px solid rgba(0,232,122,0.2);
+  padding:14px 18px;background:var(--green-dim);border:1px solid rgba(15,157,99,0.2);
   border-radius:var(--r-lg);font-size:14px;color:var(--t1);margin-bottom:32px;line-height:1.6;
 }
 .auth-notice strong{color:var(--green);font-weight:700;}
@@ -93,7 +94,7 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
   margin-top:16px;
   padding:14px 16px;
   border-radius:var(--r-xl);
-  background:rgba(255,255,255,0.03);
+  background:rgba(33,38,29,0.03);
   border:1px solid var(--b1);
   color:var(--t3);
   font-size:13px;

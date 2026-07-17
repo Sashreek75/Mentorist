@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://fonts.gstatic.com https://supabase.mentorist.local https://*.supabase.co data: blob:;">
+<meta name="theme-color" content="#f7f4ee">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://mentorist-website.vercel.app; base-uri 'self'; frame-ancestors 'self'; form-action 'self' https://forms.gle;">
 <script src="analytics.js"></script>
 <title>Guidelines - Mentorist</title>
   <link rel="icon" type="image/png" href="favicon.png">
@@ -21,7 +22,7 @@
     }
 
     .guide-hero {
-      background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(0,232,122,0.04));
+      background: linear-gradient(135deg, rgba(33,38,29,0.03), rgba(15,157,99,0.04));
       border: 1px solid var(--b1);
       border-radius: var(--r-3xl);
       padding: clamp(28px, 6vw, 48px);
@@ -34,7 +35,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at top right, rgba(0,232,122,0.14), transparent 35%);
+      background: radial-gradient(circle at top right, rgba(15,157,99,0.14), transparent 35%);
       pointer-events: none;
     }
 
@@ -45,7 +46,7 @@
       padding: 8px 14px;
       border-radius: 999px;
       background: var(--green-dim);
-      border: 1px solid rgba(0,232,122,0.2);
+      border: 1px solid rgba(15,157,99,0.2);
       color: var(--green);
       font-size: 11px;
       font-weight: 800;

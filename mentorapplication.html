@@ -1,214 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://fonts.gstatic.com https://supabase.mentorist.local https://*.supabase.co data: blob:;">
-<script src="analytics.js"></script>
-<title>Mentor Application - Mentorist</title>
+  <meta name="theme-color" content="#f3f7f5">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://mentorist-website.vercel.app; base-uri 'self'; frame-ancestors 'self'; form-action 'self' https://forms.gle;">
+  <script src="analytics.js"></script>
+  <title>Become a Mentor — Mentorist</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="stylesheet" href="shared.css">
   <style>
-    body {
-      background: var(--bg);
-    }
+    .app-layout { max-width: 760px; margin: 0 auto; padding: 116px 24px 96px; }
 
-    .app-layout {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 100px 24px 80px;
-    }
+    /* Stepper */
+    .stepper { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:28px; }
+    .stepper .st { display:flex; align-items:center; gap:8px; }
+    .stepper .dot { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+      font-size:13px; font-weight:700; font-family:var(--font-h); background:var(--bg-2); color:var(--t4); border:1px solid var(--b2); transition:all .3s; }
+    .stepper .st.on .dot { background:linear-gradient(135deg,var(--green),var(--green-2)); color:#fff; border-color:transparent; box-shadow:var(--shadow-green); }
+    .stepper .lbl { font-size:12.5px; font-weight:600; color:var(--t4); }
+    .stepper .st.on .lbl { color:var(--t1); }
+    .stepper .bar { width:32px; height:2px; background:var(--b2); border-radius:2px; }
+    @media(max-width:560px){ .stepper .lbl{display:none;} .stepper .bar{width:20px;} }
 
-    .app-card {
-      background: var(--bg-1);
-      border: 1px solid var(--b1);
-      border-radius: var(--r-3xl);
-      padding: clamp(24px, 6vw, 48px);
-      position: relative;
-      overflow: hidden;
-    }
+    .app-header { text-align:center; margin-bottom:32px; }
+    .app-title { font-family:var(--font-h); font-size:clamp(28px,4.4vw,40px); font-weight:700; color:var(--t1); letter-spacing:-0.03em; margin-bottom:12px; }
+    .app-sub { font-size:16px; color:var(--t3); max-width:520px; margin:0 auto; line-height:1.7; }
 
-    .app-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, var(--green), var(--green-2));
-    }
+    /* Benefit row */
+    .benefits { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:28px; }
+    .benefit { background:var(--bg-1); border:1px solid var(--b1); border-radius:var(--r-lg); padding:16px; text-align:center; box-shadow:var(--shadow-sm); }
+    .benefit .bi { width:36px; height:36px; margin:0 auto 8px; border-radius:10px; background:var(--green-dim); color:var(--green-2); display:flex; align-items:center; justify-content:center; }
+    .benefit .bi svg{width:18px;height:18px;}
+    .benefit strong { display:block; font-size:13.5px; color:var(--t1); font-family:var(--font-h); font-weight:600; }
+    .benefit span { font-size:12px; color:var(--t4); }
+    @media(max-width:560px){ .benefits{grid-template-columns:1fr;} }
 
-    .app-header {
-      text-align: center;
-      margin-bottom: 48px;
-    }
+    .app-card { background:var(--bg-1); border:1px solid var(--b1); border-radius:var(--r-3xl); padding:clamp(24px,5vw,44px); position:relative; overflow:hidden; box-shadow:var(--shadow-md); }
+    .app-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg,var(--green),var(--green-4)); }
 
-    .app-title {
-      font-family: var(--font-h);
-      font-size: 36px;
-      font-weight: 800;
-      color: var(--t1);
-      margin-bottom: 12px;
-      letter-spacing: -0.03em;
-    }
+    /* Timeline notice */
+    .pending-notice { background:linear-gradient(135deg,var(--green-dim),rgba(52,211,153,0.06)); padding:20px 22px; border-radius:var(--r-xl); border:1px solid rgba(14,159,110,0.22); margin-bottom:36px; display:flex; gap:14px; align-items:flex-start; }
+    .pn-icon { width:38px; height:38px; flex-shrink:0; border-radius:11px; background:var(--bg-1); border:1px solid rgba(14,159,110,0.25); display:flex; align-items:center; justify-content:center; }
+    .pn-icon svg{width:20px;height:20px;color:var(--green-2);}
+    .pn-text h4 { font-family:var(--font-h); font-weight:600; color:var(--green-3); margin-bottom:4px; font-size:15px; }
+    .pn-text p { font-size:13.5px; color:var(--t2); line-height:1.65; }
 
-    .app-sub {
-      font-size: 16px;
-      color: var(--t3);
-      max-width: 540px;
-      margin: 0 auto;
-      line-height: 1.7;
-    }
+    .rejected-notice { background:var(--danger-bg); padding:20px 22px; border-radius:var(--r-xl); border:1px solid rgba(220,75,75,0.22); margin-bottom:36px; display:flex; gap:14px; align-items:flex-start; }
+    .rejected-notice .pn-icon { border-color:rgba(220,75,75,0.3); }
+    .rejected-notice .pn-icon svg { color:var(--danger); }
+    .rejected-notice h4 { font-family:var(--font-h); font-weight:600; color:var(--danger); margin-bottom:4px; font-size:15px; }
+    .rejected-notice p { font-size:13.5px; color:var(--t2); line-height:1.65; }
 
-    .form-visual-wrap {
-      background: var(--bg-2);
-      border: 1px solid var(--b1);
-      border-radius: var(--r-2xl);
-      overflow: hidden;
-      margin-top: 40px;
-      aspect-ratio: 16/9;
-      width: 100%;
-      position: relative;
-    }
+    .sec-h { font-family:var(--font-h); font-size:18px; font-weight:600; color:var(--t1); margin-bottom:6px; display:flex; align-items:center; gap:10px; }
+    .sec-h .n { width:24px; height:24px; border-radius:7px; background:var(--green-dim); color:var(--green-2); font-size:12px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; }
+    .sec-desc { color:var(--t3); font-size:14px; margin-bottom:22px; }
 
-    .form-visual-wrap img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+    .pick-group { display:flex; flex-wrap:wrap; gap:9px; margin-bottom:8px; }
+    .pick { padding:9px 15px; border-radius:var(--r-pill); font-size:13px; font-weight:600; border:1px solid var(--b2); background:var(--bg-1); color:var(--t3); cursor:pointer; transition:all .2s; user-select:none; }
+    .pick:hover { border-color:var(--green-2); color:var(--t1); }
+    .pick.on { border-color:var(--green); background:var(--green-dim); color:var(--green-2); }
 
-    .pending-notice {
-      background: var(--green-dim);
-      padding: 24px;
-      border-radius: var(--r-xl);
-      border: 1px solid rgba(0, 232, 122, 0.25);
-      margin-top: 40px;
-      display: flex;
-      gap: 16px;
-    }
+    .app-success { display:none; text-align:center; padding:44px 28px; background:linear-gradient(135deg,var(--green-surface),rgba(52,211,153,0.05)); border-radius:var(--r-2xl); border:1px solid rgba(14,159,110,0.25); }
+    .app-success .ic { width:64px; height:64px; margin:0 auto 18px; border-radius:50%; background:linear-gradient(135deg,var(--green),var(--green-2)); display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-green); animation:scaleIn .5s var(--ease) both; }
+    .app-success .ic svg { width:30px; height:30px; color:#fff; }
+    .app-success h4 { font-family:var(--font-h); font-size:20px; font-weight:700; color:var(--t1); margin-bottom:8px; }
+    .app-success p { font-size:14.5px; color:var(--t3); line-height:1.7; max-width:400px; margin:0 auto; }
 
-    .pn-icon {
-      font-size: 24px;
-    }
-
-    .pn-text h4 {
-      font-weight: 800;
-      color: var(--green);
-      margin-bottom: 4px;
-    }
-
-    .pn-text p {
-      font-size: 14px;
-      color: var(--t2);
-      line-height: 1.6;
-    }
-
-    .rejected-notice {
-      background: rgba(239, 68, 68, 0.1);
-      padding: 24px;
-      border-radius: var(--r-xl);
-      border: 1px solid rgba(239, 68, 68, 0.2);
-      margin-top: 40px;
-      display: flex;
-      gap: 16px;
-    }
-
-    .rejected-notice h4 {
-      font-weight: 800;
-      color: #f87171;
-      margin-bottom: 4px;
-    }
-
-    @media(max-width:768px) {
-      .app-layout { padding: 80px 16px 100px; }
-      .app-card { padding: clamp(16px, 5vw, 32px); }
-      .app-title { font-size: 28px; }
-      .app-sub { font-size: 14px; }
-      .form-visual-wrap { margin-top: 32px; aspect-ratio: auto; min-height: 250px; }
-      .form-input, .form-textarea { font-size: 16px; }
-      .pending-notice, .rejected-notice { padding: 16px; gap: 12px; }
-    }
-
-    @media(max-width:500px) {
-      .app-title { font-size: 24px; }
-      .btn-lg { height: 44px; }
-      .btn-secondary { width: 100%; }
-    }
+    @media(max-width:768px){ .app-layout{ padding:92px 16px 96px; } .form-input,.form-textarea{ font-size:16px; } }
   </style>
 </head>
-
 <body>
 
   <nav class="navbar">
     <a href="index.html" class="nav-logo">
-      <div class="nav-logomark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-          stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2L2 7l10 5 10-5-10-5z" />
-          <path d="M2 17l10 5 10-5" />
-          <path d="M2 12l10 5 10-5" />
-        </svg></div>
+      <div class="nav-logomark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="M3 8v5"/><path d="M7 10.5V15c0 1.5 2.2 3 5 3s5-1.5 5-3v-4.5"/></svg></div>
       <span class="nav-wordmark">Mentorist</span>
     </a>
     <div class="nav-actions">
-      <a href="vault.html" class="btn btn-ghost btn-sm">Vault</a>
+      <a href="vault.html" class="btn btn-ghost btn-sm">Resource Vault</a>
       <button class="btn btn-ghost btn-sm" onclick="Auth.logout()">Log out</button>
     </div>
   </nav>
 
   <div class="app-layout">
-    <div class="app-header reveal">
-      <h1 class="app-title">Apply as a Mentor</h1>
-      <p class="app-sub">We review every mentor application manually to ensure all strategic guidance remains high-quality and verified.</p>
+    <div class="stepper reveal">
+      <div class="st on"><span class="dot">1</span><span class="lbl">Apply</span></div>
+      <span class="bar"></span>
+      <div class="st"><span class="dot">2</span><span class="lbl">We review</span></div>
+      <span class="bar"></span>
+      <div class="st"><span class="dot">3</span><span class="lbl">Get matched</span></div>
     </div>
 
-    <main class="app-card stagger" id="applicationMain">
+    <div class="app-header reveal">
+      <h1 class="app-title">Become a mentor</h1>
+      <p class="app-sub">A few hours can change a student's trajectory. Tell us about yourself — every application is reviewed by our team to keep guidance high-quality and trusted.</p>
+    </div>
+
+    <div class="benefits reveal">
+      <div class="benefit"><div class="bi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg></div><strong>1:1 matching</strong><span>Students in your field</span></div>
+      <div class="benefit"><div class="bi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><strong>Flexible</strong><span>On your schedule</span></div>
+      <div class="benefit"><div class="bi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5l-8-3Z"/></svg></div><strong>Vetted</strong><span>A trusted community</span></div>
+    </div>
+
+    <main class="app-card reveal" id="applicationMain">
       <div id="noticeContainer">
         <div class="pending-notice">
-          <div class="pn-icon">🕒</div>
+          <div class="pn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
           <div class="pn-text">
-            <h4>Review Policy</h4>
-            <p>After you submit the form below, our team will review your qualifications. You will receive an approval notification within 48 hours. Once approved, you can access the Mentor Dashboard.</p>
+            <h4>What happens next</h4>
+            <p>Submit the form below and our team reviews your qualifications — usually within 48 hours. Once approved, your Mentor Dashboard unlocks and we start matching you with students.</p>
           </div>
         </div>
       </div>
 
-      <div class="form-visual-wrap">
-        <img src="mentor_application_visual.png" alt="Mentorship Path">
-      </div>
-
-      <div id="ctaSection" style="margin-top:40px; text-align:left;">
-        <h3 style="font-family:var(--font-h); font-size:24px; color:var(--t1); margin-bottom:12px;">Step 1: Submit Your Info</h3>
-        <p style="color:var(--t3); font-size:15px; margin-bottom:32px;">
-          Complete the official Mentorist Application. This ensures we have all the data needed for your review.
-        </p>
-
+      <div id="ctaSection">
         <div id="appForm">
+          <div class="sec-h"><span class="n">1</span> About you</div>
+          <p class="sec-desc">This is what our reviewers see. Be specific — it helps us match you well.</p>
+
           <div class="form-group">
             <label class="form-label" for="appUniversity">University / College</label>
-            <input type="text" class="form-input" id="appUniversity" placeholder="e.g. Stanford University '26">
+            <input type="text" class="form-input" id="appUniversity" placeholder="e.g. Georgia Institute of Technology '26">
           </div>
           <div class="form-group">
-            <label class="form-label" for="appMajor">Major / Field of Study</label>
+            <label class="form-label" for="appMajor">Major / Field of study</label>
             <input type="text" class="form-input" id="appMajor" placeholder="e.g. Computer Science">
           </div>
-          <div class="form-group" style="margin-bottom: 24px;">
-            <label class="form-label" for="appExperience">Why do you want to be a mentor?</label>
-            <textarea class="form-textarea" id="appExperience" placeholder="Share a brief story about your academic or professional journey and what strategies worked for you..." style="min-height:120px;"></textarea>
+
+          <div class="form-group">
+            <label class="form-label">Areas you can mentor in <span style="color:var(--t4);font-weight:500;">(pick any)</span></label>
+            <div class="pick-group" id="expertisePicks">
+              <span class="pick" data-v="STEM & Engineering">STEM &amp; Engineering</span>
+              <span class="pick" data-v="Computer Science">Computer Science</span>
+              <span class="pick" data-v="Business & Finance">Business &amp; Finance</span>
+              <span class="pick" data-v="Medicine & Health">Medicine &amp; Health</span>
+              <span class="pick" data-v="Humanities & Writing">Humanities &amp; Writing</span>
+              <span class="pick" data-v="Arts & Design">Arts &amp; Design</span>
+              <span class="pick" data-v="College Admissions">College Admissions</span>
+              <span class="pick" data-v="Internships & Careers">Internships &amp; Careers</span>
+            </div>
           </div>
-          <button class="btn btn-primary btn-lg btn-full" onclick="submitApplication()">Submit Application</button>
+
+          <div class="form-group">
+            <label class="form-label">Who you can help <span style="color:var(--t4);font-weight:500;">(pick any)</span></label>
+            <div class="pick-group" id="gradePicks">
+              <span class="pick" data-v="Middle school">Middle school</span>
+              <span class="pick" data-v="High school">High school</span>
+              <span class="pick" data-v="College">College</span>
+            </div>
+          </div>
+
+          <div class="sec-h" style="margin-top:30px;"><span class="n">2</span> Your story</div>
+          <p class="sec-desc">A short note on your journey and why you want to mentor.</p>
+          <div class="form-group" style="margin-bottom:8px;">
+            <textarea class="form-textarea" id="appExperience" maxlength="1000" placeholder="Share a bit about your academic or professional path, and what you'd love to help students with..." style="min-height:130px;"></textarea>
+            <div class="char-count" id="expCount">0 / 1000</div>
+          </div>
+
+          <div class="form-group" style="margin-top:14px;">
+            <label class="form-label" for="appLinkedin">LinkedIn or portfolio <span style="color:var(--t4);font-weight:500;">(optional)</span></label>
+            <input type="text" class="form-input" id="appLinkedin" placeholder="linkedin.com/in/you">
+          </div>
+
+          <button class="btn btn-primary btn-lg btn-full" style="margin-top:12px;" onclick="submitApplication()">Submit application</button>
+          <p style="text-align:center;font-size:12.5px;color:var(--t4);margin-top:14px;">By applying you agree to our <a href="guidelines.html" style="color:var(--green-2);font-weight:600;">community guidelines</a>.</p>
         </div>
 
-        <div id="appSuccess" style="display:none; text-align:center; padding: 40px; background: rgba(0,232,122,0.05); border-radius: var(--r-xl); border: 1px dashed var(--green);">
-          <div style="font-size:32px; margin-bottom:16px;">✅</div>
-          <h4 style="font-size:18px; font-weight:700; color:var(--t1); margin-bottom:8px;">Application Received</h4>
-          <p style="font-size:14px; color:var(--t3);">Your application is now under manual review by our administrative team. Check back here for updates.</p>
+        <div class="app-success" id="appSuccess">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <h4>Application received</h4>
+          <p>You're in the review queue. We'll notify you here once a reviewer approves your application — usually within 48 hours. Thanks for giving back.</p>
         </div>
       </div>
 
-      <div style="margin-top:40px; text-align:center;">
-        <p style="font-size:13px; color:var(--t4); margin-bottom:20px;">Already submitted? We're processing your application now.</p>
-        <button class="btn btn-secondary" onclick="checkStatus()">Check My Status</button>
+      <div style="margin-top:32px;text-align:center;border-top:1px solid var(--b1);padding-top:24px;">
+        <p style="font-size:13px;color:var(--t4);margin-bottom:14px;">Already applied? Refresh your status below.</p>
+        <button class="btn btn-secondary btn-sm" onclick="checkStatus()">Check my status</button>
       </div>
     </main>
   </div>
@@ -218,49 +186,50 @@
   <script>
     let currentUser = Auth.requireAuth();
 
+    // ── Pill selection + char counter ─────────────────────────────
+    document.querySelectorAll('.pick').forEach(p => {
+      p.addEventListener('click', () => p.classList.toggle('on'));
+    });
+    const expEl = document.getElementById('appExperience');
+    const expCount = document.getElementById('expCount');
+    if (expEl && expCount) {
+      const upd = () => {
+        const n = expEl.value.length;
+        expCount.textContent = `${n} / 1000`;
+        expCount.classList.toggle('warn', n > 850);
+        expCount.classList.toggle('over', n >= 1000);
+      };
+      expEl.addEventListener('input', upd); upd();
+    }
+    const picked = (id) => Array.from(document.querySelectorAll(`#${id} .pick.on`)).map(el => el.dataset.v);
+
     function syncApplicationView() {
       currentUser = Auth.syncCurrentUserFromStore(currentUser?.email) || Auth.getUser() || currentUser;
       currentUser = Auth.normalizeUser(currentUser);
 
-      if (!currentUser) {
-        window.location.href = 'auth.html';
-        return false;
-      }
-
-      if (currentUser.role !== 'mentor') {
-        window.location.href = 'index.html';
-        return false;
-      }
-
-      if (currentUser.status === 'active') {
-        Auth.routeAfterLogin(currentUser);
-        return false;
-      }
+      if (!currentUser) { window.location.href = 'auth.html'; return false; }
+      if (currentUser.role !== 'mentor') { window.location.href = 'index.html'; return false; }
+      if (currentUser.status === 'active') { Auth.routeAfterLogin(currentUser); return false; }
 
       if (currentUser.status === 'rejected' && currentUser.rejectedAt) {
-        const rejectedAt = new Date(currentUser.rejectedAt);
-        const diffHrs = (new Date() - rejectedAt) / (1000 * 60 * 60);
-
+        const diffHrs = (new Date() - new Date(currentUser.rejectedAt)) / (1000 * 60 * 60);
         if (diffHrs < 24) {
           document.getElementById('noticeContainer').innerHTML = `
             <div class="rejected-notice">
-              <div class="pn-icon">🚫</div>
+              <div class="pn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg></div>
               <div class="pn-text">
-                <h4>Application Rejected</h4>
-                <p>Your application was not approved at this time. To maintain quality standards, you cannot re-apply for 24 hours.</p>
+                <h4>Application not approved</h4>
+                <p>Your application wasn't approved this time. To keep quality high, you can re-apply after a 24-hour cooldown.</p>
               </div>
-            </div>
-          `;
+            </div>`;
           document.getElementById('ctaSection').innerHTML = `
-            <div style="padding:48px 24px; background:var(--bg-2); border-radius:var(--r-xl); border:1px solid var(--b1);">
-              <p style="color:var(--t4); font-size:14px; margin-bottom:12px; font-weight:600;">COOLDOWN IN EFFECT</p>
-              <p style="color:var(--t2); font-size:15px;">Please check back tomorrow to re-initiate your application.</p>
-            </div>
-          `;
+            <div style="padding:44px 24px;background:var(--bg-2);border-radius:var(--r-xl);border:1px solid var(--b1);text-align:center;">
+              <p style="color:var(--t4);font-size:12px;margin-bottom:10px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;">Cooldown in effect</p>
+              <p style="color:var(--t2);font-size:15px;">Please check back tomorrow to start a new application.</p>
+            </div>`;
           return false;
         }
-
-        Utils.toast('Your rejection cooldown has expired. You may re-apply.', 'info');
+        Utils.toast('Your cooldown has expired — you can re-apply.', 'info');
       }
 
       if (currentUser.appliedAt || currentUser.applicationData) {
@@ -270,20 +239,19 @@
         document.getElementById('appForm').style.display = 'block';
         document.getElementById('appSuccess').style.display = 'none';
       }
-
       return true;
     }
 
     function checkStatus() {
       const fresh = Auth.syncCurrentUserFromStore(currentUser?.email) || Auth.getUser() || currentUser;
       if (fresh?.status === 'rejected') {
-        Utils.toast('Your previous application was rejected. See the notice above.', 'error');
-      } else if (fresh?.appliedAt || fresh?.applicationData) {
-        Utils.toast('Your application is still under review. Check back soon!', 'info');
+        Utils.toast('Your previous application was not approved. See the notice above.', 'error');
       } else if (fresh?.status === 'active') {
         Auth.routeAfterLogin(fresh);
+      } else if (fresh?.appliedAt || fresh?.applicationData) {
+        Utils.toast('Your application is still under review. Check back soon!', 'info');
       } else {
-        Utils.toast('If you submitted an application, it will appear here once it is processed.', 'info');
+        Utils.toast('Once you submit, your status will appear here.', 'info');
       }
     }
 
@@ -291,27 +259,14 @@
       const uni = document.getElementById('appUniversity').value.trim();
       const major = document.getElementById('appMajor').value.trim();
       const exp = document.getElementById('appExperience').value.trim();
+      const linkedin = document.getElementById('appLinkedin').value.trim();
+      const expertise = picked('expertisePicks');
+      const gradeLevels = picked('gradePicks');
 
-      // Validation
-      if (!uni || uni.length < 3) {
-        Utils.toast('Please enter a valid university name (at least 3 characters).', 'error');
-        return;
-      }
-
-      if (!major || major.length < 2) {
-        Utils.toast('Please enter a valid field of study (at least 2 characters).', 'error');
-        return;
-      }
-
-      if (!exp || exp.length < 20) {
-        Utils.toast('Please provide more detail about why you want to mentor (at least 20 characters).', 'error');
-        return;
-      }
-
-      if (exp.length > 1000) {
-        Utils.toast('Your experience story is too long. Please keep it under 1000 characters.', 'error');
-        return;
-      }
+      if (!uni || uni.length < 3) { Utils.toast('Please enter a valid university name (at least 3 characters).', 'error'); return; }
+      if (!major || major.length < 2) { Utils.toast('Please enter a valid field of study (at least 2 characters).', 'error'); return; }
+      if (!exp || exp.length < 20) { Utils.toast('Tell us a little more about why you want to mentor (at least 20 characters).', 'error'); return; }
+      if (exp.length > 1000) { Utils.toast('Please keep your story under 1000 characters.', 'error'); return; }
 
       Auth.updateUser({
         role: 'mentor',
@@ -323,25 +278,30 @@
         applicationData: {
           university: uni,
           major: major,
-          experience: exp
+          experience: exp,
+          expertise: expertise,
+          gradeLevels: gradeLevels,
+          linkedin: linkedin
         }
       });
 
       currentUser = Auth.syncCurrentUserFromStore(currentUser?.email) || Auth.getUser() || currentUser;
-      if (typeof window.refreshMentoristState === 'function') {
-        window.refreshMentoristState(currentUser?.email);
-      }
+      if (typeof window.refreshMentoristState === 'function') window.refreshMentoristState(currentUser?.email);
 
       document.getElementById('appForm').style.display = 'none';
       document.getElementById('appSuccess').style.display = 'block';
-      Utils.toast('Application submitted successfully!', 'success');
+      Utils.toast('Application submitted — thank you!', 'success');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       syncApplicationView();
     }
+
+    // Reveal on load
+    const ro = new IntersectionObserver((e) => e.forEach(x => { if (x.isIntersecting) { x.target.classList.add('visible'); ro.unobserve(x.target); } }), { threshold: 0.08 });
+    document.querySelectorAll('.reveal').forEach(el => ro.observe(el));
 
     Promise.resolve(UserStore.refreshFromRemote())
       .then(syncApplicationView)
       .catch(err => { console.error(err); syncApplicationView(); });
   </script>
 </body>
-
 </html>
