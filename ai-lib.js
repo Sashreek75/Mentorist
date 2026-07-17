@@ -63,62 +63,169 @@ Use the Google Search tool you have been given to ground your answer in REAL, CU
 - Prefer primary sources (school/district sites, official program pages, company careers pages).
 
 Rules:
-- Tailor everything to the student's EXACT profile, grade, interest, and question. No generic club advice.
-- Recommend specific, NAMED courses / programs / internships / competitions / projects.
-- For each recommendation add a one-line "Why this fits you" tied to their profile.
+- ANSWER ONLY THE REQUESTED FOCUS AREA. The request specifies a single category (e.g. Course Plan, GPA Strategy, Internships). Stay tightly on that topic. Do NOT produce an all-in-one plan covering unrelated areas — that is the #1 mistake to avoid.
+- The student's full profile is provided below. You ALREADY KNOW their school, grade, GPA, interest, courses, and goals — use them explicitly and refer to them by name (e.g. name their actual school). Never ask for information you were already given.
+- If the student did not type a specific question, ASSUME they are asking for the best advice in the chosen category and infer their situation entirely from the profile. Do not stall or ask what they want.
+- Recommend specific, NAMED items relevant to the focus, each with a one-line "Why this fits you" tied to their profile.
 - Flag GPA and workload risk honestly for any ambitious/stretch choice.
 - When you used a real source, briefly cite it inline (e.g. "— from the Rouse HS catalog").
-- If you genuinely could not verify something, say so and give the best proven general guidance instead of inventing specifics.
-- Format in clean, scannable Markdown (short headers, tight bullets). End with exactly 3 "This Week" action items.`;
+- If you genuinely could not verify something, say so and give the best proven guidance instead of inventing specifics.
+- Format in clean, scannable Markdown (short headers, tight bullets). End with exactly 3 "This Week" action items that fit the focus.`;
+
+/* Per-category scope so the engine answers exactly what the student picked
+   instead of dumping an all-in-one strategy. */
+function categoryDirective(requestType) {
+  const t = String(requestType || '').toLowerCase();
+  const mk = (focus, structure, forbid) => ({ focus, structure, forbid });
+
+  if (t.includes('course') || t.includes('class') || t.includes('schedule')) {
+    return mk(
+      'a focused COURSE PLAN only',
+      [
+        'Open with 1-2 sentences reading their exact situation (school, grade, interest, GPA).',
+        'Give a prioritized course sequence pulled from their REAL school catalog (search it by name). Group as: Take next term / Then / Stretch (optional).',
+        'For EACH course: one line "Why this fits you" + a short GPA/workload note.',
+        'Include at least ONE lower-risk alternative for the hardest pick.'
+      ],
+      'internships, jobs, summer programs, competitions, essays, and long career roadmaps'
+    );
+  }
+  if (t.includes('gpa')) {
+    return mk(
+      'GPA & RIGOR strategy only',
+      [
+        'State a realistic GPA/rigor target for their goals and current standing.',
+        'Name which weighted/AP/honors courses to prioritize or drop to protect GPA while showing rigor.',
+        'Give concrete habits/tactics to raise or defend the GPA this term.'
+      ],
+      'internships, essays, extracurriculars, and summer programs'
+    );
+  }
+  if (t.includes('internship') || t.includes('job')) {
+    return mk(
+      'INTERNSHIPS & ROLES only',
+      [
+        'List 4-6 REAL, currently-relevant roles/programs matched to their interest and level; name specific companies/orgs (search for them).',
+        'For each: why it fits, realistic entry difficulty, and exactly how to apply or break in.',
+        'Note skills to build to become competitive.'
+      ],
+      'course plans, GPA strategy, and essays'
+    );
+  }
+  if (t.includes('summer')) {
+    return mk(
+      'SUMMER PROGRAMS only',
+      [
+        'Name specific summer programs matched to their interest, level, and selectivity tolerance.',
+        'For each: why it fits, selectivity, rough deadline/timing, and how to apply.',
+        'Include at least one accessible/low-cost option.'
+      ],
+      'course plans, GPA strategy, and essays'
+    );
+  }
+  if (t.includes('extracurricular') || t.includes('project')) {
+    return mk(
+      'EXTRACURRICULARS & PROJECTS only',
+      [
+        'Recommend specific activities, competitions, and buildable projects that deepen their "spike".',
+        'Tell them what to escalate, start, or drop, and how to turn activity into measurable impact.',
+        'For each: why it fits and the proof-of-work it creates.'
+      ],
+      'course plans, GPA strategy, and essays'
+    );
+  }
+  if (t.includes('essay')) {
+    return mk(
+      'COLLEGE ESSAY strategy only',
+      [
+        'Suggest 2-3 essay angles built from THIS student\'s real experiences/projects in the profile.',
+        'Explain what makes each compelling and the trap to avoid.',
+        'Give a concrete opening approach for the strongest angle.'
+      ],
+      'course plans, GPA math, internships, and summer programs'
+    );
+  }
+  if (t.includes('ivy') || t.includes('admission')) {
+    return mk(
+      'ADMISSIONS POSITIONING for their target colleges',
+      [
+        'Honestly assess their current profile vs. the named target colleges.',
+        'Identify the 2-3 biggest gaps and the highest-leverage moves to close them.',
+        'Tie advice to what those specific schools actually value (search them).'
+      ],
+      'exhaustive course-by-course plans (summarize rigor only)'
+    );
+  }
+  if (t.includes('career')) {
+    return mk(
+      'CAREER PATH strategy',
+      [
+        'Map a realistic path toward their stated career, with the key milestones and skills at each stage.',
+        'Name concrete roles, fields, or credentials to aim for.',
+        'Connect near-term moves to the long-term goal.'
+      ],
+      'exhaustive high-school course lists'
+    );
+  }
+  return mk(
+    'the most useful strategy for the student',
+    ['Read their situation, then give the highest-leverage, specific next moves.'],
+    'padding or generic advice'
+  );
+}
 
 function buildPrompt(profile, requestType, userQuery, ctx = {}) {
   const { block: profileBlock, missing } = buildStudentProfileBlock(profile);
   const inventory = buildInventoryBlock(ctx.mentors, ctx.opportunities);
-  const resolvedQuery = sanitizeUserText(userQuery) ||
-    `Give the most useful ${(requestType || 'academic strategy').toLowerCase()} based on the profile.`;
+  const typedQuery = sanitizeUserText(userQuery);
+  const dir = categoryDirective(requestType);
 
-  // Build concrete web-search directives from the profile so the model
-  // grounds its answer in REAL catalogs / roles rather than inventing them.
-  const searchTargets = [];
   const school = profile?.schoolName;
-  const grade = profile?.schoolGrade || profile?.grade || '';
   const interest = profile?.interest && profile.interest !== 'undecided' ? profile.interest : '';
-  const isCollege = /college|university|undergrad|sophomore|junior|senior/i.test(String(grade)) ||
-    /college|university|undergrad/i.test(String(profile?.goal || ''));
-  if (school) {
-    searchTargets.push(`Search: "${school} course catalog" (or "program of studies") and recommend ONLY courses that actually appear there${interest ? `, prioritizing the ${interest} pathway` : ''}. Cite the catalog.`);
+  const t = String(requestType || '').toLowerCase();
+  const wantsCatalog = /course|class|schedule|gpa|extracurricular|project|essay|ivy|admission/.test(t);
+  const wantsRoles = /internship|job|career|summer/.test(t);
+  const wantsColleges = (profile?.targetColleges || []).length && /course|gpa|ivy|admission|career|essay|summer/.test(t);
+
+  // Only ask the model to search for what THIS category needs.
+  const searchTargets = [];
+  if (wantsCatalog && school) {
+    searchTargets.push(`Search "${school} course catalog" / "program of studies" and use ONLY real offerings from it${interest ? `, prioritizing the ${interest} pathway` : ''}. Cite it.`);
   }
-  if (isCollege || (profile?.careers || []).length) {
+  if (wantsRoles) {
     const focus = interest || (profile?.careers || [])[0] || "the student's field";
-    searchTargets.push(`Search for REAL, currently-relevant internships/roles in ${focus} and name specific companies/programs that hire for them, with how to apply.`);
+    searchTargets.push(`Search for REAL, current openings/programs in ${focus}; name specific companies/organizations and exactly how to apply.`);
   }
-  if (profile?.targetColleges?.length) {
-    searchTargets.push(`Search each target college (${profile.targetColleges.join(', ')}) for what they actually value in ${interest || 'this'} applicants and align the plan to it.`);
+  if (wantsColleges) {
+    searchTargets.push(`Check what ${profile.targetColleges.join(', ')} actually value and align the advice to it.`);
   }
 
   return [
-    `REQUEST TYPE: ${requestType || 'General strategy'}`,
-    `STUDENT QUESTION: ${resolvedQuery}`,
+    `REQUESTED FOCUS: "${requestType || 'General strategy'}" — your entire answer must be ${dir.focus}.`,
+    typedQuery
+      ? `STUDENT QUESTION: ${typedQuery}`
+      : `STUDENT QUESTION: (none typed) — Infer the highest-value ${requestType || 'strategy'} advice directly from the profile below and answer as if they asked for it. Do not ask what they want.`,
     '',
     profileBlock,
     '',
     inventory,
     inventory ? '' : null,
-    `KNOWN GAPS: ${missing.length ? missing.join(', ') : 'No obvious gaps'}`,
+    missing.length ? `NOTE: The profile is missing ${missing.join(', ')}. Work around this with reasonable assumptions — do NOT ask the student for it.` : null,
     '',
-    searchTargets.length ? 'WEB SEARCH DIRECTIVES (use your Google Search tool):' : null,
-    ...(searchTargets.length ? searchTargets.map((t) => `- ${t}`) : []),
+    searchTargets.length ? 'USE YOUR GOOGLE SEARCH TOOL TO:' : null,
+    ...(searchTargets.length ? searchTargets.map((x) => `- ${x}`) : []),
     searchTargets.length ? '' : null,
-    'INSTRUCTIONS',
-    '- Ground answers in REAL, verifiable data via search; name real courses, programs, companies, and competitions.',
-    '- Recommend specific, named mentors/opportunities/programs/courses/projects.',
-    '- Prefer the INTERNAL MENTORIST INVENTORY items above when they fit the student.',
-    '- For every course-related question, provide a prioritized course plan and include at least one lower-risk alternative.',
-    '- For each recommendation include a one-line "Why this fits you" tied to the profile.',
-    '- Include a clear note about GPA risk or workload impact for any ambitious course choices.',
-    '- If planning is involved, include a short Now / Next / Later roadmap.',
-    '- Cite real sources inline when used. If a specific fact cannot be verified, say so rather than inventing it.',
-    '- Format in clean Markdown and end with exactly 3 "This Week" actions.'
+    `SCOPE — CRITICAL: This response must cover ${dir.focus} and nothing else.`,
+    `Do NOT include ${dir.forbid}. If tempted to add those, stop — they belong to other categories the student can pick separately.`,
+    '',
+    'STRUCTURE:',
+    ...dir.structure.map((s) => `- ${s}`),
+    '',
+    'ALWAYS:',
+    '- Use the profile explicitly and refer to their real school and details by name; you already have this info, so never ask for it.',
+    '- Make every recommendation specific and NAMED, each with a one-line "Why this fits you" tied to the profile.',
+    '- Cite real sources inline when used; if something cannot be verified, say so instead of inventing it.',
+    '- Keep it tight and scannable. End with exactly 3 "This Week" actions that fit THIS focus.'
   ].filter((x) => x !== null).join('\n');
 }
 
