@@ -101,6 +101,19 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
   line-height:1.6;
 }
 
+/* Always-visible way back to the landing page (the left panel with the logo
+   is hidden below 1024px, so this must live on the form side). */
+.auth-back{
+  position:absolute;top:22px;left:22px;z-index:5;
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:13px;font-weight:600;color:var(--t2);
+  padding:9px 15px;border-radius:var(--r-pill);
+  background:var(--bg-1);border:1px solid var(--b1);box-shadow:var(--shadow-sm);
+  transition:color 0.2s,border-color 0.2s,transform 0.2s;
+}
+.auth-back:hover{color:var(--green-2);border-color:rgba(14,159,110,0.4);transform:translateX(-3px);}
+.auth-back svg{width:15px;height:15px;}
+
 @media(max-width:1024px){
   .auth-layout{grid-template-columns:1fr;}
   .auth-left{display:none;}
@@ -152,6 +165,10 @@ body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;}
   </div>
 
   <div class="auth-right">
+    <a href="index.html?no_redirect=true" class="auth-back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
+      Back to home
+    </a>
     <div class="auth-box">
 
       <!-- SIGNUP -->
