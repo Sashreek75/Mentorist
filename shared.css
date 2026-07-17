@@ -116,13 +116,19 @@ input,textarea,select{font-family:var(--font);appearance:none;-webkit-appearance
   }
 }
 
-/* ===== AMBIENT BACKGROUND — light, airy, alive ===== */
+/* ===== AMBIENT BACKGROUND — light, airy, alive & slowly drifting ===== */
 body::before{
-  content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;
+  content:'';position:fixed;inset:-12%;z-index:-2;pointer-events:none;will-change:transform;
   background:
     radial-gradient(60% 55% at 12% 0%, rgba(14,159,110,0.10) 0%, transparent 60%),
-    radial-gradient(50% 50% at 100% 8%, rgba(52,211,153,0.08) 0%, transparent 55%),
+    radial-gradient(50% 50% at 100% 8%, rgba(52,211,153,0.09) 0%, transparent 55%),
     radial-gradient(55% 60% at 85% 100%, rgba(14,159,110,0.06) 0%, transparent 60%);
+  animation:bgDrift 34s ease-in-out infinite;
+}
+@keyframes bgDrift{
+  0%,100%{transform:translate3d(0,0,0) scale(1);}
+  33%{transform:translate3d(1.5%,1%,0) scale(1.05);}
+  66%{transform:translate3d(-1.5%,-1%,0) scale(1.03);}
 }
 body::after{
   content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0.02;
@@ -149,6 +155,27 @@ body::after{
 @keyframes sheen{from{transform:translateX(-120%) skewX(-18deg);}to{transform:translateX(220%) skewX(-18deg);}}
 @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
 @keyframes ring{0%{box-shadow:0 0 0 0 var(--green-glow);}70%{box-shadow:0 0 0 12px rgba(14,159,110,0);}100%{box-shadow:0 0 0 0 rgba(14,159,110,0);}}
+@keyframes pageEnter{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+@keyframes shimmerBar{from{transform:translateX(-100%);}to{transform:translateX(400%);}}
+@keyframes tick{0%,100%{transform:scale(1);}50%{transform:scale(1.5);}}
+
+/* ===== ENTRANCE: whole-page fade on first paint (page shells only) ===== */
+.app-layout,.dashboard-layout{animation:pageEnter 0.6s var(--ease) both;}
+
+/* ===== SCROLL REVEAL (driven by animations.js) ===== */
+.will-reveal{opacity:0;transform:translateY(26px);}
+.will-reveal.revealed{opacity:1;transform:none;transition:opacity 0.7s var(--ease),transform 0.7s var(--ease);}
+@media (prefers-reduced-motion: reduce){
+  .app-layout,.dashboard-layout{animation:none;}
+  .will-reveal{opacity:1!important;transform:none!important;}
+}
+
+/* Continuous shimmer sweep for progress fills */
+.progress-bar-fill{position:relative;overflow:hidden;}
+.progress-bar-fill::after{content:'';position:absolute;inset:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.45),transparent);transform:translateX(-100%);animation:shimmerBar 2.4s ease-in-out infinite;}
+
+/* Realtime "connected" dot gets a soft expanding ring */
+.realtime-connected::before{animation:pulse 1.8s ease-in-out infinite;}
 
 /* ===== LAYOUT UTILITIES ===== */
 .container{width:100%;max-width:1180px;margin:0 auto;padding:0 clamp(20px,5vw,48px);}
@@ -367,7 +394,7 @@ body::after{
 .rc-desc{font-size:13px;color:var(--t4);line-height:1.55;}
 
 /* ===== DASHBOARD LAYOUT ===== */
-.dashboard-layout,.app-layout{display:flex;flex:1;min-height:100vh;padding-top:74px;width:100%;}
+.dashboard-layout{display:flex;flex:1;min-height:100vh;padding-top:74px;width:100%;}
 .sidebar{width:260px;flex-shrink:0;background:var(--bg-1);border-right:1px solid var(--b1);padding:32px 16px;position:fixed;top:74px;bottom:0;left:0;overflow-y:auto;}
 .sidebar-label{font-size:11px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--t4);padding-left:12px;margin-bottom:12px;}
 .sidebar-link{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r-lg);font-size:14px;font-weight:600;color:var(--t3);transition:color 0.2s,background 0.2s;margin-bottom:4px;}
