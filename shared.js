@@ -1083,6 +1083,12 @@ const MobileNav = {
     const navbar = document.querySelector('.navbar');
     if (!navbar || document.querySelector('.mobile-menu')) return;
 
+    // Dashboard pages get a bottom nav (built below), so a top hamburger
+    // would be redundant and just duplicate/clutter navigation. Skip it there.
+    const path = window.location.pathname;
+    const isDashboard = path.includes('dashboard') || path.includes('admin.html');
+    if (isDashboard && Auth.getUser()) return;
+
     // Add Toggle Button
     const toggle = document.createElement('button');
     toggle.className = 'nav-menu-toggle';
@@ -1134,8 +1140,12 @@ const MobileNav = {
         { label: 'Logout', icon: 'log-out', link: '#', action: () => Auth.forceLogout('You have been signed out.') }
       ];
     } else {
+      // Students get direct access to the AI Strategy Engine on mobile —
+      // it lives in the desktop sidebar, which is hidden on small screens.
       items = [
         { label: 'Home', icon: 'home', link: 'studentdashboard.html' },
+        { label: 'AI Engine', icon: 'compass', link: 'recommendations.html' },
+        { label: 'History', icon: 'clock', link: 'studentdashboard.html#history' },
         { label: 'Vault', icon: 'archive', link: 'vault.html' },
         { label: 'Logout', icon: 'log-out', link: '#', action: () => Auth.forceLogout('You have been signed out.') }
       ];
@@ -1145,15 +1155,27 @@ const MobileNav = {
       home: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`,
       archive: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>`,
       shield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>`,
+      compass: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>`,
+      clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
       'log-out': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>`
+    };
+
+    const curFile = (window.location.pathname.split('/').pop() || 'index.html');
+    const curHash = window.location.hash || '';
+    const isActive = (link) => {
+      if (!link || link === '#') return false;
+      const [file, hash] = link.split('#');
+      if (hash) return curFile === file && curHash === '#' + hash;          // hash-specific view
+      if (file === 'studentdashboard.html') return curFile === file && !curHash; // Home only when no hash
+      return curFile === file;
     };
 
     items.forEach(item => {
       const a = document.createElement('a');
       a.href = item.link;
-      a.className = `bottom-nav-item ${path.includes(item.link) ? 'active' : ''}`;
+      a.className = `bottom-nav-item ${isActive(item.link) ? 'active' : ''}`;
       if (item.action) a.onclick = (e) => { e.preventDefault(); item.action(); };
-      
+
       a.innerHTML = `
         ${icons[item.icon]}
         <span>${item.label}</span>

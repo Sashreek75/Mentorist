@@ -84,7 +84,7 @@
     /* ───────── Right column ───────── */
     .ob-main { position: relative; padding: 40px clamp(20px,5vw,72px) 90px; width: 100%; }
     .ob-inner { max-width: 720px; margin: 0 auto; }
-    .ob-top { display: flex; gap: 10px; margin-bottom: 30px; }
+    .ob-top { display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
     .ob-head { animation: fadeUp 0.6s var(--ease) both; }
     .on-eyebrow { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green-2); background: var(--green-dim); padding: 6px 13px; border-radius: var(--r-pill); border: 1px solid rgba(14,159,110,0.18); margin-bottom: 14px; }
     .on-title { font-family: var(--font-h); font-size: clamp(24px,3.2vw,32px); font-weight: 700; letter-spacing: -0.03em; color: var(--t1); }
@@ -103,10 +103,29 @@
     .step-content.active { display: block; animation: stepIn 0.5s var(--ease) both; }
     @keyframes stepIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 
-    .step-title { font-family: var(--font-h); font-size: clamp(22px,2.6vw,28px); font-weight: 700; color: var(--t1); letter-spacing: -0.02em; margin-bottom: 8px; }
+    .step-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
+    .step-title { font-family: var(--font-h); font-size: clamp(22px,2.6vw,28px); font-weight: 700; color: var(--t1); letter-spacing: -0.02em; }
     .step-sub { font-size: 15px; color: var(--t3); line-height: 1.65; margin-bottom: 26px; }
 
+    /* Required / Optional tag */
+    .q-tag { font-size: 10px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; padding: 4px 10px; border-radius: var(--r-pill); line-height: 1; }
+    .q-req { background: var(--green-dim); color: var(--green-2); border: 1px solid rgba(14,159,110,0.28); }
+    .q-opt { background: var(--bg-3); color: var(--t3); border: 1px solid var(--b2); }
+    .lbl-opt { color: var(--t4); font-weight: 500; text-transform: none; letter-spacing: 0; }
+    .field-hint { color: var(--t4); margin-top: 8px; display: block; font-size: 12.5px; line-height: 1.5; }
+
     .choices-flex { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); gap: 12px; margin-bottom: 8px; }
+
+    /* Optional details disclosure */
+    .opt-details { margin-top: 26px; border: 1px solid var(--b1); border-radius: var(--r-xl); background: var(--bg-2); overflow: hidden; }
+    .opt-details > summary {
+      list-style: none; cursor: pointer; padding: 16px 18px; display: flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: 14px; color: var(--t2);
+    }
+    .opt-details > summary::-webkit-details-marker { display: none; }
+    .opt-details > summary .chev { margin-left: auto; transition: transform 0.3s var(--ease); }
+    .opt-details[open] > summary .chev { transform: rotate(180deg); }
+    .opt-details .opt-body { padding: 4px 18px 20px; }
 
     .profile-summary-premium { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .ps-item { display: flex; flex-direction: column; gap: 3px; padding: 14px 16px; background: var(--bg-2); border: 1px solid var(--b1); border-radius: var(--r-lg); }
@@ -116,11 +135,16 @@
     @media(max-width:980px) {
       .ob { grid-template-columns: 1fr; }
       .ob-rail { display: none; }
-      .ob-main { padding: 32px 18px 88px; }
+      .ob-main { padding: 28px 16px 96px; }
+      .on-card-premium { padding: 22px 18px; border-radius: var(--r-2xl); }
     }
     @media(max-width:560px) {
       .choices-flex { grid-template-columns: 1fr; }
       .profile-summary-premium { grid-template-columns: 1fr; }
+      .ob-main { padding: 22px 14px 100px; }
+      /* Prevent iOS zoom-on-focus: inputs must be >=16px */
+      .form-input, .form-textarea, .form-select { font-size: 16px; }
+      .step-sub { font-size: 14.5px; }
     }
   </style>
 </head>
@@ -138,22 +162,20 @@
       </div>
 
       <h1 class="ob-headline">Let's map <span>your</span> path.</h1>
-      <p class="ob-lead">A few quick questions and the Strategy Engine builds a plan around the real you — grounded in your school, your goals, and your grade.</p>
+      <p class="ob-lead">Just 5 quick questions and the Strategy Engine builds a plan around the real you — grounded in your school, your goals, and your grade.</p>
 
       <div class="ob-journey" id="journeySteps">
         <div class="oj-step"><div class="oj-node"><span class="oj-num">1</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div class="oj-label">Standing</div></div>
         <div class="oj-step"><div class="oj-node"><span class="oj-num">2</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div class="oj-label">School</div></div>
-        <div class="oj-step"><div class="oj-node"><span class="oj-num">3</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div class="oj-label">Interest</div></div>
-        <div class="oj-step"><div class="oj-node"><span class="oj-num">4</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div class="oj-label">Course rigor</div></div>
-        <div class="oj-step"><div class="oj-node"><span class="oj-num">5</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div class="oj-label">Your goal</div></div>
-        <div class="oj-step"><div class="oj-node"><span class="oj-num">6</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div class="oj-label">Aspirations</div></div>
-        <div class="oj-step"><div class="oj-node"><span class="oj-num">7</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div class="oj-label">Activities</div></div>
-        <div class="oj-step"><div class="oj-node"><span class="oj-num">8</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div class="oj-label">Review</div></div>
+        <div class="oj-step"><div class="oj-node"><span class="oj-num">3</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div class="oj-label">Year &amp; GPA</div></div>
+        <div class="oj-step"><div class="oj-node"><span class="oj-num">4</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div class="oj-label">Focus &amp; Goal</div></div>
+        <div class="oj-step"><div class="oj-node"><span class="oj-num">5</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div class="oj-label">Aspirations</div></div>
+        <div class="oj-step"><div class="oj-node"><span class="oj-num">6</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div class="oj-label">Review</div></div>
       </div>
 
       <div class="ob-footnote">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-        About 2 minutes · Free forever
+        Under a minute · Free forever
       </div>
     </aside>
 
@@ -174,7 +196,7 @@
         </div>
 
         <div class="ob-head">
-          <span class="on-eyebrow" id="stepIndicator">Step 1 of 8</span>
+          <span class="on-eyebrow" id="stepIndicator">Question 1 of 5</span>
           <h1 class="on-title" id="mainHeader">Welcome, Navigator.</h1>
         </div>
 
@@ -184,272 +206,244 @@
           <div class="p-dot"></div>
           <div class="p-dot"></div>
           <div class="p-dot"></div>
-          <div class="p-dot"></div>
-          <div class="p-dot"></div>
-          <div class="p-dot"></div>
         </div>
+
+        <!-- Back-a-step control -->
+        <button id="stepBack" class="btn btn-ghost btn-sm" style="display:none;align-items:center;gap:7px;margin-bottom:14px;" onclick="goBack()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
+          Previous
+        </button>
 
         <main class="on-card-premium">
 
-          <!-- STEP 1: GRADE -->
-          <div class="step-content active" id="step-0">
-            <h2 class="step-title">Current Standing</h2>
-            <p class="step-sub">Which stage of your current journey are you in?</p>
+          <!-- Q1: STANDING (required, auto-advance) -->
+          <div class="step-content active" id="q-standing">
+            <div class="step-title-row">
+              <h2 class="step-title">Where are you right now?</h2>
+              <span class="q-tag q-req">Required</span>
+            </div>
+            <p class="step-sub">Pick the stage that fits you best — tap one to continue.</p>
             <div class="choices-flex">
-              <div class="choice-card" onclick="setV('grade','highschool',this,true)">
+              <div class="choice-card" onclick="setStage('highschool',this)">
                 <div class="rc-name">High School</div>
                 <div class="rc-desc">Currently in secondary ed</div>
               </div>
-              <div class="choice-card" onclick="setV('grade','college',this,true)">
+              <div class="choice-card" onclick="setStage('college',this)">
                 <div class="rc-name">Undergrad</div>
                 <div class="rc-desc">Currently in College/Uni</div>
               </div>
-              <div class="choice-card" onclick="setV('grade','gap',this,true)">
+              <div class="choice-card" onclick="setStage('gap',this)">
                 <div class="rc-name">Gap Year</div>
                 <div class="rc-desc">Exploring before next step</div>
               </div>
-              <div class="choice-card" onclick="setV('grade','grad',this,true)">
+              <div class="choice-card" onclick="setStage('grad',this)">
                 <div class="rc-name">Early Career</div>
                 <div class="rc-desc">Post-grad or starting out</div>
               </div>
-              <div class="choice-card" onclick="setV('grade','parent',this,true)">
+              <div class="choice-card" onclick="setStage('parent',this)">
                 <div class="rc-name">Parent</div>
                 <div class="rc-desc">Supporting a navigator</div>
               </div>
-              <div class="choice-card" onclick="setV('grade','international',this,true)">
+              <div class="choice-card" onclick="setStage('international',this)">
                 <div class="rc-name">International</div>
                 <div class="rc-desc">Outside the US system</div>
               </div>
             </div>
           </div>
 
-          <!-- STEP 2: SCHOOL PROFILE -->
-          <div class="step-content" id="step-school">
-            <h2 class="step-title">School Profile</h2>
-            <p class="step-sub">Tell us your school so we can search the right catalog and course pathway.</p>
+          <!-- Q2: SCHOOL + LOCATION (required, autocomplete) -->
+          <div class="step-content" id="q-school">
+            <div class="step-title-row">
+              <h2 class="step-title">Your school &amp; district</h2>
+              <span class="q-tag q-req">Required</span>
+            </div>
+            <p class="step-sub">This lets the engine pull the right course catalog and pathways. Start typing — suggestions will appear.</p>
             <div class="form-group">
               <label class="form-label" for="schoolName">School Name</label>
-              <input type="text" class="form-input" id="schoolName" maxlength="120" placeholder="e.g. Rouse High School">
+              <input type="text" class="form-input" id="schoolName" maxlength="120" list="dl-schools" autocomplete="off" placeholder="e.g. Rouse High School">
+              <small class="field-hint">Enter your real school. This is used only to find your course catalog.</small>
             </div>
             <div class="form-group">
-              <label class="form-label" for="schoolLocation">School District / City, State</label>
-              <input type="text" class="form-input" id="schoolLocation" maxlength="120" placeholder="e.g. Leander ISD | Leander, TX">
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="schoolGrade">Current Grade / Year</label>
-              <input type="text" class="form-input" id="schoolGrade" maxlength="40" placeholder="e.g. 10th grade, sophomore, college freshman">
-              <small style="color: var(--t4); margin-top: 8px; display: block;">This helps us sequence courses correctly and avoid duplicate recommendations.</small>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="schoolCatalogUrl">Course Catalog URL (optional)</label>
-              <input type="url" class="form-input" id="schoolCatalogUrl" maxlength="300" placeholder="https://your-school.edu/course-catalog">
-              <small style="color: var(--t4); margin-top: 8px; display: block;">If you do not know it, we will search the web using your school name automatically.</small>
+              <label class="form-label" for="schoolLocation">District / City, State</label>
+              <input type="text" class="form-input" id="schoolLocation" maxlength="120" list="dl-locations" autocomplete="off" placeholder="e.g. Leander ISD, Texas — or — Austin, TX">
+              <small class="field-hint">Please include your state so we search the right region.</small>
             </div>
             <button class="btn btn-primary btn-full btn-lg" onclick="advanceFromSchool()">
-              Save School Profile
+              Continue
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>
             </button>
           </div>
 
-          <!-- STEP 3: INTEREST -->
-          <div class="step-content" id="step-1">
-            <h2 class="step-title">Academic Interest</h2>
-            <p class="step-sub">We'll match you with mentors specializing in your future field.</p>
-            <div class="choices-flex">
-              <div class="choice-card" onclick="setV('interest','stem',this,true)">
+          <!-- Q3: YEAR + GPA -->
+          <div class="step-content" id="q-year">
+            <div class="step-title-row">
+              <h2 class="step-title">Your year &amp; grades</h2>
+              <span class="q-tag q-req">Required</span>
+            </div>
+            <p class="step-sub">So we sequence courses correctly and calibrate rigor safely.</p>
+            <div class="form-group">
+              <label class="form-label" for="schoolGrade">Current Grade / Year</label>
+              <input type="text" class="form-input" id="schoolGrade" maxlength="40" list="dl-years" autocomplete="off" placeholder="e.g. 11th Grade or College Sophomore">
+              <small class="field-hint">Pick from the list or type your own.</small>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="currentGpa">Current GPA <span class="lbl-opt">· optional</span></label>
+              <input type="text" class="form-input" id="currentGpa" maxlength="24" autocomplete="off" placeholder="e.g. 3.9 UW / 4.4 W">
+              <small class="field-hint">Numbers only (add "UW"/"W" if you like). Leave blank if you're not sure.</small>
+            </div>
+            <button class="btn btn-primary btn-full btn-lg" onclick="advanceFromYear()">
+              Continue
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>
+            </button>
+          </div>
+
+          <!-- Q4: FOCUS + GOAL -->
+          <div class="step-content" id="q-focus">
+            <div class="step-title-row">
+              <h2 class="step-title">Your focus &amp; goal</h2>
+              <span class="q-tag q-req">Required</span>
+            </div>
+            <p class="step-sub">Choose the field closest to your interest, then tell us the one thing you most want to achieve.</p>
+            <label class="form-label" style="margin-bottom:12px;">Academic Interest</label>
+            <div class="choices-flex" style="margin-bottom:22px;">
+              <div class="choice-card" onclick="setInterest('stem',this)">
                 <div class="rc-name">STEM Track</div>
                 <div class="rc-desc">Engineering, Tech, CS</div>
               </div>
-              <div class="choice-card" onclick="setV('interest','medicine',this,true)">
+              <div class="choice-card" onclick="setInterest('medicine',this)">
                 <div class="rc-name">Medicine</div>
                 <div class="rc-desc">Bio, Chem, Health</div>
               </div>
-              <div class="choice-card" onclick="setV('interest','business',this,true)">
+              <div class="choice-card" onclick="setInterest('business',this)">
                 <div class="rc-name">Business</div>
                 <div class="rc-desc">Finance, Economics</div>
               </div>
-              <div class="choice-card" onclick="setV('interest','humanities',this,true)">
+              <div class="choice-card" onclick="setInterest('humanities',this)">
                 <div class="rc-name">Humanities</div>
                 <div class="rc-desc">History, Politics, Law</div>
               </div>
-              <div class="choice-card" onclick="setV('interest','arts',this,true)">
+              <div class="choice-card" onclick="setInterest('arts',this)">
                 <div class="rc-name">Arts &amp; Design</div>
                 <div class="rc-desc">Digital, Visual Arts</div>
               </div>
-              <div class="choice-card" onclick="setV('interest','undecided',this,true)">
+              <div class="choice-card" onclick="setInterest('undecided',this)">
                 <div class="rc-name">Exploring</div>
                 <div class="rc-desc">General strategy</div>
               </div>
             </div>
-          </div>
-
-          <!-- STEP 4: RIGOR -->
-          <div class="step-content" id="step-2">
-            <h2 class="step-title">Course Rigor</h2>
-            <p class="step-sub">How challenging is your current schedule, and how much load can you handle while still protecting the GPA?</p>
-            <div class="choices-flex" style="margin-bottom:18px;">
-              <div class="choice-card" onclick="setV('rigor','standard',this,false)">
-                <div class="rc-name">Standard</div>
-                <div class="rc-desc">Standard college-prep classes</div>
-              </div>
-              <div class="choice-card" onclick="setV('rigor','rigorous',this,false)">
-                <div class="rc-name">Rigorous</div>
-                <div class="rc-desc">A mix of Honors/AP/IB</div>
-              </div>
-              <div class="choice-card" onclick="setV('rigor','extreme',this,false)">
-                <div class="rc-name">Most Rigorous</div>
-                <div class="rc-desc">4+ AP/IB courses/year</div>
-              </div>
-            </div>
-            <div class="choices-flex" style="margin-bottom:28px;">
-              <div class="choice-card" onclick="setV('workloadPreference','light',this,false)">
-                <div class="rc-name">Light Load</div>
-                <div class="rc-desc">I want to keep room for GPA protection and outside commitments.</div>
-              </div>
-              <div class="choice-card" onclick="setV('workloadPreference','balanced',this,false)">
-                <div class="rc-name">Balanced</div>
-                <div class="rc-desc">I can handle a strong schedule if it stays sustainable.</div>
-              </div>
-              <div class="choice-card" onclick="setV('workloadPreference','ambitious',this,false)">
-                <div class="rc-name">Ambitious</div>
-                <div class="rc-desc">I can take a serious load if the courses are worth it.</div>
-              </div>
-              <div class="choice-card" onclick="setV('workloadPreference','extreme',this,false)">
-                <div class="rc-name">Maximum Rigor</div>
-                <div class="rc-desc">I can absorb a very demanding schedule.</div>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="currentGpa">Current GPA <span style="color:var(--t4);font-weight:500;">(so we can calibrate rigor safely)</span></label>
-              <input type="text" class="form-input" id="currentGpa" maxlength="24" placeholder="e.g. 3.9 unweighted / 4.4 weighted">
-              <small style="color: var(--t4); margin-top: 8px; display: block;">Include weighted and unweighted if you know both. Leave blank if you're not sure.</small>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="currentCourses">Current Courses</label>
-              <textarea class="form-textarea" id="currentCourses" placeholder="e.g. AP CSP, Honors Algebra II, Biology, English II, Spanish III"></textarea>
-              <small style="color: var(--t4); margin-top: 8px; display: block;">This helps the engine avoid recommending classes you have already taken and find the next step in the sequence.</small>
-            </div>
-            <button class="btn btn-primary btn-full btn-lg" onclick="advanceFromRigor()">
-              Save Course Load
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>
-            </button>
-          </div>
-
-          <!-- STEP 5: GOAL -->
-          <div class="step-content" id="step-3">
-            <h2 class="step-title">The Big Objective</h2>
-            <p class="step-sub">What is the single most important thing you want to achieve, and which colleges or programs are you aiming toward?</p>
             <div class="form-group">
               <label class="form-label" for="goal">Primary Goal</label>
-              <textarea class="form-textarea" placeholder="e.g. Navigating the STEM track to get into a top engineering school like Stanford while maintaining my GPA." id="goal" oninput="upPB(this)"></textarea>
+              <textarea class="form-textarea" id="goal" maxlength="500" placeholder="e.g. Get into a top engineering program like Stanford while protecting my GPA."></textarea>
+              <small class="field-hint">Write freely — this is where detail helps the engine most.</small>
             </div>
-            <div class="form-group">
-              <label class="form-label" for="targetColleges">Target Colleges or Programs (optional)</label>
-              <input type="text" class="form-input" id="targetColleges" maxlength="220" placeholder="e.g. Stanford, UT Austin Cockrell, Georgia Tech, local honors programs">
-            </div>
-            <button class="btn btn-primary btn-full btn-lg" onclick="advanceFromGoal()">
-              Review My Profile
+            <button class="btn btn-primary btn-full btn-lg" onclick="advanceFromFocus()">
+              Continue
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>
             </button>
           </div>
 
-          <!-- STEP 6: CAREER ASPIRATIONS -->
-          <div class="step-content" id="step-4">
-            <h2 class="step-title">Career Aspirations</h2>
-            <p class="step-sub">Where do you see yourself in 10 years, and when do you want to start testing internships or selective programs?</p>
+          <!-- Q5: CAREER + SKILLS -->
+          <div class="step-content" id="q-career">
+            <div class="step-title-row">
+              <h2 class="step-title">Where are you headed?</h2>
+              <span class="q-tag q-req">Required</span>
+            </div>
+            <p class="step-sub">Your dream direction helps us match mentors and target the right opportunities.</p>
             <div class="form-group">
               <label class="form-label" for="careers">Dream Careers or Roles</label>
-              <textarea class="form-textarea" placeholder="e.g. Software engineer at a startup, Neurosurgeon, Product manager at a tech company, Lawyer specializing in civil rights" id="careers"></textarea>
-              <small style="color: var(--t4); margin-top: 8px; display: block;">Be specific - this helps us match you with mentors and provide targeted recommendations</small>
+              <textarea class="form-textarea" id="careers" maxlength="500" placeholder="e.g. Software engineer at a startup, neurosurgeon, product manager, civil-rights lawyer"></textarea>
+              <small class="field-hint">Be as specific as you like — it sharpens every recommendation.</small>
             </div>
             <div class="form-group">
-              <label class="form-label" for="skills">Top 3 Skills You Want to Build</label>
-              <textarea class="form-textarea" placeholder="e.g. Python programming, Public speaking, Leadership" id="skills"></textarea>
+              <label class="form-label" for="skills">Top Skills You Want to Build <span class="lbl-opt">· optional</span></label>
+              <textarea class="form-textarea" id="skills" maxlength="300" placeholder="e.g. Python, public speaking, leadership"></textarea>
             </div>
-            <div class="choices-flex" style="margin-bottom:28px;">
-              <div class="choice-card" onclick="setV('internshipTimeline','this summer',this,false)">
-                <div class="rc-name">This Summer</div>
-                <div class="rc-desc">I want something immediately actionable.</div>
-              </div>
-              <div class="choice-card" onclick="setV('internshipTimeline','6-12 months',this,false)">
-                <div class="rc-name">6-12 Months</div>
-                <div class="rc-desc">I am building toward a stronger application.</div>
-              </div>
-              <div class="choice-card" onclick="setV('internshipTimeline','1 year+',this,false)">
-                <div class="rc-name">1 Year+</div>
-                <div class="rc-desc">I want a stretch path with long-term upside.</div>
-              </div>
-              <div class="choice-card" onclick="setV('internshipTimeline','exploring',this,false)">
-                <div class="rc-name">Exploring</div>
-                <div class="rc-desc">I want ideas before I commit.</div>
-              </div>
-            </div>
-            <button class="btn btn-primary btn-full btn-lg" onclick="advanceFromAspirations()">
-              Unlock My Personalized Recommendations
+            <button class="btn btn-primary btn-full btn-lg" onclick="advanceFromCareer()">
+              Review my profile
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>
             </button>
           </div>
 
-          <!-- STEP 7: ACTIVITIES -->
-          <div class="step-content" id="step-5">
-            <h2 class="step-title">Activities and Proof of Work</h2>
-            <p class="step-sub">What are you already doing, and what kind of project cadence can you sustain?</p>
-            <div class="form-group">
-              <label class="form-label" for="extracurriculars">Current Clubs, Sports, Volunteering, or Activities</label>
-              <textarea class="form-textarea" placeholder="e.g. Robotics club, varsity soccer, church volunteer, coding club, band" id="extracurriculars"></textarea>
+          <!-- REVIEW + OPTIONAL DETAILS -->
+          <div class="step-content" id="q-review">
+            <div class="step-title-row">
+              <h2 class="step-title">Profile ready.</h2>
+              <span class="q-tag q-opt">Review</span>
             </div>
-            <div class="form-group">
-              <label class="form-label" for="passionProjects">Passion Projects or Things You Have Built</label>
-              <textarea class="form-textarea" placeholder="e.g. Personal website, tutoring app, research poster, design portfolio" id="passionProjects"></textarea>
-            </div>
-            <div class="choices-flex" style="margin-bottom:28px;">
-              <div class="choice-card" onclick="setV('timeAvailability','2-3 hrs/wk',this,false)">
-                <div class="rc-name">2-3 Hours / Week</div>
-                <div class="rc-desc">I can stay consistent but need a lighter load.</div>
-              </div>
-              <div class="choice-card" onclick="setV('timeAvailability','4-6 hrs/wk',this,false)">
-                <div class="rc-name">4-6 Hours / Week</div>
-                <div class="rc-desc">I can make steady progress on a real project.</div>
-              </div>
-              <div class="choice-card" onclick="setV('timeAvailability','7-10 hrs/wk',this,false)">
-                <div class="rc-name">7-10 Hours / Week</div>
-                <div class="rc-desc">I can handle a more serious extracurricular or project.</div>
-              </div>
-              <div class="choice-card" onclick="setV('timeAvailability','10+ hrs/wk',this,false)">
-                <div class="rc-name">10+ Hours / Week</div>
-                <div class="rc-desc">I can commit to a deep, ambitious build.</div>
-              </div>
-            </div>
-            <button class="btn btn-primary btn-full btn-lg" onclick="advanceFromActivities()">
-              Build My Roadmap
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>
-            </button>
-          </div>
-
-          <!-- STEP 8: SUMMARY -->
-          <div class="step-content" id="step-complete">
-            <h2 class="step-title">Profile Built.</h2>
-            <p class="step-sub">Here's how mentors will see your background. High-quality context ensures precise advice.</p>
+            <p class="step-sub">Here's what mentors and the engine will see. Add optional detail below for sharper advice, or finish now.</p>
             <div class="profile-summary-premium">
-              <div class="ps-item"><span class="ps-label">Education</span><span class="ps-val" id="sumEdu"></span></div>
+              <div class="ps-item"><span class="ps-label">Standing</span><span class="ps-val" id="sumEdu"></span></div>
               <div class="ps-item"><span class="ps-label">School</span><span class="ps-val" id="sumSchool"></span></div>
-              <div class="ps-item"><span class="ps-label">Catalog Link</span><span class="ps-val" id="sumCatalog"></span></div>
+              <div class="ps-item"><span class="ps-label">Location</span><span class="ps-val" id="sumLocation"></span></div>
               <div class="ps-item"><span class="ps-label">Field Focus</span><span class="ps-val" id="sumFocus"></span></div>
-              <div class="ps-item"><span class="ps-label">Course Rigor</span><span class="ps-val" id="sumRigor"></span></div>
               <div class="ps-item"><span class="ps-label">Current GPA</span><span class="ps-val" id="sumGpa"></span></div>
-              <div class="ps-item"><span class="ps-label">Workload Comfort</span><span class="ps-val" id="sumWorkload"></span></div>
-              <div class="ps-item"><span class="ps-label">Long-term Strategy</span><span class="ps-val" id="sumGoal"></span></div>
-              <div class="ps-item"><span class="ps-label">Target Colleges</span><span class="ps-val" id="sumColleges"></span></div>
+              <div class="ps-item"><span class="ps-label">Primary Goal</span><span class="ps-val" id="sumGoal"></span></div>
               <div class="ps-item"><span class="ps-label">Career Aspirations</span><span class="ps-val" id="sumCareers"></span></div>
               <div class="ps-item"><span class="ps-label">Skills to Build</span><span class="ps-val" id="sumSkills"></span></div>
-              <div class="ps-item"><span class="ps-label">Current Courses</span><span class="ps-val" id="sumCourses"></span></div>
-              <div class="ps-item"><span class="ps-label">Activities</span><span class="ps-val" id="sumActivities"></span></div>
-              <div class="ps-item"><span class="ps-label">Projects</span><span class="ps-val" id="sumProjects"></span></div>
-              <div class="ps-item"><span class="ps-label">Internship Timing</span><span class="ps-val" id="sumTimeline"></span></div>
             </div>
-            <div class="alert alert-info" style="margin:40px 0;">
+
+            <!-- OPTIONAL: complete-your-profile-later section -->
+            <details class="opt-details">
+              <summary>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:18px;height:18px;"><path d="M12 5v14M5 12h14"/></svg>
+                Add optional details (recommended for sharper advice)
+                <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:18px;height:18px;"><path d="m6 9 6 6 6-6"/></svg>
+              </summary>
+              <div class="opt-body">
+                <div class="form-group">
+                  <label class="form-label" for="rigor">Course rigor <span class="lbl-opt">· optional</span></label>
+                  <select class="form-select" id="rigor">
+                    <option value="">Not sure yet</option>
+                    <option value="standard">Standard college-prep</option>
+                    <option value="rigorous">Honors / AP / IB mix</option>
+                    <option value="extreme">Most rigorous (4+ APs)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="workloadPreference">Workload comfort <span class="lbl-opt">· optional</span></label>
+                  <select class="form-select" id="workloadPreference">
+                    <option value="balanced">Balanced (default)</option>
+                    <option value="light">Light — protect my GPA</option>
+                    <option value="ambitious">Ambitious</option>
+                    <option value="extreme">Maximum rigor</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="internshipTimeline">Internship timing <span class="lbl-opt">· optional</span></label>
+                  <select class="form-select" id="internshipTimeline">
+                    <option value="exploring">Just exploring</option>
+                    <option value="this summer">This summer</option>
+                    <option value="6-12 months">6–12 months</option>
+                    <option value="1 year+">1 year+</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="currentCourses">Current courses <span class="lbl-opt">· optional</span></label>
+                  <textarea class="form-textarea" id="currentCourses" maxlength="400" style="min-height:90px;" placeholder="e.g. AP CSP, Honors Algebra II, Biology, English II, Spanish III"></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="targetColleges">Target colleges / programs <span class="lbl-opt">· optional</span></label>
+                  <input type="text" class="form-input" id="targetColleges" maxlength="220" placeholder="e.g. Stanford, UT Austin Cockrell, Georgia Tech">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="extracurriculars">Clubs, sports &amp; activities <span class="lbl-opt">· optional</span></label>
+                  <textarea class="form-textarea" id="extracurriculars" maxlength="400" style="min-height:90px;" placeholder="e.g. Robotics club, varsity soccer, coding club, volunteering"></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="passionProjects">Passion projects <span class="lbl-opt">· optional</span></label>
+                  <textarea class="form-textarea" id="passionProjects" maxlength="400" style="min-height:90px;" placeholder="e.g. Personal website, tutoring app, research poster"></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="schoolCatalogUrl">Course catalog URL <span class="lbl-opt">· optional</span></label>
+                  <input type="url" class="form-input" id="schoolCatalogUrl" maxlength="300" placeholder="https://your-school.edu/course-catalog">
+                  <small class="field-hint">If blank, we'll search the web using your school name automatically.</small>
+                </div>
+              </div>
+            </details>
+
+            <div class="alert alert-info" style="margin:26px 0;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4m0 4h.01" /></svg>
-              <span>We use your school, grade, and workload to search the catalog, compare peer patterns, and generate recommendations while you wait for mentors.</span>
+              <span>You can update any of this later from your dashboard — nothing here is locked in.</span>
             </div>
             <button class="btn btn-primary btn-full btn-lg" onclick="finish()">
               Complete Onboarding
@@ -462,6 +456,23 @@
     </div>
   </div>
 
+  <!-- ══════════ AUTOCOMPLETE DATA ══════════ -->
+  <datalist id="dl-years">
+    <option value="8th Grade (Middle School)"></option>
+    <option value="9th Grade"></option>
+    <option value="10th Grade"></option>
+    <option value="11th Grade"></option>
+    <option value="12th Grade"></option>
+    <option value="College Freshman"></option>
+    <option value="College Sophomore"></option>
+    <option value="College Junior"></option>
+    <option value="College Senior"></option>
+    <option value="Graduate Student"></option>
+    <option value="Gap Year"></option>
+  </datalist>
+  <datalist id="dl-schools"></datalist>
+  <datalist id="dl-locations"></datalist>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="shared.js"></script>
   <script src="animations.js"></script>
@@ -471,253 +482,285 @@
         const user = Auth.requireAuth();
 
         if (!user) {
-            // Not logged in at all — send to auth
             window.location.href = 'auth.html';
         } else if (user.onboarded) {
-            // Already completed onboarding — go to dashboard
             Auth.routeAfterLogin(user);
         } else if (user.role === 'admin') {
-            // Admins skip the quiz entirely
             Auth.updateUser({ onboarded: true });
             window.location.href = 'admin.html';
         } else if (user.role === 'mentor') {
-            // Mentors skip the quiz entirely
             completeMentor();
+        }
+
+        /* ── Reference data for autocomplete + validation ── */
+        const US_STATES = {
+          AL:'Alabama', AK:'Alaska', AZ:'Arizona', AR:'Arkansas', CA:'California', CO:'Colorado',
+          CT:'Connecticut', DE:'Delaware', FL:'Florida', GA:'Georgia', HI:'Hawaii', ID:'Idaho',
+          IL:'Illinois', IN:'Indiana', IA:'Iowa', KS:'Kansas', KY:'Kentucky', LA:'Louisiana',
+          ME:'Maine', MD:'Maryland', MA:'Massachusetts', MI:'Michigan', MN:'Minnesota', MS:'Mississippi',
+          MO:'Missouri', MT:'Montana', NE:'Nebraska', NV:'Nevada', NH:'New Hampshire', NJ:'New Jersey',
+          NM:'New Mexico', NY:'New York', NC:'North Carolina', ND:'North Dakota', OH:'Ohio', OK:'Oklahoma',
+          OR:'Oregon', PA:'Pennsylvania', RI:'Rhode Island', SC:'South Carolina', SD:'South Dakota',
+          TN:'Tennessee', TX:'Texas', UT:'Utah', VT:'Vermont', VA:'Virginia', WA:'Washington',
+          WV:'West Virginia', WI:'Wisconsin', WY:'Wyoming', DC:'District of Columbia'
+        };
+        const STATE_NAMES = Object.values(US_STATES).map(s => s.toLowerCase());
+        const STATE_ABBRS = Object.keys(US_STATES).map(s => s.toLowerCase());
+
+        // A small starter list to power school autocomplete suggestions.
+        // Free typing is still allowed; this just guides common entries.
+        const COMMON_SCHOOLS = [
+          'Stanford University','Harvard University','Massachusetts Institute of Technology',
+          'University of California, Berkeley','University of California, Los Angeles',
+          'University of Texas at Austin','Georgia Institute of Technology','Carnegie Mellon University',
+          'University of Michigan','New York University','University of Washington','Purdue University',
+          'University of Illinois Urbana-Champaign','Cornell University','Princeton University',
+          'Yale University','Columbia University','Rouse High School','Thomas Jefferson High School for Science and Technology',
+          'Stuyvesant High School','Bronx High School of Science','Lowell High School','Phillips Exeter Academy',
+          'Phillips Academy Andover','Boston Latin School','Plano Senior High School','Westlake High School'
+        ];
+        const COMMON_LOCATIONS = Object.entries(US_STATES).map(([ab, name]) => `${name}`)
+          .concat(['Austin, TX','Los Angeles, CA','New York, NY','Chicago, IL','Houston, TX',
+                   'Boston, MA','Seattle, WA','Atlanta, GA','San Francisco, CA','Leander ISD, Texas']);
+
+        (function seedDatalists(){
+          const put = (id, arr) => {
+            const dl = document.getElementById(id); if (!dl) return;
+            dl.innerHTML = arr.map(v => `<option value="${v.replace(/"/g,'&quot;')}"></option>`).join('');
+          };
+          put('dl-schools', COMMON_SCHOOLS);
+          put('dl-locations', COMMON_LOCATIONS);
+        })();
+
+        /* ── Input-safety helpers ──
+           Constrained fields (school, location, year, GPA) are validated so the
+           Strategy Engine can't be fed junk or prompt-injection. Free-text fields
+           (goal, careers, skills, projects) stay open but are sanitized. */
+        const INJECTION_RE = /(ignore|disregard|forget|override)\s+(all\s+|the\s+|your\s+|these\s+|previous\s+|above\s+|prior\s+|earlier\s+)*(instruction|prompt|context|rule|direction|message)s?|system\s*prompt|you\s+are\s+now|act\s+as\s+(an?|the)\b|pretend\s+(to\s+be|you)|new\s+instructions?|reveal\s+(your|the)\s+(prompt|instructions)|jailbreak|<\s*\/?\s*(system|assistant|user)\s*>|\b(system|assistant)\s*:/i;
+
+        function hasInjection(v){ return INJECTION_RE.test(String(v || '')); }
+
+        function looksLikeGibberish(v){
+          const s = String(v || '').trim();
+          if (!s) return false;
+          if (/(.)\1{5,}/.test(s)) return true;                 // 6+ identical chars in a row
+          if (/\S{35,}/.test(s)) return true;                   // 35+ chars with no space
+          const letters = (s.match(/[a-z]/gi) || []).length;
+          if (letters / s.length < 0.45) return true;           // mostly non-letters
+          const symbols = (s.match(/[^a-z0-9\s.,'&\/()#-]/gi) || []).length;
+          if (symbols > 4) return true;
+          return false;
+        }
+
+        function validateConstrained(value, { min = 2, max = 120, label = 'This field' } = {}){
+          const v = String(value || '').trim();
+          if (v.length < min) return { ok:false, reason:`${label} looks too short — please enter a real answer.` };
+          if (v.length > max) return { ok:false, reason:`${label} is too long.` };
+          if (hasInjection(v)) return { ok:false, reason:`${label} contains text that isn't allowed. Please enter a real answer.` };
+          if (looksLikeGibberish(v)) return { ok:false, reason:`${label} doesn't look valid. Please enter a real answer.` };
+          return { ok:true, value:v };
+        }
+
+        function validateLocation(value){
+          const base = validateConstrained(value, { min:2, max:120, label:'Location' });
+          if (!base.ok) return base;
+          const low = base.value.toLowerCase();
+          const hasState = STATE_NAMES.some(n => low.includes(n)) ||
+                           STATE_ABBRS.some(a => new RegExp(`\\b${a}\\b`).test(low));
+          if (!hasState) return { ok:false, reason:'Please include your state, e.g. "Austin, TX" or "Leander ISD, Texas".' };
+          return { ok:true, value:base.value };
+        }
+
+        function validateYear(value){
+          const base = validateConstrained(value, { min:2, max:40, label:'Grade / year' });
+          if (!base.ok) return base;
+          const low = base.value.toLowerCase();
+          const ok = /(grade|freshman|sophomore|junior|senior|college|university|undergrad|graduate|grad|gap|middle school|9th|10th|11th|12th|8th|7th|year\s*\d)/.test(low)
+                     || /^\d{1,2}(st|nd|rd|th)?$/.test(low);
+          if (!ok) return { ok:false, reason:'Please pick or type a valid grade/year, e.g. "11th Grade" or "College Sophomore".' };
+          return { ok:true, value:base.value };
+        }
+
+        function validateGpa(value){
+          const v = String(value || '').trim();
+          if (!v) return { ok:true, value:'' };                 // optional
+          if (v.length > 24) return { ok:false, reason:'GPA looks too long.' };
+          if (hasInjection(v)) return { ok:false, reason:'GPA contains text that isn\'t allowed.' };
+          if (!/\d/.test(v)) return { ok:false, reason:'GPA should include a number, e.g. 3.9.' };
+          if (!/^[0-9.\s\/a-z()%.-]+$/i.test(v)) return { ok:false, reason:'GPA can only contain numbers and simple notes, e.g. "3.9 UW / 4.4 W".' };
+          return { ok:true, value:v };
+        }
+
+        function sanitizeFree(value, max = 600){
+          let s = String(value || '').replace(/[\x00-\x1f\x7f]/g, ' '); // control chars
+          s = s.replace(/`{2,}/g, ' ');                                        // code fences
+          s = s.replace(INJECTION_RE, ' ');                                    // neutralize injections
+          s = s.replace(/\s{2,}/g, ' ').trim();
+          return s.slice(0, max);
         }
 
         /* ── State ── */
         let data = { workloadPreference: 'balanced' };
         let curStep = 0;
-        const steps = ['step-0', 'step-school', 'step-1', 'step-2', 'step-3', 'step-4', 'step-5', 'step-complete'];
+        const steps = ['q-standing', 'q-school', 'q-year', 'q-focus', 'q-career', 'q-review'];
+        const QUESTION_COUNT = 5; // review is the 6th screen, not a question
 
-        /* ── Card selection + auto-advance ── */
-        function setV(key, val, el, autoAdvance = false) {
-            data[key] = val;
-
-            // Highlight selected card
+        /* ── Card selection ── */
+        function setStage(val, el){
+            data.grade = val;
+            selectCard(el);
+            setTimeout(advance, 200);
+        }
+        function setInterest(val, el){
+            data.interest = val;
+            selectCard(el);
+        }
+        function selectCard(el){
             const group = el.closest('.choices-flex');
-            if (group) {
-                group.querySelectorAll('.choice-card')
-                    .forEach(c => c.classList.remove('selected'));
-            }
+            if (group) group.querySelectorAll('.choice-card').forEach(c => c.classList.remove('selected'));
             el.classList.add('selected');
-
-            // Brief visual confirmation, then advance
-            if (autoAdvance) setTimeout(advance, 200);
         }
 
-        function upPB(el) {
-            data.goal = el.value;
-        }
-
-        function advanceFromSchool() {
-            const schoolName = document.getElementById('schoolName').value.trim();
-            const schoolGrade = document.getElementById('schoolGrade').value.trim();
-            const schoolLocation = document.getElementById('schoolLocation').value.trim();
-            const catalogUrl = document.getElementById('schoolCatalogUrl').value.trim();
-
-            if (!schoolName || schoolName.length < 3) {
-              Utils.toast('Please enter your school name.', 'error');
-              return;
-            }
-
-            if (!schoolGrade || schoolGrade.length < 2) {
-              Utils.toast('Please enter your current grade or year.', 'error');
-              return;
-            }
-
-            data.schoolName = schoolName;
-            data.schoolGrade = schoolGrade;
-            data.schoolLocation = schoolLocation;
-            data.schoolCatalogUrl = catalogUrl;
+        /* ── Step advance handlers ── */
+        function advanceFromSchool(){
+            const name = validateConstrained(document.getElementById('schoolName').value, { min:3, max:120, label:'School name' });
+            if (!name.ok) { Utils.toast(name.reason, 'error'); return; }
+            const loc = validateLocation(document.getElementById('schoolLocation').value);
+            if (!loc.ok) { Utils.toast(loc.reason, 'error'); return; }
+            data.schoolName = name.value;
+            data.schoolLocation = loc.value;
             advance();
         }
 
-        function advanceFromGoal() {
-            const goalText = document.getElementById('goal').value.trim();
-            const targetColleges = document.getElementById('targetColleges').value.trim();
-
-            if (!goalText || goalText.length < 10) {
-              Utils.toast('Please describe your primary goal (at least 10 characters).', 'error');
-              return;
-            }
-
-            if (goalText.length > 500) {
-              Utils.toast('Your goal description is too long (max 500 characters).', 'error');
-              return;
-            }
-
-            data.goal = goalText;
-            data.targetColleges = targetColleges;
+        function advanceFromYear(){
+            const year = validateYear(document.getElementById('schoolGrade').value);
+            if (!year.ok) { Utils.toast(year.reason, 'error'); return; }
+            const gpa = validateGpa(document.getElementById('currentGpa').value);
+            if (!gpa.ok) { Utils.toast(gpa.reason, 'error'); return; }
+            data.schoolGrade = year.value;
+            data.currentGpa = gpa.value;
             advance();
         }
 
-        function advanceFromAspirations() {
-            const careersText = document.getElementById('careers').value.trim();
-            const skillsText = document.getElementById('skills').value.trim();
-
-            if (!careersText || careersText.length < 5) {
-              Utils.toast('Please describe your career aspirations (at least 5 characters).', 'error');
-              return;
-            }
-
-            if (!skillsText || skillsText.length < 5) {
-              Utils.toast('Please describe skills you want to build (at least 5 characters).', 'error');
-              return;
-            }
-
-            if (careersText.length > 500) {
-              Utils.toast('Career aspirations description is too long (max 500 characters).', 'error');
-              return;
-            }
-
-            if (skillsText.length > 300) {
-              Utils.toast('Skills description is too long (max 300 characters).', 'error');
-              return;
-            }
-
-            data.careers = careersText;
-            data.skills = skillsText;
+        function advanceFromFocus(){
+            if (!data.interest) { Utils.toast('Please choose your academic interest.', 'error'); return; }
+            const goal = sanitizeFree(document.getElementById('goal').value, 500);
+            if (goal.length < 10) { Utils.toast('Please describe your primary goal (at least 10 characters).', 'error'); return; }
+            data.goal = goal;
             advance();
         }
 
-        function advanceFromRigor() {
-            const currentCourses = document.getElementById('currentCourses').value.trim();
-            if (!data.rigor) {
-              Utils.toast('Please pick a course rigor level.', 'error');
-              return;
-            }
-            if (!data.workloadPreference) {
-              data.workloadPreference = 'balanced';
-            }
-            data.currentCourses = currentCourses;
-            data.currentGpa = document.getElementById('currentGpa').value.trim();
-            advance();
-        }
-
-        function advanceFromActivities() {
-            const extracurriculars = document.getElementById('extracurriculars').value.trim();
-            const passionProjects = document.getElementById('passionProjects').value.trim();
-
-            data.extracurriculars = extracurriculars || 'None yet';
-            data.passionProjects = passionProjects || 'None yet';
-            if (!data.timeAvailability) data.timeAvailability = '4-6 hrs/wk';
+        function advanceFromCareer(){
+            const careers = sanitizeFree(document.getElementById('careers').value, 500);
+            if (careers.length < 5) { Utils.toast('Please describe your dream career or role (at least 5 characters).', 'error'); return; }
+            data.careers = careers;
+            data.skills = sanitizeFree(document.getElementById('skills').value, 300); // optional
             advance();
         }
 
         /* ── Step navigation ── */
-        function advance() {
+        function advance(){
             if (curStep >= steps.length - 1) return;
-
-            // Hide current step
+            showStep(curStep + 1);
+        }
+        function goBack(){
+            if (curStep <= 0) return;
+            showStep(curStep - 1);
+        }
+        function showStep(index){
             const current = document.getElementById(steps[curStep]);
             current.classList.remove('active');
             current.style.display = 'none';
-
-            curStep++;
-
-            // Show and animate next step
+            curStep = index;
             const next = document.getElementById(steps[curStep]);
             next.style.display = 'block';
             requestAnimationFrame(() => requestAnimationFrame(() => next.classList.add('active')));
-
             updateMeta();
+            document.querySelector('.ob-main')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        function updateMeta() {
-            const isLast = curStep === steps.length - 1;
+        function updateMeta(){
+            const isReview = curStep === steps.length - 1;
 
             document.getElementById('stepIndicator').textContent =
-                `Step ${curStep + 1} of ${steps.length}`;
-
+                isReview ? 'Final step · Review' : `Question ${curStep + 1} of ${QUESTION_COUNT}`;
             document.getElementById('mainHeader').textContent =
-                isLast ? 'Confirm Strategy.' : 'Welcome, Navigator.';
+                isReview ? 'Confirm your strategy.' : 'Welcome, Navigator.';
+
+            const back = document.getElementById('stepBack');
+            if (back) back.style.display = curStep > 0 ? 'inline-flex' : 'none';
 
             document.querySelectorAll('.p-dot').forEach((dot, i) => {
                 dot.className = 'p-dot';
-                if (i === curStep) dot.classList.add('active');
-                else if (i < curStep) dot.classList.add('complete');
+                if (isReview || i < curStep) dot.classList.add('complete');
+                else if (i === curStep) dot.classList.add('active');
             });
 
-            if (isLast) renderSummary();
+            syncRail();
+            if (isReview) renderSummary();
         }
 
-        function completeMentor() {
+        function syncRail(){
+            const jSteps = document.querySelectorAll('#journeySteps .oj-step');
+            jSteps.forEach((s, i) => {
+                s.classList.remove('active', 'complete');
+                if (i < curStep) s.classList.add('complete');
+                else if (i === curStep) s.classList.add('active');
+            });
+        }
+
+        function completeMentor(){
             Auth.updateUser({ onboarded: true });
             window.location.href = 'mentordashboard.html';
         }
 
-        function renderSummary() {
+        function renderSummary(){
             const gradeMap = {
-                highschool: 'High School Navigator',
-                college: 'Undergrad Navigator',
-                gap: 'Gap Year Explorer',
-                grad: 'Early Career Navigator',
-                parent: 'Parent Explorer',
-                international: 'International Applicant'
+                highschool:'High School Navigator', college:'Undergrad Navigator', gap:'Gap Year Explorer',
+                grad:'Early Career Navigator', parent:'Parent Explorer', international:'International Applicant'
             };
             const interestMap = {
-                stem: 'STEM-focused Track',
-                medicine: 'Medical Track Focus',
-                business: 'Business Track',
-                humanities: 'Humanities Focus',
-                arts: 'Arts & Design Field',
-                undecided: 'Interdisciplinary Focus'
+                stem:'STEM-focused Track', medicine:'Medical Track Focus', business:'Business Track',
+                humanities:'Humanities Focus', arts:'Arts & Design Field', undecided:'Interdisciplinary Focus'
             };
-            const rigorMap = {
-                standard: 'Standard College-Prep',
-                rigorous: 'Honors / AP / IB Mix',
-                extreme: 'Maximum Rigor (4+ APs)'
-            };
-            const workloadMap = {
-                light: 'Light',
-                balanced: 'Balanced',
-                ambitious: 'Ambitious',
-                extreme: 'Maximum'
-            };
-
-            const setText = (id, value) => {
-              const node = document.getElementById(id);
-              if (node) node.textContent = value;
-            };
-
-            setText('sumEdu', `${gradeMap[data.grade] || '—'} · ${data.schoolGrade || 'Grade not set'}`);
-            setText('sumSchool', data.schoolName || 'School not set');
-            setText('sumCatalog', data.schoolCatalogUrl || 'We will search automatically');
+            const setText = (id, value) => { const n = document.getElementById(id); if (n) n.textContent = value; };
+            setText('sumEdu', `${gradeMap[data.grade] || '—'} · ${data.schoolGrade || '—'}`);
+            setText('sumSchool', data.schoolName || 'Not set');
+            setText('sumLocation', data.schoolLocation || 'Not set');
             setText('sumFocus', interestMap[data.interest] || '—');
-            setText('sumRigor', rigorMap[data.rigor] || '—');
             setText('sumGpa', data.currentGpa || 'Not shared');
-            setText('sumWorkload', workloadMap[data.workloadPreference] || data.workloadPreference || '—');
             setText('sumGoal', data.goal || 'Not yet defined');
-            setText('sumColleges', data.targetColleges || 'Not specified');
             setText('sumCareers', data.careers || 'Not specified');
             setText('sumSkills', data.skills || 'Not specified');
-            setText('sumCourses', data.currentCourses || 'Not shared');
-            setText('sumActivities', data.extracurriculars || 'Not shared');
-            setText('sumProjects', data.passionProjects || 'Not shared');
-            setText('sumTimeline', data.internshipTimeline || 'Exploring');
         }
 
         /* ── Completion ── */
-        function finish() {
-            if (!data.grade || !data.schoolName || !data.schoolGrade || !data.interest || !data.rigor || !data.goal || !data.careers || !data.skills) {
-              Utils.toast('Please complete all profile steps before finishing.', 'error');
-              curStep = 0;
-              updateMeta();
-              document.getElementById('step-complete').classList.remove('active');
-              document.getElementById('step-complete').style.display = 'none';
-              document.getElementById('step-0').style.display = 'block';
-              requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById('step-0').classList.add('active')));
-              return;
+        function finish(){
+            const missing = [];
+            if (!data.grade) missing.push('standing');
+            if (!data.schoolName) missing.push('school');
+            if (!data.schoolLocation) missing.push('location');
+            if (!data.schoolGrade) missing.push('grade/year');
+            if (!data.interest) missing.push('interest');
+            if (!data.goal) missing.push('primary goal');
+            if (!data.careers) missing.push('career direction');
+            if (missing.length){
+                Utils.toast(`Please complete: ${missing.join(', ')}.`, 'error');
+                showStep(0);
+                return;
             }
 
-            data.workloadPreference = data.workloadPreference || 'balanced';
-            data.currentCourses = data.currentCourses || '';
-            data.extracurriculars = data.extracurriculars || 'None yet';
-            data.passionProjects = data.passionProjects || 'None yet';
-            data.targetColleges = data.targetColleges || '';
-            data.internshipTimeline = data.internshipTimeline || 'exploring';
+            const val = (id) => (document.getElementById(id)?.value || '').trim();
+            data.rigor = val('rigor') || 'standard';
+            data.workloadPreference = val('workloadPreference') || 'balanced';
+            data.internshipTimeline = val('internshipTimeline') || 'exploring';
+            data.currentCourses = sanitizeFree(val('currentCourses'), 400);
+            data.targetColleges = sanitizeFree(val('targetColleges'), 220);
+            data.extracurriculars = sanitizeFree(val('extracurriculars'), 400) || 'None yet';
+            data.passionProjects = sanitizeFree(val('passionProjects'), 400) || 'None yet';
             data.timeAvailability = data.timeAvailability || '4-6 hrs/wk';
+            const catalog = val('schoolCatalogUrl');
+            data.schoolCatalogUrl = (/^https?:\/\//i.test(catalog) && !hasInjection(catalog)) ? catalog : '';
 
             Auth.updateUser({ profile: data, onboarded: true });
             const updated = Auth.getUser();
@@ -725,31 +768,9 @@
                 ? 'mentordashboard.html'
                 : 'recommendations.html?new=true';
         }
-  </script>
 
-  <!-- Keep the signature journey rail in sync with the flow's progress dots.
-       Observes the .p-dot classes (set by updateMeta) without touching the flow logic. -->
-  <script>
-    (function () {
-      try {
-        var dots = document.querySelectorAll('#dotGrid .p-dot');
-        var jSteps = document.querySelectorAll('#journeySteps .oj-step');
-        if (!dots.length || !jSteps.length) return;
-        function sync() {
-          dots.forEach(function (d, i) {
-            var s = jSteps[i]; if (!s) return;
-            s.classList.remove('active', 'complete');
-            if (d.classList.contains('active')) s.classList.add('active');
-            else if (d.classList.contains('complete')) s.classList.add('complete');
-          });
-        }
-        var mo = new MutationObserver(sync);
-        dots.forEach(function (d) { mo.observe(d, { attributes: true, attributeFilter: ['class'] }); });
-        // Stagger the journey steps in on load.
-        jSteps.forEach(function (s, i) { s.style.animationDelay = (0.25 + i * 0.06) + 's'; });
-        sync();
-      } catch (e) { /* non-critical */ }
-    })();
+        // Initialise rail/back state on first paint.
+        updateMeta();
   </script>
 </body>
 </html>

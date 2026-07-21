@@ -520,3 +520,71 @@ h1,h2,h3,h4,p,li{overflow-wrap:break-word;}
   .container,.footer-inner{padding-left:18px;padding-right:18px;}
   .foot-bottom{flex-direction:column;gap:8px;}
 }
+
+/* ============================================================
+   MOBILE HARDENING v2 — utility classes, bottom-nav polish,
+   iOS zoom prevention, and safe-area support.
+   ============================================================ */
+
+/* Utility: hide an element on phones (used by page headers/nav). */
+.hide-mobile{display:inline;}
+@media(max-width:768px){
+  .hide-mobile{display:none!important;}
+}
+
+/* Prevent iOS Safari from auto-zooming when a form control is focused:
+   any control smaller than 16px triggers the zoom, so bump on phones. */
+@media(max-width:560px){
+  input,textarea,select,.form-input,.form-textarea,.form-select,.rec-input-box{font-size:16px!important;}
+}
+
+/* Bottom nav now carries up to 5 items (Home · AI Engine · History · Vault ·
+   Logout for students). Keep it tidy on narrow phones and clear the iOS
+   home-indicator with a safe-area inset. */
+.bottom-nav{padding-bottom:max(10px,env(safe-area-inset-bottom));}
+.bottom-nav a{flex:1;min-width:0;gap:4px;}
+.bottom-nav a span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+@media(max-width:380px){
+  .bottom-nav{padding-left:8px;padding-right:8px;}
+  .bottom-nav a{font-size:10px;}
+  .bottom-nav svg{width:21px;height:21px;}
+}
+/* Ensure dashboard content never hides behind the bottom nav. */
+@media(max-width:960px){
+  .dashboard-main{padding-bottom:calc(96px + env(safe-area-inset-bottom));}
+}
+
+/* The mobile menu overlay should scroll if content is tall, and respect
+   the safe area at the bottom. */
+.mobile-menu{overflow-y:auto;padding-bottom:max(28px,env(safe-area-inset-bottom));}
+
+/* Never let a stray wide element cause horizontal scrolling on mobile.
+   (Icons are excluded — they carry fixed sizes and must not be reflowed.) */
+@media(max-width:768px){
+  html,body{max-width:100%;overflow-x:hidden;}
+  img,video,canvas{max-width:100%;height:auto;}
+}
+
+/* ------------------------------------------------------------------
+   FIX: opened hamburger menu was stretching every cloned nav item to
+   full width. A circular avatar (border-radius:50%) stretched full-
+   width becomes a "super outstretched ellipse", and the email/status
+   text became a button-looking bar. Only real links/buttons should
+   stretch; decorative items are hidden inside the menu.
+   ------------------------------------------------------------------ */
+.mobile-menu .nav-actions > *{width:auto;}
+.mobile-menu .nav-actions > a,
+.mobile-menu .nav-actions > button{
+  width:100%;text-align:center;justify-content:center;
+}
+.mobile-menu .nav-actions .avatar,
+.mobile-menu .nav-actions .realtime-badge,
+.mobile-menu .nav-actions > span{
+  display:none!important;
+}
+/* Give the menu real breathing room and a clear card feel. */
+.mobile-menu .nav-actions{gap:10px;padding-top:8px;}
+
+/* The hamburger icon is a fixed square; never let flex distort it. */
+.nav-menu-toggle{flex:0 0 44px;}
+.nav-menu-toggle svg{width:22px;height:22px;flex-shrink:0;display:block;}

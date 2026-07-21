@@ -319,14 +319,26 @@ body{background:var(--bg);}
   }
 
   function showView(v) {
+    if (!['ask','history'].includes(v)) v = 'ask';
     ['ask','history'].forEach(x => {
       document.getElementById('view-'+x).style.display='none';
       document.getElementById('sidebar-'+x).classList.remove('active');
     });
     document.getElementById('view-'+v).style.display = 'block';
     document.getElementById('sidebar-'+v).classList.add('active');
+    // Keep the URL hash in sync so the mobile bottom-nav highlights correctly.
+    const desired = v === 'history' ? '#history' : '';
+    if ((window.location.hash || '') !== desired) {
+      history.replaceState(null, '', window.location.pathname + window.location.search + desired);
+    }
     if (v==='history') refreshFeed();
   }
+
+  // Open the correct view from the URL hash (used by the mobile bottom-nav
+  // "History" link, e.g. studentdashboard.html#history).
+  function viewFromHash() { showView(window.location.hash === '#history' ? 'history' : 'ask'); }
+  window.addEventListener('hashchange', viewFromHash);
+  document.addEventListener('DOMContentLoaded', () => { if (window.location.hash === '#history') viewFromHash(); });
 
   function toggleT(el, t) {
     el.classList.toggle('active');
