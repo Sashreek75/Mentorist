@@ -350,6 +350,41 @@
     }
 
     @keyframes slideDown { 0%{opacity:0; transform:translateY(-10px);} 100%{opacity:1; transform:translateY(0);} }
+
+    /* ===== SHELL + RESPONSIVE HEADER LAYOUT ===== */
+    .admin-shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 120px clamp(18px, 5vw, 32px) 80px;
+    }
+    .admin-title { font-size: clamp(26px, 5.5vw, 42px); line-height: 1.1; }
+    .admin-section-head { flex-wrap: wrap; gap: 16px; }
+
+    @media(max-width:768px) {
+      /* Clear the mobile bottom-nav (76px) + iOS home indicator. */
+      .admin-shell { padding: 96px 16px calc(96px + env(safe-area-inset-bottom)); }
+
+      /* Section headers stack cleanly instead of colliding. */
+      .admin-section-head { align-items: flex-start; }
+      .admin-section-head h2 { font-size: 22px !important; }
+      .admin-head-actions { width: 100%; flex-wrap: wrap; }
+      .admin-head-actions a.btn { flex: 1; justify-content: center; }
+
+      /* Broadcast title/tag inputs go single-column. */
+      .broadcast-grid { grid-template-columns: 1fr !important; gap: 14px !important; }
+
+      /* Broadcast panel + inner cards get tighter padding. */
+      .admin-card > div[style*="padding:32px"] { padding: 20px !important; }
+
+      /* Tables never blow out the viewport — scroll within their frame. */
+      .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .table-wrap table { min-width: 560px; }
+    }
+
+    @media(max-width:500px) {
+      .admin-shell { padding-left: 12px; padding-right: 12px; }
+      .admin-card { padding: 18px 14px !important; }
+    }
   </style>
 </head>
 
@@ -371,12 +406,12 @@
     </div>
   </nav>
 
-  <div class="app-layout" style="max-width:1100px; margin:0 auto; padding-top:120px; padding-bottom:80px;">
+  <div class="app-layout admin-shell">
     <div id="undoContainer"></div>
 
     <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:28px;">
       <div>
-        <h1 style="font-family:var(--font-h); font-size:42px; font-weight:800; color:var(--t1); letter-spacing:-0.04em; margin-bottom:12px;">Founder <span style="color:var(--green);">Impact</span> Dashboard</h1>
+        <h1 class="admin-title" style="font-family:var(--font-h); font-weight:800; color:var(--t1); letter-spacing:-0.04em; margin-bottom:12px;">Founder <span style="color:var(--green);">Impact</span> Dashboard</h1>
         <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
           <div id="refreshStatus" style="font-size:13px; color:var(--t4);">Last sync: waiting for data...</div>
           <span id="realtimeStatusBadge" class="realtime-badge realtime-connecting">Realtime: connecting</span>
@@ -385,12 +420,12 @@
     </div>
 
     <div class="admin-card" id="mentorReviewCenter" style="display:none; border-color: var(--green); box-shadow: 0 0 40px rgba(15,157,99,0.1);">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+      <div class="admin-section-head" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
         <div>
           <h2 style="font-family:var(--font-h); font-size:28px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">Mentor Review Center</h2>
           <p style="color:var(--t3); font-size:15px;">There are pending mentor applications that require your strategic review.</p>
         </div>
-        <div style="display:flex; gap:12px; align-items:center;">
+        <div class="admin-head-actions" style="display:flex; gap:12px; align-items:center;">
           <a href="mentor-review.html" class="btn btn-primary btn-sm">Open Full Review Center</a>
           <div style="background:var(--green-dim); padding:8px 16px; border-radius:var(--r-lg); border:1px solid rgba(15,157,99,0.3);">
             <span id="pendingCountBadge" style="font-size:14px; font-weight:800; color:var(--green);">0 Pending</span>
@@ -414,7 +449,7 @@
     </div>
 
     <div class="admin-card">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px;">
+      <div class="admin-section-head" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px;">
         <div>
           <h2 style="font-family:var(--font-h); font-size:28px; font-weight:800; color:var(--t1); letter-spacing:-0.03em; margin-bottom:8px;">Founder Broadcast Center</h2>
           <p style="color:var(--t3); font-size:15px;">Send strategic opportunities and critical updates directly to every Mentorist user.</p>
@@ -429,7 +464,7 @@
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V8z"/><path d="M10 12l2 2 4-4"/></svg>
         </div>
         
-        <div style="display:grid; grid-template-columns:1.2fr 0.8fr; gap:20px; margin-bottom:20px;">
+        <div class="broadcast-grid" style="display:grid; grid-template-columns:1.2fr 0.8fr; gap:20px; margin-bottom:20px;">
           <div>
             <label style="display:block; font-size:11px; font-weight:700; color:var(--t4); text-transform:uppercase; margin-bottom:8px; letter-spacing:0.05em;">Broadcast Title</label>
             <input type="text" id="alTitle" placeholder="e.g. Stanford SIMR Applications Open" style="width:100%; background:var(--bg-1); border:1px solid var(--b2); border-radius:var(--r-lg); padding:14px; color:var(--t1); font-weight:600;">

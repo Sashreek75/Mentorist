@@ -114,7 +114,37 @@
     .lbl-opt { color: var(--t4); font-weight: 500; text-transform: none; letter-spacing: 0; }
     .field-hint { color: var(--t4); margin-top: 8px; display: block; font-size: 12.5px; line-height: 1.5; }
 
+    /* Required-field indicator */
+    .req-star { color: var(--red); font-weight: 800; margin-left: 3px; }
+    .req-legend { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--t4); margin: -6px 0 22px; }
+    .req-legend .req-star { font-size: 14px; margin: 0; }
+
     .choices-flex { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); gap: 12px; margin-bottom: 8px; }
+
+    /* ───────── Custom combobox (reliable on desktop + mobile) ───────── */
+    .combo { position: relative; }
+    .combo .form-input { padding-right: 44px; }
+    .combo-caret {
+      position: absolute; right: 15px; top: 21px; width: 18px; height: 18px;
+      color: var(--t4); pointer-events: none; transition: transform 0.25s var(--ease);
+    }
+    .combo.open .combo-caret { transform: rotate(180deg); color: var(--green-2); }
+    .combo-panel {
+      position: absolute; z-index: 60; top: calc(100% + 6px); left: 0; right: 0;
+      background: var(--bg-1); border: 1px solid var(--b2); border-radius: var(--r-lg);
+      box-shadow: var(--shadow-lg); max-height: 264px; overflow-y: auto;
+      -webkit-overflow-scrolling: touch; padding: 6px; display: none;
+      overscroll-behavior: contain;
+    }
+    .combo.open .combo-panel { display: block; animation: fadeUp 0.16s var(--ease) both; }
+    .combo-opt {
+      padding: 12px 14px; border-radius: var(--r-md); font-size: 15px; color: var(--t1);
+      cursor: pointer; min-height: 44px; display: flex; align-items: center;
+      line-height: 1.35; word-break: break-word;
+    }
+    .combo-opt:hover, .combo-opt.active { background: var(--green-surface); color: var(--green-2); }
+    .combo-opt mark { background: transparent; color: var(--green-2); font-weight: 700; }
+    .combo-empty { padding: 13px 14px; color: var(--t4); font-size: 13px; }
 
     /* Optional details disclosure */
     .opt-details { margin-top: 26px; border: 1px solid var(--b1); border-radius: var(--r-xl); background: var(--bg-2); overflow: hidden; }
@@ -141,10 +171,21 @@
     @media(max-width:560px) {
       .choices-flex { grid-template-columns: 1fr; }
       .profile-summary-premium { grid-template-columns: 1fr; }
-      .ob-main { padding: 22px 14px 100px; }
+      .ob-main { padding: 22px 14px calc(72px + env(safe-area-inset-bottom)); }
       /* Prevent iOS zoom-on-focus: inputs must be >=16px */
-      .form-input, .form-textarea, .form-select { font-size: 16px; }
+      .form-input, .form-textarea, .form-select, .combo-opt { font-size: 16px; }
       .step-sub { font-size: 14.5px; }
+      .step-title-row { gap: 8px; }
+      .step-title { font-size: 21px; }
+      /* Comfortable tap targets + full-width primary buttons on phones */
+      .btn-lg { min-height: 50px; }
+      /* Give the dropdown a touch more room on small screens */
+      .combo-panel { max-height: 240px; }
+      .ob-top .btn { flex: 1; justify-content: center; }
+    }
+    @media(max-width:380px) {
+      .ob-main { padding: 20px 12px calc(72px + env(safe-area-inset-bottom)); }
+      .on-card-premium { padding: 18px 14px; }
     }
   </style>
 </head>
@@ -208,6 +249,8 @@
           <div class="p-dot"></div>
         </div>
 
+        <p class="req-legend"><span class="req-star" aria-hidden="true">*</span> marks a required question — everything else is optional and can be added later.</p>
+
         <!-- Back-a-step control -->
         <button id="stepBack" class="btn btn-ghost btn-sm" style="display:none;align-items:center;gap:7px;margin-bottom:14px;" onclick="goBack()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
@@ -257,15 +300,23 @@
               <h2 class="step-title">Your school &amp; district</h2>
               <span class="q-tag q-req">Required</span>
             </div>
-            <p class="step-sub">This lets the engine pull the right course catalog and pathways. Start typing — suggestions will appear.</p>
+            <p class="step-sub">This lets the engine pull the right course catalog and pathways. Start typing or tap the field to pick from the list.</p>
             <div class="form-group">
-              <label class="form-label" for="schoolName">School Name</label>
-              <input type="text" class="form-input" id="schoolName" maxlength="120" list="dl-schools" autocomplete="off" placeholder="e.g. Rouse High School">
-              <small class="field-hint">Enter your real school. This is used only to find your course catalog.</small>
+              <label class="form-label" for="schoolName">School Name <span class="req-star" aria-hidden="true">*</span></label>
+              <div class="combo">
+                <input type="text" class="form-input" id="schoolName" maxlength="120" autocomplete="off" data-combo placeholder="e.g. Rouse High School" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-required="true">
+                <svg class="combo-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                <div class="combo-panel" role="listbox"></div>
+              </div>
+              <small class="field-hint">Enter your real school, or pick a suggestion. This is used only to find your course catalog.</small>
             </div>
             <div class="form-group">
-              <label class="form-label" for="schoolLocation">District / City, State</label>
-              <input type="text" class="form-input" id="schoolLocation" maxlength="120" list="dl-locations" autocomplete="off" placeholder="e.g. Leander ISD, Texas — or — Austin, TX">
+              <label class="form-label" for="schoolLocation">District / City, State <span class="req-star" aria-hidden="true">*</span></label>
+              <div class="combo">
+                <input type="text" class="form-input" id="schoolLocation" maxlength="120" autocomplete="off" data-combo placeholder="e.g. Leander ISD, Texas — or — Austin, TX" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-required="true">
+                <svg class="combo-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                <div class="combo-panel" role="listbox"></div>
+              </div>
               <small class="field-hint">Please include your state so we search the right region.</small>
             </div>
             <button class="btn btn-primary btn-full btn-lg" onclick="advanceFromSchool()">
@@ -282,8 +333,12 @@
             </div>
             <p class="step-sub">So we sequence courses correctly and calibrate rigor safely.</p>
             <div class="form-group">
-              <label class="form-label" for="schoolGrade">Current Grade / Year</label>
-              <input type="text" class="form-input" id="schoolGrade" maxlength="40" list="dl-years" autocomplete="off" placeholder="e.g. 11th Grade or College Sophomore">
+              <label class="form-label" for="schoolGrade">Current Grade / Year <span class="req-star" aria-hidden="true">*</span></label>
+              <div class="combo">
+                <input type="text" class="form-input" id="schoolGrade" maxlength="40" autocomplete="off" data-combo placeholder="Tap to choose — e.g. 11th Grade or College Sophomore" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-required="true">
+                <svg class="combo-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                <div class="combo-panel" role="listbox"></div>
+              </div>
               <small class="field-hint">Pick from the list or type your own.</small>
             </div>
             <div class="form-group">
@@ -304,7 +359,7 @@
               <span class="q-tag q-req">Required</span>
             </div>
             <p class="step-sub">Choose the field closest to your interest, then tell us the one thing you most want to achieve.</p>
-            <label class="form-label" style="margin-bottom:12px;">Academic Interest</label>
+            <label class="form-label" style="margin-bottom:12px;">Academic Interest <span class="req-star" aria-hidden="true">*</span></label>
             <div class="choices-flex" style="margin-bottom:22px;">
               <div class="choice-card" onclick="setInterest('stem',this)">
                 <div class="rc-name">STEM Track</div>
@@ -332,7 +387,7 @@
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label" for="goal">Primary Goal</label>
+              <label class="form-label" for="goal">Primary Goal <span class="req-star" aria-hidden="true">*</span></label>
               <textarea class="form-textarea" id="goal" maxlength="500" placeholder="e.g. Get into a top engineering program like Stanford while protecting my GPA."></textarea>
               <small class="field-hint">Write freely — this is where detail helps the engine most.</small>
             </div>
@@ -350,7 +405,7 @@
             </div>
             <p class="step-sub">Your dream direction helps us match mentors and target the right opportunities.</p>
             <div class="form-group">
-              <label class="form-label" for="careers">Dream Careers or Roles</label>
+              <label class="form-label" for="careers">Dream Careers or Roles <span class="req-star" aria-hidden="true">*</span></label>
               <textarea class="form-textarea" id="careers" maxlength="500" placeholder="e.g. Software engineer at a startup, neurosurgeon, product manager, civil-rights lawyer"></textarea>
               <small class="field-hint">Be as specific as you like — it sharpens every recommendation.</small>
             </div>
@@ -531,6 +586,104 @@
           put('dl-schools', COMMON_SCHOOLS);
           put('dl-locations', COMMON_LOCATIONS);
         })();
+
+        /* ── Custom combobox ──
+           Native <datalist> dropdowns are unreliable — many mobile browsers
+           show nothing at all. This lightweight combobox renders a real,
+           tappable, filterable list on every device while still allowing
+           free-text entry (needed for real school names / locations). */
+        const YEARS = [
+          '8th Grade (Middle School)','9th Grade','10th Grade','11th Grade','12th Grade',
+          'College Freshman','College Sophomore','College Junior','College Senior',
+          'Graduate Student','Gap Year'
+        ];
+        const COMBO_SOURCES = {
+          schoolName: COMMON_SCHOOLS,
+          schoolLocation: COMMON_LOCATIONS,
+          schoolGrade: YEARS
+        };
+
+        function initComboboxes(){
+          const esc = (s) => String(s).replace(/[&<>"']/g, c => (
+            { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+          document.querySelectorAll('input[data-combo]').forEach(input => {
+            const wrap  = input.closest('.combo');
+            const panel = wrap.querySelector('.combo-panel');
+            const options = COMBO_SOURCES[input.id] || [];
+            let activeIdx = -1;
+            let matches = [];
+
+            const open  = () => { wrap.classList.add('open'); input.setAttribute('aria-expanded','true'); };
+            const close = () => { wrap.classList.remove('open'); input.setAttribute('aria-expanded','false'); activeIdx = -1; };
+
+            function render(){
+              const q = input.value.trim().toLowerCase();
+              matches = q ? options.filter(o => o.toLowerCase().includes(q)) : options.slice();
+              if (!matches.length){
+                panel.innerHTML = `<div class="combo-empty">No suggestions — your own answer works too.</div>`;
+                return;
+              }
+              panel.innerHTML = matches.map((o, i) => {
+                let label = esc(o);
+                if (q){
+                  const idx = o.toLowerCase().indexOf(q);
+                  if (idx > -1){
+                    label = esc(o.slice(0, idx)) + '<mark>' + esc(o.slice(idx, idx + q.length)) +
+                            '</mark>' + esc(o.slice(idx + q.length));
+                  }
+                }
+                return `<div class="combo-opt" role="option" data-i="${i}">${label}</div>`;
+              }).join('');
+            }
+
+            function select(val){
+              input.value = val;
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+              close();
+            }
+
+            function setActive(i){
+              const els = panel.querySelectorAll('.combo-opt');
+              if (!els.length) return;
+              activeIdx = (i + els.length) % els.length;
+              els.forEach(el => el.classList.remove('active'));
+              const el = els[activeIdx];
+              el.classList.add('active');
+              el.scrollIntoView({ block: 'nearest' });
+            }
+
+            input.addEventListener('focus', () => { render(); open(); });
+            input.addEventListener('input', () => { render(); open(); activeIdx = -1; });
+
+            input.addEventListener('keydown', (e) => {
+              if (e.key === 'ArrowDown'){ e.preventDefault(); if (!wrap.classList.contains('open')){ render(); open(); } setActive(activeIdx + 1); }
+              else if (e.key === 'ArrowUp'){ e.preventDefault(); setActive(activeIdx - 1); }
+              else if (e.key === 'Enter'){ if (wrap.classList.contains('open') && activeIdx > -1){ e.preventDefault(); select(matches[activeIdx]); } }
+              else if (e.key === 'Escape'){ close(); }
+            });
+
+            // pointerdown fires before input blur, so the tap registers reliably on mobile.
+            panel.addEventListener('pointerdown', (e) => {
+              const opt = e.target.closest('.combo-opt');
+              if (!opt) return;
+              e.preventDefault();
+              select(matches[+opt.dataset.i]);
+            });
+
+            // Caret toggles the list.
+            wrap.querySelector('.combo-caret').addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              if (wrap.classList.contains('open')) { close(); }
+              else { input.focus(); render(); open(); }
+            });
+
+            // Close when tapping/clicking outside.
+            document.addEventListener('pointerdown', (e) => { if (!wrap.contains(e.target)) close(); });
+            input.addEventListener('blur', () => { setTimeout(() => { if (!wrap.matches(':focus-within')) close(); }, 120); });
+          });
+        }
+        initComboboxes();
 
         /* ── Input-safety helpers ──
            Constrained fields (school, location, year, GPA) are validated so the
