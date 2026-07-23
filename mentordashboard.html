@@ -27,7 +27,7 @@ body{background:var(--bg);}
   display:flex;align-items:center;justify-content:space-between;
   margin-bottom:32px;padding:8px 0;border-bottom:1px solid var(--b1);
 }
-.filter-tabs{display:flex;gap:12px;}
+.filter-tabs{display:flex;gap:12px;flex-wrap:wrap;}
 
 .m-card-luxury{
   background:var(--bg-1);border:1px solid var(--b1);border-radius:var(--r-2xl);
@@ -88,6 +88,19 @@ body{background:var(--bg);}
   .btn { padding: 10px 16px; font-size: 12px; }
   .m-card-luxury { padding: 16px; }
 }
+
+/* Broadcast alert cards: stack on phones so the "I understand" control
+   and author are never cut off. */
+@media(max-width:640px){
+  .alert-card{ flex-direction:column !important; align-items:stretch !important; gap:14px !important; }
+  .alert-card > div:last-child{
+    border-left:none !important; padding-left:0 !important;
+    border-top:1px solid var(--b1); padding-top:14px;
+    flex-direction:row !important; align-items:center !important;
+    justify-content:space-between; text-align:left !important; width:100%;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -147,7 +160,6 @@ body{background:var(--bg);}
         <button class="tag-pill" onclick="setF('Career Prep',this)">Career Prep</button>
         <button class="tag-pill" onclick="setF('Life Help',this)">Life Help</button>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="openBroadcastModal()">Broadcast Opportunity</button>
       <div style="font-size:12px;color:var(--t4);font-weight:700;" id="qCount">0 Available</div>
     </div>
 
@@ -222,71 +234,18 @@ body{background:var(--bg);}
     const dismissed = new Set((currentUser.dismissedAlertIds || []).map(String));
     dismissed.add(String(id));
     Auth.updateUser({ dismissedAlertIds: [...dismissed] });
+    // Also persist to the auth session metadata so the dismissal survives
+    // a fresh login on any device, not just this browser.
+    try { supabaseClient?.auth?.updateUser({ data: { dismissedAlertIds: [...dismissed] } }); } catch (e) {}
     if (typeof window.refreshMentoristState === 'function') {
       window.refreshMentoristState(currentUser.email);
     }
+    renderAlerts();
     Utils.toast('Broadcast acknowledged.', 'success');
   }
 
-  function openBroadcastModal() {
-    const html = `
-      <div id="bcModal" style="position:fixed; inset:0; background:rgba(40,35,25,0.14); backdrop-filter:blur(10px); z-index:2000; display:flex; align-items:center; justify-content:center; padding:24px;">
-        <div style="background:var(--bg-1); border:1px solid var(--b1); border-radius:var(--r-2xl); width:100%; max-width:500px; padding:40px; position:relative;">
-          <h2 style="font-family:var(--font-h); font-size:28px; font-weight:800; color:var(--t1); margin-bottom:8px;">Broadcast Opportunity</h2>
-          <p style="color:var(--t4); font-size:14px; margin-bottom:24px;">Alert all Mentorist students about a competition, summer program, or key resource.</p>
-          
-          <div style="margin-bottom:16px;">
-            <label style="display:block; font-size:11px; font-weight:700; color:var(--t4); text-transform:uppercase; margin-bottom:8px;">Title</label>
-            <input type="text" id="bcTitle" placeholder="e.g. Conrad Challenge 2025" style="width:100%; background:var(--bg-2); border:1px solid var(--b2); border-radius:var(--r-lg); padding:12px; color:var(--t1);">
-          </div>
-          <div style="margin-bottom:16px;">
-            <label style="display:block; font-size:11px; font-weight:700; color:var(--t4); text-transform:uppercase; margin-bottom:8px;">Category</label>
-            <input type="text" id="bcTag" placeholder="e.g. Competition" style="width:100%; background:var(--bg-2); border:1px solid var(--b2); border-radius:var(--r-lg); padding:12px; color:var(--t1);">
-          </div>
-          <div style="margin-bottom:24px;">
-            <label style="display:block; font-size:11px; font-weight:700; color:var(--t4); text-transform:uppercase; margin-bottom:8px;">Details</label>
-            <textarea id="bcBody" placeholder="Briefly explain the opportunity..." style="width:100%; background:var(--bg-2); border:1px solid var(--b2); border-radius:var(--r-lg); padding:12px; color:var(--t1); height:100px;"></textarea>
-          </div>
-          
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-            <button class="btn btn-ghost" onclick="document.getElementById('bcModal').remove()">Cancel</button>
-            <button class="btn btn-primary" onclick="submitBroadcast()">Send Alert</button>
-          </div>
-        </div>
-      </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', html);
-  }
-
-  function submitBroadcast() {
-    const title = document.getElementById('bcTitle').value.trim();
-    const tag = document.getElementById('bcTag').value.trim();
-    const body = document.getElementById('bcBody').value.trim();
-    
-    if(!title || title.length < 5) {
-      Utils.toast('Please provide a broadcast title (at least 5 characters)', 'error');
-      return;
-    }
-    if(!body || body.length < 10) {
-      Utils.toast('Please provide broadcast details (at least 10 characters)', 'error');
-      return;
-    }
-
-    if (title.length > 200) {
-      Utils.toast('Title is too long (max 200 characters)', 'error');
-      return;
-    }
-
-    if (body.length > 2000) {
-      Utils.toast('Details are too long (max 2000 characters)', 'error');
-      return;
-    }
-
-    AlertStore.add({ title, tag: tag||'Alert', body, author: user.name });
-    Utils.toast('Strategic Alert sent to all students!', 'success');
-    document.getElementById('bcModal').remove();
-    renderAlerts();
-  }
+  // Broadcasting is founder-only and lives in the admin console (admin.html,
+  // gated by AdminAuth). Mentors no longer have a broadcast path.
 
   function setSidebarF(f, el) {
     sidebarF = f;
@@ -424,3 +383,4 @@ body{background:var(--bg);}
 </script>
 </body>
 </html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     

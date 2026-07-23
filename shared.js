@@ -370,7 +370,10 @@ const Auth = {
       onboarded: stored?.onboarded ?? metadata.onboarded ?? finalRole === "admin",
       profile: stored?.profile ?? metadata.profile,
       applicationData: stored?.applicationData ?? metadata.applicationData,
-      rejectedAt: stored?.rejectedAt ?? metadata.rejectedAt ?? null
+      rejectedAt: stored?.rejectedAt ?? metadata.rejectedAt ?? null,
+      // Preserve which broadcasts the user has already acknowledged, so an
+      // "I understand" dismissal sticks across logins instead of reappearing.
+      dismissedAlertIds: stored?.dismissedAlertIds ?? metadata.dismissedAlertIds ?? []
     };
     
     console.log(`[AUTH] fromSupabaseUser created:`, appUser);

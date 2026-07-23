@@ -120,7 +120,20 @@ body{background:var(--bg);}
   .tour-step-action{font-size:13px;color:var(--t2);font-weight:700;}
   .tour-actions{display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap;}
   @media(max-width:720px){.tour-dialog{padding:24px;}.tour-header{flex-direction:column;align-items:flex-start;}.tour-actions{justify-content:flex-start;}}  
-  </style>
+  
+/* Broadcast alert cards: stack on phones so the "I understand" control
+   and author are never cut off. */
+@media(max-width:640px){
+  .alert-card{ flex-direction:column !important; align-items:stretch !important; gap:14px !important; }
+  .alert-card > div:last-child{
+    border-left:none !important; padding-left:0 !important;
+    border-top:1px solid var(--b1); padding-top:14px;
+    flex-direction:row !important; align-items:center !important;
+    justify-content:space-between; text-align:left !important; width:100%;
+  }
+}
+
+</style>
 </head>
 <body>
 
@@ -445,9 +458,13 @@ body{background:var(--bg);}
     const dismissed = new Set((currentUser.dismissedAlertIds || []).map(String));
     dismissed.add(String(id));
     Auth.updateUser({ dismissedAlertIds: [...dismissed] });
+    // Also persist to the auth session metadata so the dismissal survives
+    // a fresh login on any device, not just this browser.
+    try { supabaseClient?.auth?.updateUser({ data: { dismissedAlertIds: [...dismissed] } }); } catch (e) {}
     if (typeof window.refreshMentoristState === 'function') {
       window.refreshMentoristState(currentUser.email);
     }
+    renderAlerts();
     Utils.toast('Broadcast acknowledged.', 'success');
   }
 
