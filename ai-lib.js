@@ -100,7 +100,9 @@ Rules:
 - Flag GPA and workload risk honestly for any ambitious/stretch choice.
 - When you used a real source, briefly cite it inline (e.g. "— from the Rouse HS catalog").
 - If you genuinely could not verify something, say so and give the best proven guidance instead of inventing specifics.
-- Format in clean, scannable Markdown (short headers, tight bullets). End with exactly 3 "This Week" action items that fit the focus.`;
+- When the student typed a specific question, ANSWER THAT QUESTION FIRST and directly — do not replace it with a generic plan for the whole category.
+- BE CONCISE AND HIGH-VALUE: keep the whole reply around 150-250 words (never more than 300). Lead with the answer, cut preamble, and do not recite frameworks the question did not ask about.
+- Format in clean, scannable Markdown (short headers, tight bullets). End with up to 3 one-line "This Week" actions that directly serve the question.`;
 
 /* Per-category scope so the engine answers exactly what the student picked
    instead of dumping an all-in-one strategy. */
@@ -245,17 +247,26 @@ function buildPrompt(profile, requestType, userQuery, ctx = {}) {
     searchTargets.length ? 'USE YOUR GOOGLE SEARCH TOOL TO:' : null,
     ...(searchTargets.length ? searchTargets.map((x) => `- ${x}`) : []),
     searchTargets.length ? '' : null,
-    `SCOPE — CRITICAL: This response must cover ${dir.focus} and nothing else.`,
-    `Do NOT include ${dir.forbid}. If tempted to add those, stop — they belong to other categories the student can pick separately.`,
-    '',
-    'STRUCTURE:',
-    ...dir.structure.map((s) => `- ${s}`),
+    ...(typedQuery
+      ? [
+          'HOW TO ANSWER (the student typed a specific question):',
+          '- Answer the STUDENT QUESTION directly and specifically as the FIRST thing you say — give a clear recommendation, not a survey of every option or a full category plan.',
+          `- Stay in the spirit of "${requestType || 'their question'}", but include a point ONLY if it genuinely helps answer what they actually asked. Skip everything else — do NOT bolt on unrelated sections.`
+        ]
+      : [
+          `SCOPE — CRITICAL: This response must cover ${dir.focus} and nothing else.`,
+          `Do NOT include ${dir.forbid}. If tempted to add those, stop — they belong to other categories the student can pick separately.`,
+          '',
+          'STRUCTURE:',
+          ...dir.structure.map((s) => `- ${s}`)
+        ]),
     '',
     'ALWAYS:',
     '- Use the profile explicitly and refer to their real school and details by name; you already have this info, so never ask for it.',
-    '- Make every recommendation specific and NAMED, each with a one-line "Why this fits you" tied to the profile.',
+    '- Make every recommendation specific and NAMED, each with a short "why this fits you".',
     '- Cite real sources inline when used; if something cannot be verified, say so instead of inventing it.',
-    '- Keep it tight and scannable. End with exactly 3 "This Week" actions that fit THIS focus.'
+    '- BE CONCISE: aim for 150-250 words (300 max). Lead with the answer — no preamble, and do not recite frameworks the question did not ask about.',
+    '- End with up to 3 one-line "This Week" steps — only ones that directly serve the question.'
   ].filter((x) => x !== null).join('\n');
 }
 
@@ -280,7 +291,7 @@ async function callGeminiOnce(model, prompt, systemPrompt, apiKey, useGrounding)
   const requestBody = {
     systemInstruction: { parts: [{ text: systemPrompt || DEFAULT_SYSTEM_PROMPT }] },
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.45, topP: 0.92, maxOutputTokens: 2600, candidateCount: 1 }
+    generationConfig: { temperature: 0.45, topP: 0.92, maxOutputTokens: 1600, candidateCount: 1 }
   };
   if (useGrounding) requestBody.tools = [{ googleSearch: {} }];
 
