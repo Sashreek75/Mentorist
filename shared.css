@@ -588,3 +588,16 @@ h1,h2,h3,h4,p,li{overflow-wrap:break-word;}
 /* The hamburger icon is a fixed square; never let flex distort it. */
 .nav-menu-toggle{flex:0 0 44px;}
 .nav-menu-toggle svg{width:22px;height:22px;flex-shrink:0;display:block;}
+
+/* ============================================================
+   MOBILE DECLUTTER — hide decorative, non-interactive elements
+   that read as tappable buttons on phones.
+   ============================================================ */
+@media(max-width:768px){
+  /* Hero "stat" blurbs (e.g. Open questions / Mentor-led / Community impact,
+     Real mentors / AI strategy / Free access) are decorative only and look
+     like buttons on a phone. Hide them for a clean, unambiguous dashboard. */
+  .dashboard-hero .dashboard-stat-grid,
+  .mentor-hero .dashboard-stat-grid,
+  .dashboard-stat-grid{ display:none !important; }
+}

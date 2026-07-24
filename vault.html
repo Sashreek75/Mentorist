@@ -305,7 +305,9 @@ body{background:var(--bg);}
     if (user.email === 'loading@mentorist.org') return;
     if(user) {
       const actions = document.getElementById('navActions');
-      actions.innerHTML = `<a href="index.html" class="nav-sign-in">Home</a><a href="${user.role==='mentor'?'mentordashboard.html':user.role==='admin'?'admin.html':'studentdashboard.html'}" class="nav-get-started">My Dashboard</a>`;
+      // "Home" already lives in .nav-links; only add the dashboard CTA here so it
+      // is not duplicated (especially in the stacked mobile menu).
+      actions.innerHTML = `<a href="${user.role==='mentor'?'mentordashboard.html':user.role==='admin'?'admin.html':'studentdashboard.html'}" class="nav-get-started">My Dashboard</a>`;
     }
 
     const qs = QuestionStore.getAll();

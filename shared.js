@@ -1112,6 +1112,15 @@ const MobileNav = {
       menu.appendChild(navActions);
     }
 
+    // Some pages carry the same destination in both .nav-links and .nav-actions
+    // (e.g. a "Home" link in each). Stacked into one mobile menu that shows as a
+    // confusing duplicate, so collapse links that share an href + label.
+    const _seen = new Set();
+    menu.querySelectorAll('a[href]').forEach(a => {
+      const key = (a.getAttribute('href') || '').split('#')[0].replace(/^\.\//, '').toLowerCase()
+                  + '|' + (a.textContent || '').trim().toLowerCase();
+      if (_seen.has(key)) a.remove(); else _seen.add(key);
+    });
     document.body.appendChild(menu);
     this.menu = menu;
     this.toggle = toggle;

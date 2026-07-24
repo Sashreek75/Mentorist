@@ -376,9 +376,35 @@
       /* Broadcast panel + inner cards get tighter padding. */
       .admin-card > div[style*="padding:32px"] { padding: 20px !important; }
 
-      /* Tables never blow out the viewport — scroll within their frame. */
+      /* Tables must fit the viewport — never force horizontal scroll, which
+         pushed the action buttons off the right edge. */
       .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-      .table-wrap table { min-width: 560px; }
+      .table-wrap table { min-width: 0; width: 100%; }
+    }
+
+    /* Phones: turn each table row into a self-contained card so every control
+       (Approve / Suspend / Ban / Delete) is fully visible — no side-scrolling. */
+    @media(max-width:640px) {
+      .table-wrap { overflow-x: visible; background: transparent; border: none; }
+      .table-wrap table,
+      .table-wrap thead,
+      .table-wrap tbody,
+      .table-wrap tr,
+      .table-wrap th,
+      .table-wrap td { display: block; width: 100%; }
+      .table-wrap thead { position: absolute; left: -9999px; top: -9999px; }
+      .table-wrap tr {
+        background: var(--bg-1); border: 1px solid rgba(33,38,29,0.08);
+        border-radius: var(--r-xl); margin-bottom: 14px; padding: 8px 6px;
+      }
+      .table-wrap td {
+        border-bottom: none !important; padding: 8px 14px !important;
+        max-width: none !important; white-space: normal !important;
+        overflow: visible !important; text-overflow: clip !important;
+      }
+      .action-btns { flex-direction: column; align-items: stretch; gap: 8px; margin-top: 4px; }
+      .action-btns .btn-action,
+      .action-btns .btn { width: 100%; min-height: 44px; }
     }
 
     @media(max-width:500px) {
